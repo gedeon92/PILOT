@@ -69,10 +69,12 @@ Limites connues des offres gratuites, acceptées pour la phase de test :
 - [x] `render.yaml` prêt (service `pilot-api-staging`, offre gratuite)
 - [x] Service Render créé depuis le `render.yaml` (Blueprint « PILOT »), `DATABASE_URL` = branche Neon `staging` ; https://pilot-api-staging.onrender.com/api/health répond « database: ok »
 - [x] `vercel.json` prêt (redirection `/api/*` vers Render)
-- [ ] Projet Vercel créé et relié au dossier `frontend/`
+- [x] Projet Vercel `pilot` créé (offre Hobby), relié au dossier `frontend/` : https://pilot-beta-swart.vercel.app
 - [x] CI GitHub Actions : lint, tests et build backend + frontend, contrôle des types générés ; Render ne déploie que si la CI passe
 
 **Terminé quand :** la page en ligne sur Vercel affiche l'état de l'API Render, et l'API est connectée à Neon.
+
+✅ **Phase 0 terminée le 3 nov. 2026** : la page Vercel joint l'API Render (`/api/health` → `database: ok`).
 
 ## Phase 1 — Comptes, espaces et droits (CDC §4, §15)
 
