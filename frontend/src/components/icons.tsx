@@ -74,3 +74,76 @@ export function Logo({ size = 30 }: { size?: number }) {
     </svg>
   )
 }
+
+export const FolderIcon = () => (
+  <Icon>
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+  </Icon>
+)
+
+export const TasksIcon = () => (
+  <Icon>
+    <rect x="3" y="3" width="18" height="18" rx="4" />
+    <path d="m8 12 3 3 5-6" />
+  </Icon>
+)
+
+export const TimelineIcon = () => (
+  <Icon>
+    <path d="M4 6h10M8 12h12M6 18h8" />
+  </Icon>
+)
+
+export const DocumentIcon = () => (
+  <Icon>
+    <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+    <path d="M14 3v6h6M8 13h8M8 17h5" />
+  </Icon>
+)
+
+export const InboxIcon = () => (
+  <Icon>
+    <path d="M4 13h4l2 3h4l2-3h4" />
+    <path d="M6 4h12l2 9v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6z" />
+  </Icon>
+)
+
+export const BellIcon = ({ size }: { size?: number }) => (
+  <Icon size={size}>
+    <path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8" />
+    <path d="M10 20a2 2 0 0 0 4 0" />
+  </Icon>
+)
+
+export const ClockIcon = () => (
+  <Icon size={18}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </Icon>
+)
+
+export const BlockedIcon = () => (
+  <Icon size={18}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="m5.6 5.6 12.8 12.8" />
+  </Icon>
+)
+
+export const CalendarIcon = ({ size = 18 }: { size?: number }) => (
+  <Icon size={size}>
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path d="M3 10h18M8 3v4M16 3v4" />
+  </Icon>
+)
+
+export const ArrowUpRightIcon = () => (
+  <Icon size={18}>
+    <path d="M7 17 17 7M8 7h9v9" />
+  </Icon>
+)
+
+export const ChevronsIcon = () => (
+  <Icon size={16}>
+    <path d="m8 9 4-4 4 4M8 15l4 4 4-4" />
+  </Icon>
+)

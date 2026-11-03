@@ -1,7 +1,21 @@
-import { NavLink, Outlet, useNavigate, useParams } from 'react-router'
+import { useState, type ReactNode } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router'
 import { ROLE_LABELS, type Me, type Space } from '../api/client'
-import { useLogout, useSpace } from '../api/queries'
-import { BuildingIcon, DashboardIcon, Logo, LogoutIcon, MembersIcon } from '../components/icons'
+import { useLogout, useMembers, useSpace } from '../api/queries'
+import {
+  BellIcon,
+  BuildingIcon,
+  ChevronsIcon,
+  DashboardIcon,
+  DocumentIcon,
+  FolderIcon,
+  InboxIcon,
+  Logo,
+  LogoutIcon,
+  MembersIcon,
+  TasksIcon,
+  TimelineIcon,
+} from '../components/icons'
 import { Alert, FullPageLoader } from '../components/ui'
 
 export type SpaceContext = { space: Space; me: Me }
@@ -15,69 +29,124 @@ function initials(name: string) {
     .join('')
 }
 
+const linkClass = ({ isActive }: { isActive: boolean }) =>
+  isActive ? 'nav__link nav__link--active' : 'nav__link'
+
+/** Entrée de menu prévue dans le workflow mais pas encore construite. */
+function SoonLink({ icon, label }: { icon: ReactNode; label: string }) {
+  return (
+    <span className="nav__link nav__link--soon" aria-disabled="true">
+      {icon}
+      <span className="nav__label">{label}</span>
+      <span className="badge">Bientôt</span>
+    </span>
+  )
+}
+
 function Sidebar({ me, space }: SpaceContext) {
   const navigate = useNavigate()
   const logout = useLogout()
+  const members = useMembers(space.id)
   const base = `/espaces/${space.id}`
-  const linkClass = ({ isActive }: { isActive: boolean }) =>
-    isActive ? 'nav__link nav__link--active' : 'nav__link'
+  const pending = members.data?.filter((m) => m.status === 'invited').length ?? 0
+  // Sur téléphone, le menu est replié derrière un bouton ; il se referme à chaque changement de page.
+  const location = useLocation()
+  const [openOn, setOpenOn] = useState<string | null>(null)
+  const open = openOn === location.pathname
 
   return (
-    <nav className="sidebar" aria-label="Navigation principale">
-      <div className="brand">
-        <Logo />
-        <span className="brand__name">PILOT</span>
-      </div>
-
-      <label className="space-switcher">
-        <BuildingIcon />
-        <span className="visually-hidden">Espace</span>
-        <select
-          value={space.id}
-          onChange={(e) =>
-            navigate(e.target.value === 'new' ? '/espaces/nouveau' : `/espaces/${e.target.value}`)
-          }
-        >
-          {me.spaces.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-          <option value="new">+ Créer un espace</option>
-        </select>
-      </label>
-
-      <div className="nav">
-        <NavLink to={base} end className={linkClass}>
-          <DashboardIcon />
-          Vue d’ensemble
-        </NavLink>
-        <NavLink to={`${base}/membres`} className={linkClass}>
-          <MembersIcon />
-          Accès et membres
-        </NavLink>
-      </div>
-
-      <div className="sidebar__spacer" />
-
-      <div className="user-card">
-        <div className="user-card__who">
-          <span className="avatar" aria-hidden="true">
-            {initials(me.user.display_name)}
-          </span>
-          <span className="user-card__text">
-            <span className="user-card__name">{me.user.display_name}</span>
-            <span className="user-card__role">{ROLE_LABELS[space.role]}</span>
-          </span>
+    <nav className={open ? 'sidebar sidebar--open' : 'sidebar'} aria-label="Navigation principale">
+      <div className="sidebar__top">
+        <div className="brand">
+          <Logo />
+          <span className="brand__name">PILOT</span>
         </div>
         <button
           type="button"
-          className="nav__link"
-          onClick={() => logout.mutate(undefined, { onSuccess: () => navigate('/connexion') })}
+          className="button button--small sidebar__toggle"
+          aria-expanded={open}
+          aria-controls="sidebar-content"
+          onClick={() => setOpenOn(open ? null : location.pathname)}
         >
-          <LogoutIcon />
-          Déconnexion
+          {open ? 'Fermer' : 'Menu'}
         </button>
+      </div>
+
+      <div className="sidebar__content" id="sidebar-content">
+        <label className="space-switcher">
+          <BuildingIcon />
+          <span className="visually-hidden">Changer d’espace</span>
+          <select
+            value={space.id}
+            onChange={(e) =>
+              navigate(e.target.value === 'new' ? '/espaces/nouveau' : `/espaces/${e.target.value}`)
+            }
+          >
+            {me.spaces.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+            <option value="new">+ Créer un espace</option>
+          </select>
+          <ChevronsIcon />
+        </label>
+
+        <div className="sidebar__divider" />
+
+        <div className="nav">
+          <NavLink to={base} end className={linkClass}>
+            <DashboardIcon />
+            <span className="nav__label">Vue d’ensemble</span>
+          </NavLink>
+          <SoonLink icon={<FolderIcon />} label="Projets" />
+          <SoonLink icon={<TasksIcon />} label="Tâches" />
+          <SoonLink icon={<TimelineIcon />} label="Timeline" />
+          <SoonLink icon={<DocumentIcon />} label="Documents" />
+          <SoonLink icon={<InboxIcon />} label="Mises à jour" />
+          <SoonLink icon={<BellIcon />} label="Alertes" />
+        </div>
+
+        <div className="sidebar__divider" />
+
+        <div className="nav">
+          <span className="nav__section">Équipe</span>
+          <NavLink to={`${base}/membres`} className={linkClass}>
+            <MembersIcon />
+            <span className="nav__label">Accès et membres</span>
+            {pending > 0 && (
+              <span className="badge badge--count" title={`${pending} invitation(s) en attente`}>
+                {pending}
+              </span>
+            )}
+          </NavLink>
+        </div>
+
+        <div className="sidebar__spacer" />
+
+        <div className="user-card">
+          <div className="user-card__who">
+            <span className="avatar" aria-hidden="true">
+              {initials(me.user.display_name)}
+            </span>
+            <span className="user-card__text">
+              <span className="user-card__name">{me.user.display_name}</span>
+              <span className="user-card__role">
+                {ROLE_LABELS[space.role]} · {me.user.email}
+              </span>
+            </span>
+          </div>
+          <div className="user-card__actions">
+            <button
+              type="button"
+              className="nav__link"
+              onClick={() => logout.mutate(undefined, { onSuccess: () => navigate('/connexion') })}
+            >
+              <LogoutIcon />
+              <span className="nav__label">Déconnexion</span>
+            </button>
+          </div>
+        </div>
       </div>
     </nav>
   )
@@ -106,9 +175,7 @@ export function SpaceLayout({ me }: { me: Me }) {
     <div className="app">
       <Sidebar {...context} />
       <main className="app__main">
-        <div className="panel app__panel">
-          <Outlet context={context} />
-        </div>
+        <Outlet context={context} />
       </main>
     </div>
   )

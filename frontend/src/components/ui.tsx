@@ -12,6 +12,26 @@ export function StatusPill({ tone, children }: { tone: Tone; children: ReactNode
   )
 }
 
+export function PageHeader({
+  title,
+  subtitle,
+  actions,
+}: {
+  title: string
+  subtitle?: ReactNode
+  actions?: ReactNode
+}) {
+  return (
+    <header className="page-header">
+      <div className="page-header__text">
+        <h1>{title}</h1>
+        {subtitle && <p>{subtitle}</p>}
+      </div>
+      {actions && <div className="page-header__actions">{actions}</div>}
+    </header>
+  )
+}
+
 export function Alert({ tone = 'danger', children }: { tone?: Tone; children: ReactNode }) {
   return (
     <p className={`alert alert--${tone}`} role={tone === 'danger' ? 'alert' : 'status'}>

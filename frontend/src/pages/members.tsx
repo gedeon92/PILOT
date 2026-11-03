@@ -15,7 +15,7 @@ import {
   useRenewInvitation,
 } from '../api/queries'
 import { LinkIcon, PlusIcon } from '../components/icons'
-import { Alert, StatusPill } from '../components/ui'
+import { Alert, PageHeader, StatusPill } from '../components/ui'
 import type { SpaceContext } from './space-layout'
 
 type InvitableRole = Exclude<Role, 'owner'>
@@ -245,13 +245,15 @@ export function MembersPage() {
 
   return (
     <div className="page-content">
-      <header className="page-header">
-        <h1>Accès et membres</h1>
-        <p>
-          Les <strong>lecteurs</strong> consultent ; les <strong>contributeurs</strong> ajoutent et
-          modifient. Seul le rôle Propriétaire gère les accès.
-        </p>
-      </header>
+      <PageHeader
+        title="Accès et membres"
+        subtitle={
+          <>
+            Les <strong>lecteurs</strong> consultent ; les <strong>contributeurs</strong> ajoutent
+            et modifient. Seul le rôle Propriétaire gère les accès.
+          </>
+        }
+      />
 
       {isOwner && (
         <section className="section">
