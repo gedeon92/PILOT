@@ -29,6 +29,9 @@ from pilot_api.schemas import (
     ProjectTypeUpdate,
 )
 
+# Champs toujours renseignés : jamais remplacés par une valeur vide.
+REQUIRED_FIELDS = {"color", "kind"}
+
 
 def sort_key(name: str) -> str:
     """Ordre alphabétique français : « Événement » se range avec les E, pas après le Z."""
@@ -85,9 +88,10 @@ def catalog_router(
     @router.post("", status_code=201, response_model=out_schema)
     def create_item(body: create_schema, membership: OwnerMembership, db: DbSession):  # type: ignore[valid-type]
         ensure_unique(db, membership.space_id, body.name, exclude=None)
-        values = {name: getattr(body, name) or None for name in fields}
-        if "color" in values:
-            values["color"] = body.color
+        values = {
+            name: getattr(body, name) if name in REQUIRED_FIELDS else getattr(body, name) or None
+            for name in fields
+        }
         item = model(space_id=membership.space_id, name=body.name, **values)
         db.add(item)
         db.flush()
@@ -123,8 +127,8 @@ def catalog_router(
         for name in fields:
             if name in sent:
                 value = getattr(body, name)
-                if name == "color" and value is None:
-                    continue  # la couleur est obligatoire : « null » ne l'efface pas
+                if name in REQUIRED_FIELDS and value is None:
+                    continue  # champ obligatoire : « null » ne l'efface pas
                 setattr(item, name, value or None)
         if "archived" in sent and body.archived is not None:
             if body.archived and item.archived_at is None:

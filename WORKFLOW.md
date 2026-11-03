@@ -108,6 +108,7 @@ Limites connues des offres gratuites, acceptées pour la phase de test :
 
 ## Phase 3 — Projets et tâches (CDC §6, §8, §21, §22)
 
+- [ ] Nature des types de projets : « standard » ou « événement » (le comportement dépend de la nature, pas du nom du type)
 - [ ] Modèle `Project` complet selon le dictionnaire CDC §21 (situation, prochaine étape et décision attendue séparées ; avancement nullable ; certitude de date)
 - [ ] Modèle `Task` (responsable, livrable, statut, échéance proposée ou confirmée)
 - [ ] Statuts : À cadrer, À lancer, En préparation, En cours, En attente de validation, Bloqué, Suspendu, Terminé, Annulé
@@ -118,6 +119,20 @@ Limites connues des offres gratuites, acceptées pour la phase de test :
 - [ ] Clic « Réessayer » sans doublon (clé d'idempotence)
 
 **Terminé quand :** PRJ01, PRJ02, PRJ03 passent.
+
+## Phase 3B — Événements (CDC §6, §12, §21)
+
+Demande du 3 nov. 2026 : suivre l'organisation des événements, les voir dans un calendrier, gérer les éditions récurrentes. Un événement est un projet dont le type a la nature « événement » : il garde tâches, responsable, documents et alertes, et reçoit en plus des détails propres, stockés à part pour ne pas les imposer aux autres projets. Hors périmètre : inscriptions et gestion des participants.
+
+- [ ] Modèle `EventDetails` (1 pour 1 avec le projet) : lieu, ville, pays, date de l'événement (exacte, période ou inconnue) et sa certitude (proposée, annoncée, confirmée), statut de calendrier distinct du statut opérationnel
+- [ ] Modèle `Program` : un événement récurrent (ex. salon annuel) et ses éditions, chaque édition étant un projet
+- [ ] Suivi après l'événement jusqu'à J+15 (relances, bilan, retours d'expérience), sans l'imposer aux autres types de projets
+- [ ] Annulation d'une édition : retrait du calendrier actif, tâches ouvertes clôturées, dossier, tâches terminées et anciennes dates conservés (CDC §12)
+- [ ] Replanification : nouvelle date journalisée ; aucune réactivation automatique d'une édition annulée
+- [ ] Vue « Événements » : liste filtrable (portefeuille, filiale, pays, période) et calendrier mensuel ; les événements sans date restent visibles dans une liste à part
+- [ ] Alerte de chevauchement : deux événements aux dates communes, avec la règle affichée
+
+**Terminé quand :** CAL01 et CAL02 passent pour les événements ; une édition annulée disparaît du calendrier actif mais son dossier reste consultable ; un projet standard n'affiche aucun champ d'événement.
 
 ## Phase 4 — Documents du projet (CDC §11)
 

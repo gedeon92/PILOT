@@ -63,3 +63,12 @@ def require_owner(membership: CurrentMembership) -> Membership:
 
 
 OwnerMembership = Annotated[Membership, Depends(require_owner)]
+
+
+def require_writer(membership: CurrentMembership) -> Membership:
+    if membership.role == Role.READER:
+        raise HTTPException(403, "Votre rôle Lecteur permet de consulter, pas de modifier.")
+    return membership
+
+
+WriterMembership = Annotated[Membership, Depends(require_writer)]

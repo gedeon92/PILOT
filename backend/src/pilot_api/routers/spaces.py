@@ -84,7 +84,9 @@ def create_space(body: SpaceCreate, user: CurrentUser, db: DbSession) -> SpaceOu
             joined_at=utcnow(),
         )
     )
-    db.add_all(ProjectType(space_id=space.id, name=name) for name in DEFAULT_PROJECT_TYPES)
+    db.add_all(
+        ProjectType(space_id=space.id, name=name, kind=kind) for name, kind in DEFAULT_PROJECT_TYPES
+    )
     record(
         db,
         action="space.created",

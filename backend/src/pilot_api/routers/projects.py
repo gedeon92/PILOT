@@ -1,0 +1,580 @@
+"""Projets et tâches (CDC §6, §8, §21, §22).
+
+Lecteurs : consultation. Contributeurs et propriétaires : création et modification.
+Chaque modification incrémente la version (conflits détectés) et laisse une trace au journal.
+"""
+
+import uuid
+from datetime import date
+from enum import Enum
+from typing import Any
+from zoneinfo import ZoneInfo
+
+from fastapi import APIRouter, HTTPException
+from sqlalchemy import and_, case, func, or_, select
+from sqlalchemy.orm import Session, selectinload
+
+from pilot_api.audit import record
+from pilot_api.deps import CurrentMembership, DbSession, WriterMembership
+from pilot_api.models import (
+    CLOSED_PROJECT_STATUSES,
+    CLOSED_TASK_STATUSES,
+    AuditLog,
+    Entity,
+    Membership,
+    MembershipStatus,
+    Portfolio,
+    Project,
+    ProjectStatus,
+    ProjectType,
+    Space,
+    Task,
+    TaskStatus,
+    User,
+    utcnow,
+)
+from pilot_api.schemas import (
+    HistoryEntry,
+    PersonRef,
+    PortfolioRef,
+    ProjectCreate,
+    ProjectOut,
+    ProjectStatusChange,
+    ProjectTypeRef,
+    ProjectUpdate,
+    RefOut,
+    TaskCreate,
+    TaskOut,
+    TaskUpdate,
+)
+
+router = APIRouter(prefix="/api/spaces/{space_id}", tags=["projets"])
+
+# Champs copiés tels quels de la requête vers le projet (hors références et responsable).
+PROJECT_PLAIN_FIELDS = [
+    "title",
+    "situation",
+    "next_step",
+    "decision_needed",
+    "decision_maker",
+    "objective",
+    "deliverables",
+    "progress",
+    "risk_level",
+    "risk_note",
+    "start_date",
+    "end_date",
+    "due_date",
+    "date_certainty",
+    "window_start",
+    "window_end",
+    "country",
+    "city",
+    "external_url",
+]
+PROJECT_AUDIT_FIELDS = [
+    *PROJECT_PLAIN_FIELDS,
+    "portfolio_id",
+    "entity_id",
+    "project_type_id",
+    "owner_member_id",
+    "owner_label",
+    "status",
+    "outcome",
+    "cancel_reason",
+]
+TASK_PLAIN_FIELDS = ["title", "deliverable", "due_date", "due_certainty"]
+TASK_AUDIT_FIELDS = [*TASK_PLAIN_FIELDS, "status", "assignee_member_id", "assignee_label"]
+
+CONFLICT = "Cet élément a été modifié entre-temps. Rechargez la page avant de réessayer."
+
+
+# ---------- Outils ----------
+
+
+def _json(value: Any) -> Any:
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, uuid.UUID | date):
+        return str(value)
+    return value
+
+
+def _snapshot(obj: Any, fields: list[str]) -> dict[str, Any]:
+    return {name: _json(getattr(obj, name)) for name in fields}
+
+
+def _diff(before: dict[str, Any], after: dict[str, Any]) -> tuple[dict, dict]:
+    changed = [k for k in after if before.get(k) != after[k]]
+    return {k: before.get(k) for k in changed}, {k: after[k] for k in changed}
+
+
+def today_in(space: Space) -> date:
+    """La date du jour dans le fuseau de l'espace (CDC §12)."""
+    return utcnow().astimezone(ZoneInfo(space.timezone)).date()
+
+
+def _person(member: Membership | None, label: str | None) -> PersonRef:
+    if member is not None:
+        name = member.user.display_name if member.user else member.email
+        return PersonRef(member_id=member.id, name=name, has_account=member.user_id is not None)
+    return PersonRef(member_id=None, name=label, has_account=False)
+
+
+def _resolve_person(
+    db: Session, space_id: uuid.UUID, member_id: uuid.UUID | None, label: str | None
+) -> tuple[uuid.UUID | None, str | None]:
+    """Un responsable est soit un membre de l'espace, soit un nom libre (sans compte)."""
+    if member_id is None:
+        return None, label or None
+    member = db.scalar(
+        select(Membership)
+        .options(selectinload(Membership.user))
+        .where(Membership.id == member_id, Membership.space_id == space_id)
+    )
+    if member is None or member.status != MembershipStatus.ACTIVE:
+        raise HTTPException(422, "Ce membre n'appartient pas à l'espace.")
+    # Le nom est gardé en copie : il reste lisible si la personne quitte l'espace.
+    return member.id, member.user.display_name if member.user else member.email
+
+
+def _check_ref(db: Session, model: type, space_id: uuid.UUID, ref_id: uuid.UUID, label: str):
+    item = db.scalar(select(model).where(model.id == ref_id, model.space_id == space_id))
+    if item is None:
+        raise HTTPException(422, f"{label} introuvable dans cet espace.")
+    if item.archived_at is not None:
+        raise HTTPException(422, f"{label} « {item.name} » est archivé.")
+
+
+def _check_dates(project: Project) -> None:
+    if project.start_date and project.end_date and project.end_date < project.start_date:
+        raise HTTPException(422, "La date de fin précède la date de début.")
+    if bool(project.window_start) != bool(project.window_end):
+        raise HTTPException(422, "Une période doit avoir un début et une fin.")
+    if project.window_start and project.window_end and project.window_end < project.window_start:
+        raise HTTPException(422, "La fin de la période précède son début.")
+
+
+def _task_counts(db: Session, project_ids: list[uuid.UUID], today: date) -> dict:
+    if not project_ids:
+        return {}
+    is_open = Task.status.not_in(CLOSED_TASK_STATUSES)
+    rows = db.execute(
+        select(
+            Task.project_id,
+            func.count().filter(is_open),
+            func.count().filter(and_(is_open, Task.due_date < today)),
+        )
+        .where(Task.project_id.in_(project_ids))
+        .group_by(Task.project_id)
+    ).all()
+    return {project_id: (open_count, late) for project_id, open_count, late in rows}
+
+
+def _project_query():
+    # populate_existing : après un enregistrement, relire les liens (responsable, filiale…)
+    # plutôt que réutiliser l'objet déjà chargé dans la session.
+    return (
+        select(Project)
+        .execution_options(populate_existing=True)
+        .options(
+            selectinload(Project.portfolio),
+            selectinload(Project.entity),
+            selectinload(Project.project_type),
+            selectinload(Project.owner_member).selectinload(Membership.user),
+        )
+    )
+
+
+def _project_out(project: Project, counts: tuple[int, int] = (0, 0)) -> ProjectOut:
+    entity, ptype, portfolio = project.entity, project.project_type, project.portfolio
+    return ProjectOut(
+        id=project.id,
+        title=project.title,
+        status=project.status,
+        portfolio=PortfolioRef(id=portfolio.id, name=portfolio.name, color=portfolio.color),
+        entity=RefOut(id=entity.id, name=entity.name) if entity else None,
+        project_type=ProjectTypeRef(id=ptype.id, name=ptype.name, kind=ptype.kind)
+        if ptype
+        else None,
+        owner=_person(project.owner_member, project.owner_label),
+        open_tasks=counts[0],
+        late_tasks=counts[1],
+        **{
+            name: getattr(project, name)
+            for name in ProjectOut.model_fields
+            if name
+            not in {"id", "title", "status", "portfolio", "entity", "project_type", "owner"}
+            | {"open_tasks", "late_tasks"}
+        },
+    )
+
+
+def _load_project(db: Session, space_id: uuid.UUID, project_id: uuid.UUID) -> Project:
+    project = db.scalar(
+        _project_query().where(Project.id == project_id, Project.space_id == space_id)
+    )
+    if project is None:
+        raise HTTPException(404, "Projet introuvable.")
+    return project
+
+
+def _project_with_counts(db: Session, membership: Membership, project: Project) -> ProjectOut:
+    counts = _task_counts(db, [project.id], today_in(membership.space))
+    return _project_out(project, counts.get(project.id, (0, 0)))
+
+
+def _task_out(task: Task, today: date) -> TaskOut:
+    late = (
+        task.status not in CLOSED_TASK_STATUSES
+        and task.due_date is not None
+        and task.due_date < today
+    )
+    return TaskOut(
+        id=task.id,
+        project_id=task.project_id,
+        title=task.title,
+        deliverable=task.deliverable,
+        status=task.status,
+        assignee=_person(task.assignee_member, task.assignee_label),
+        due_date=task.due_date,
+        due_certainty=task.due_certainty,
+        late=late,
+        closed_at=task.closed_at,
+        version=task.version,
+    )
+
+
+def _load_task(db: Session, space_id: uuid.UUID, task_id: uuid.UUID) -> Task:
+    task = db.scalar(
+        select(Task)
+        .execution_options(populate_existing=True)
+        .options(selectinload(Task.assignee_member).selectinload(Membership.user))
+        .where(Task.id == task_id, Task.space_id == space_id)
+    )
+    if task is None:
+        raise HTTPException(404, "Tâche introuvable.")
+    return task
+
+
+def _apply_project_fields(db: Session, project: Project, body: Any, sent: set[str]) -> None:
+    space_id = project.space_id
+    for name in PROJECT_PLAIN_FIELDS:
+        if name in sent:
+            value = getattr(body, name)
+            if name == "external_url" and value is not None:
+                value = str(value)
+            if isinstance(value, str) and value == "":
+                value = None
+            if name == "title" and value is None:
+                continue  # le titre est obligatoire
+            setattr(project, name, value)
+    if "portfolio_id" in sent and body.portfolio_id is not None:
+        if body.portfolio_id != project.portfolio_id:
+            _check_ref(db, Portfolio, space_id, body.portfolio_id, "Le portefeuille")
+        project.portfolio_id = body.portfolio_id
+    if "entity_id" in sent:
+        if body.entity_id is not None and body.entity_id != project.entity_id:
+            _check_ref(db, Entity, space_id, body.entity_id, "La filiale")
+        project.entity_id = body.entity_id
+    if "project_type_id" in sent:
+        if body.project_type_id is not None and body.project_type_id != project.project_type_id:
+            _check_ref(db, ProjectType, space_id, body.project_type_id, "Le type de projet")
+        project.project_type_id = body.project_type_id
+    if "owner_member_id" in sent or "owner_label" in sent:
+        project.owner_member_id, project.owner_label = _resolve_person(
+            db, space_id, body.owner_member_id, body.owner_label
+        )
+    _check_dates(project)
+
+
+# ---------- Projets ----------
+
+
+@router.get("/projects")
+def list_projects(
+    membership: CurrentMembership,
+    db: DbSession,
+    portfolio_id: uuid.UUID | None = None,
+    entity_id: uuid.UUID | None = None,
+    status: ProjectStatus | None = None,
+    q: str | None = None,
+) -> list[ProjectOut]:
+    query = _project_query().where(Project.space_id == membership.space_id)
+    if portfolio_id:
+        query = query.where(Project.portfolio_id == portfolio_id)
+    if entity_id:
+        query = query.where(Project.entity_id == entity_id)
+    if status:
+        query = query.where(Project.status == status)
+    if q:
+        query = query.where(Project.title.ilike(f"%{q.strip()}%"))
+    query = query.order_by(
+        case((Project.status.in_(CLOSED_PROJECT_STATUSES), 1), else_=0),
+        Project.due_date.asc().nulls_last(),
+        func.lower(Project.title),
+    )
+    projects = db.scalars(query).all()
+    counts = _task_counts(db, [p.id for p in projects], today_in(membership.space))
+    return [_project_out(p, counts.get(p.id, (0, 0))) for p in projects]
+
+
+@router.post("/projects", status_code=201)
+def create_project(body: ProjectCreate, membership: WriterMembership, db: DbSession) -> ProjectOut:
+    space_id = membership.space_id
+    if body.client_request_id is not None:
+        existing = db.scalar(
+            _project_query().where(
+                Project.space_id == space_id, Project.client_request_id == body.client_request_id
+            )
+        )
+        if existing is not None:
+            return _project_with_counts(db, membership, existing)
+
+    _check_ref(db, Portfolio, space_id, body.portfolio_id, "Le portefeuille")
+    project = Project(
+        space_id=space_id,
+        portfolio_id=body.portfolio_id,
+        title=body.title,
+        status=body.status,
+        client_request_id=body.client_request_id,
+        created_by_id=membership.user_id,
+    )
+    sent = body.model_fields_set - {"portfolio_id", "status", "client_request_id"}
+    _apply_project_fields(db, project, body, sent)
+    if project.situation:
+        project.situation_updated_at = utcnow()
+    db.add(project)
+    db.flush()
+    record(
+        db,
+        action="project.created",
+        actor_id=membership.user_id,
+        space_id=space_id,
+        target_type="project",
+        target_id=project.id,
+        after={k: v for k, v in _snapshot(project, PROJECT_AUDIT_FIELDS).items() if v is not None},
+    )
+    db.commit()
+    return _project_with_counts(db, membership, _load_project(db, space_id, project.id))
+
+
+@router.get("/projects/{project_id}")
+def get_project(project_id: uuid.UUID, membership: CurrentMembership, db: DbSession) -> ProjectOut:
+    project = _load_project(db, membership.space_id, project_id)
+    return _project_with_counts(db, membership, project)
+
+
+@router.patch("/projects/{project_id}")
+def update_project(
+    project_id: uuid.UUID, body: ProjectUpdate, membership: WriterMembership, db: DbSession
+) -> ProjectOut:
+    project = _load_project(db, membership.space_id, project_id)
+    if project.version != body.version:
+        raise HTTPException(409, CONFLICT)
+    before = _snapshot(project, PROJECT_AUDIT_FIELDS)
+    _apply_project_fields(db, project, body, body.model_fields_set - {"version"})
+    old, new = _diff(before, _snapshot(project, PROJECT_AUDIT_FIELDS))
+    if new:
+        if "situation" in new:
+            project.situation_updated_at = utcnow()
+        project.updated_at = utcnow()
+        project.version += 1
+        record(
+            db,
+            action="project.updated",
+            actor_id=membership.user_id,
+            space_id=project.space_id,
+            target_type="project",
+            target_id=project.id,
+            before=old,
+            after=new,
+        )
+        db.commit()
+        project = _load_project(db, membership.space_id, project_id)
+    return _project_with_counts(db, membership, project)
+
+
+@router.post("/projects/{project_id}/status")
+def change_status(
+    project_id: uuid.UUID, body: ProjectStatusChange, membership: WriterMembership, db: DbSession
+) -> ProjectOut:
+    """Règles de transition (CDC §22) : bilan pour Terminé, motif et clôture des tâches
+    ouvertes pour Annulé, réouverture explicite et journalisée."""
+    project = _load_project(db, membership.space_id, project_id)
+    if project.version != body.version:
+        raise HTTPException(409, CONFLICT)
+    if body.status == project.status:
+        return _project_with_counts(db, membership, project)
+
+    before = {"status": project.status.value}
+    after: dict[str, Any] = {"status": body.status.value}
+    if body.status == ProjectStatus.DONE:
+        if not body.outcome:
+            raise HTTPException(422, "Un bilan est nécessaire pour passer le projet à Terminé.")
+        project.outcome = body.outcome
+        after["outcome"] = body.outcome
+    if body.status == ProjectStatus.CANCELLED:
+        if not body.reason:
+            raise HTTPException(422, "Un motif est nécessaire pour annuler le projet.")
+        project.cancel_reason = body.reason
+        after["cancel_reason"] = body.reason
+        open_tasks = db.scalars(
+            select(Task).where(
+                Task.project_id == project.id, Task.status.not_in(CLOSED_TASK_STATUSES)
+            )
+        ).all()
+        for task in open_tasks:
+            task.status = TaskStatus.CANCELLED
+            task.closed_at = utcnow()
+            task.version += 1
+        after["tasks_cancelled"] = len(open_tasks)
+
+    reopened = (
+        project.status in CLOSED_PROJECT_STATUSES and body.status not in CLOSED_PROJECT_STATUSES
+    )
+    project.status = body.status
+    project.updated_at = utcnow()
+    project.version += 1
+    record(
+        db,
+        action="project.reopened" if reopened else "project.status_changed",
+        actor_id=membership.user_id,
+        space_id=project.space_id,
+        target_type="project",
+        target_id=project.id,
+        before=before,
+        after=after,
+    )
+    db.commit()
+    return _project_with_counts(db, membership, _load_project(db, membership.space_id, project_id))
+
+
+@router.get("/projects/{project_id}/history")
+def project_history(
+    project_id: uuid.UUID, membership: CurrentMembership, db: DbSession
+) -> list[HistoryEntry]:
+    project = _load_project(db, membership.space_id, project_id)
+    task_ids = [str(t) for t in db.scalars(select(Task.id).where(Task.project_id == project.id))]
+    rows = db.execute(
+        select(AuditLog, User.display_name)
+        .outerjoin(User, User.id == AuditLog.actor_id)
+        .where(
+            AuditLog.space_id == membership.space_id,
+            or_(
+                and_(AuditLog.target_type == "project", AuditLog.target_id == str(project.id)),
+                and_(AuditLog.target_type == "task", AuditLog.target_id.in_(task_ids)),
+            ),
+        )
+        .order_by(AuditLog.created_at.desc())
+        .limit(100)
+    ).all()
+    return [
+        HistoryEntry(
+            id=entry.id,
+            action=entry.action,
+            target_type=entry.target_type,
+            actor_name=actor_name,
+            created_at=entry.created_at,
+            before=entry.before,
+            after=entry.after,
+        )
+        for entry, actor_name in rows
+    ]
+
+
+# ---------- Tâches ----------
+
+
+@router.get("/projects/{project_id}/tasks")
+def list_tasks(
+    project_id: uuid.UUID, membership: CurrentMembership, db: DbSession
+) -> list[TaskOut]:
+    project = _load_project(db, membership.space_id, project_id)
+    tasks = db.scalars(
+        select(Task)
+        .options(selectinload(Task.assignee_member).selectinload(Membership.user))
+        .where(Task.project_id == project.id)
+        .order_by(
+            case((Task.status.in_(CLOSED_TASK_STATUSES), 1), else_=0),
+            Task.due_date.asc().nulls_last(),
+            Task.created_at,
+        )
+    ).all()
+    today = today_in(membership.space)
+    return [_task_out(task, today) for task in tasks]
+
+
+def _apply_task_fields(db: Session, task: Task, body: Any, sent: set[str]) -> None:
+    for name in TASK_PLAIN_FIELDS:
+        if name in sent:
+            value = getattr(body, name)
+            if isinstance(value, str) and value == "":
+                value = None
+            if name == "title" and value is None:
+                continue
+            setattr(task, name, value)
+    if "assignee_member_id" in sent or "assignee_label" in sent:
+        task.assignee_member_id, task.assignee_label = _resolve_person(
+            db, task.space_id, body.assignee_member_id, body.assignee_label
+        )
+    if "status" in sent and body.status is not None and body.status != task.status:
+        task.status = body.status
+        task.closed_at = utcnow() if body.status in CLOSED_TASK_STATUSES else None
+
+
+@router.post("/projects/{project_id}/tasks", status_code=201)
+def create_task(
+    project_id: uuid.UUID, body: TaskCreate, membership: WriterMembership, db: DbSession
+) -> TaskOut:
+    project = _load_project(db, membership.space_id, project_id)
+    if project.status in CLOSED_PROJECT_STATUSES:
+        raise HTTPException(400, "Ce projet est clôturé : rouvrez-le pour ajouter des tâches.")
+    task = Task(
+        space_id=project.space_id, project_id=project.id, title=body.title, status=TaskStatus.TODO
+    )
+    _apply_task_fields(db, task, body, body.model_fields_set - {"title"} | {"status"})
+    db.add(task)
+    db.flush()
+    project.updated_at = utcnow()
+    record(
+        db,
+        action="task.created",
+        actor_id=membership.user_id,
+        space_id=project.space_id,
+        target_type="task",
+        target_id=task.id,
+        after={k: v for k, v in _snapshot(task, TASK_AUDIT_FIELDS).items() if v is not None},
+    )
+    db.commit()
+    return _task_out(_load_task(db, project.space_id, task.id), today_in(membership.space))
+
+
+@router.patch("/tasks/{task_id}")
+def update_task(
+    task_id: uuid.UUID, body: TaskUpdate, membership: WriterMembership, db: DbSession
+) -> TaskOut:
+    task = _load_task(db, membership.space_id, task_id)
+    if task.version != body.version:
+        raise HTTPException(409, CONFLICT)
+    before = _snapshot(task, TASK_AUDIT_FIELDS)
+    _apply_task_fields(db, task, body, body.model_fields_set - {"version"})
+    old, new = _diff(before, _snapshot(task, TASK_AUDIT_FIELDS))
+    if new:
+        task.version += 1
+        project = db.get(Project, task.project_id)
+        if project is not None:
+            project.updated_at = utcnow()
+        record(
+            db,
+            action="task.updated",
+            actor_id=membership.user_id,
+            space_id=task.space_id,
+            target_type="task",
+            target_id=task.id,
+            before=old,
+            after=new,
+        )
+        db.commit()
+        task = _load_task(db, membership.space_id, task_id)
+    return _task_out(task, today_in(membership.space))

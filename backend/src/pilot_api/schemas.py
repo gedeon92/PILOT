@@ -1,11 +1,20 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Literal
 from zoneinfo import available_timezones
 
-from pydantic import BaseModel, EmailStr, Field, StringConstraints, field_validator
+from pydantic import BaseModel, EmailStr, Field, HttpUrl, StringConstraints, field_validator
 
-from pilot_api.models import MembershipStatus, Role
+from pilot_api.models import (
+    CLOSED_PROJECT_STATUSES,
+    DateCertainty,
+    MembershipStatus,
+    ProjectKind,
+    ProjectStatus,
+    RiskLevel,
+    Role,
+    TaskStatus,
+)
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
 Password = Annotated[str, StringConstraints(min_length=10, max_length=128)]
@@ -162,14 +171,181 @@ class EntityOut(BaseModel):
 
 class ProjectTypeCreate(BaseModel):
     name: Name
+    kind: ProjectKind = ProjectKind.STANDARD
 
 
 class ProjectTypeUpdate(_CatalogUpdate):
-    pass
+    kind: ProjectKind | None = None
 
 
 class ProjectTypeOut(BaseModel):
     id: uuid.UUID
     name: str
+    kind: ProjectKind
     archived: bool
     version: int
+
+
+# ---------- Projets et tâches ----------
+
+Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+LongText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=5000)]
+Label = Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)]
+Progress = Annotated[int, Field(ge=0, le=100)]
+
+
+class PersonRef(BaseModel):
+    """Responsable : un membre de l'espace (`member_id`) ou un simple nom saisi."""
+
+    member_id: uuid.UUID | None
+    name: str | None
+    has_account: bool
+
+
+class RefOut(BaseModel):
+    id: uuid.UUID
+    name: str
+
+
+class PortfolioRef(RefOut):
+    color: str
+
+
+class ProjectTypeRef(RefOut):
+    kind: ProjectKind
+
+
+class _ProjectFields(BaseModel):
+    """Champs modifiables d'un projet. Seuls les champs envoyés sont pris en compte ;
+    `null` efface une valeur (une information inconnue reste vide)."""
+
+    entity_id: uuid.UUID | None = None
+    project_type_id: uuid.UUID | None = None
+    owner_member_id: uuid.UUID | None = None
+    owner_label: Label | None = None
+    situation: LongText | None = None
+    next_step: LongText | None = None
+    decision_needed: LongText | None = None
+    decision_maker: Label | None = None
+    objective: LongText | None = None
+    deliverables: LongText | None = None
+    progress: Progress | None = None
+    risk_level: RiskLevel | None = None
+    risk_note: LongText | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    due_date: date | None = None
+    date_certainty: DateCertainty | None = None
+    window_start: date | None = None
+    window_end: date | None = None
+    country: Country | None = None
+    city: Label | None = None
+    external_url: HttpUrl | None = None
+
+
+class ProjectCreate(_ProjectFields):
+    title: Title
+    portfolio_id: uuid.UUID
+    status: ProjectStatus = ProjectStatus.TO_FRAME
+    client_request_id: uuid.UUID | None = None
+
+    @field_validator("status")
+    @classmethod
+    def _not_closed(cls, value: ProjectStatus) -> ProjectStatus:
+        if value in CLOSED_PROJECT_STATUSES:
+            raise ValueError("Un projet ne peut pas être créé déjà terminé ou annulé.")
+        return value
+
+
+class ProjectUpdate(_ProjectFields):
+    version: int
+    title: Title | None = None
+    portfolio_id: uuid.UUID | None = None
+
+
+class ProjectStatusChange(BaseModel):
+    version: int
+    status: ProjectStatus
+    outcome: LongText | None = None
+    reason: LongText | None = None
+
+
+class ProjectOut(BaseModel):
+    id: uuid.UUID
+    title: str
+    status: ProjectStatus
+    portfolio: PortfolioRef
+    entity: RefOut | None
+    project_type: ProjectTypeRef | None
+    owner: PersonRef
+    situation: str | None
+    situation_updated_at: datetime | None
+    next_step: str | None
+    decision_needed: str | None
+    decision_maker: str | None
+    objective: str | None
+    deliverables: str | None
+    progress: int | None
+    risk_level: RiskLevel | None
+    risk_note: str | None
+    start_date: date | None
+    end_date: date | None
+    due_date: date | None
+    date_certainty: DateCertainty | None
+    window_start: date | None
+    window_end: date | None
+    country: str | None
+    city: str | None
+    external_url: str | None
+    outcome: str | None
+    cancel_reason: str | None
+    open_tasks: int
+    late_tasks: int
+    created_at: datetime
+    updated_at: datetime
+    version: int
+
+
+class _TaskFields(BaseModel):
+    deliverable: Annotated[str, StringConstraints(strip_whitespace=True, max_length=300)] | None = (
+        None
+    )
+    assignee_member_id: uuid.UUID | None = None
+    assignee_label: Label | None = None
+    due_date: date | None = None
+    due_certainty: DateCertainty | None = None
+
+
+class TaskCreate(_TaskFields):
+    title: Title
+    status: TaskStatus = TaskStatus.TODO
+
+
+class TaskUpdate(_TaskFields):
+    version: int
+    title: Title | None = None
+    status: TaskStatus | None = None
+
+
+class TaskOut(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    title: str
+    deliverable: str | None
+    status: TaskStatus
+    assignee: PersonRef
+    due_date: date | None
+    due_certainty: DateCertainty | None
+    late: bool
+    closed_at: datetime | None
+    version: int
+
+
+class HistoryEntry(BaseModel):
+    id: uuid.UUID
+    action: str
+    target_type: str
+    actor_name: str | None
+    created_at: datetime
+    before: dict | None
+    after: dict | None
