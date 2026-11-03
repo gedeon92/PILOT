@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Logo } from './icons'
 
-export type Tone = 'ok' | 'warn' | 'danger' | 'neutral' | 'info'
+export type Tone = 'ok' | 'warn' | 'danger' | 'neutral' | 'info' | 'violet'
 
 export function StatusPill({ tone, children }: { tone: Tone; children: ReactNode }) {
   return (

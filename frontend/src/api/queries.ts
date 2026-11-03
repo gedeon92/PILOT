@@ -2,13 +2,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   api,
   ApiError,
+  type HistoryEntry,
   type InvitationInfo,
   type InvitationLink,
   type Me,
   type Member,
+  type Project,
   type Role,
   type Space,
   type SpaceSummary,
+  type Task,
 } from './client'
 
 export const keys = {
@@ -215,5 +218,99 @@ export function useUpdateSpace(spaceId: string) {
       queryClient.invalidateQueries({ queryKey: keys.space(spaceId) })
       queryClient.invalidateQueries({ queryKey: keys.me })
     },
+  })
+}
+
+// ---------- Projets et tâches ----------
+
+const projectKeys = {
+  all: (spaceId: string) => ['space', spaceId, 'projects'] as const,
+  one: (spaceId: string, projectId: string) => ['space', spaceId, 'projects', projectId] as const,
+}
+
+export type ProjectFilters = { portfolio_id?: string; status?: string; q?: string }
+
+export function useProjects(spaceId: string, filters: ProjectFilters = {}) {
+  const params = new URLSearchParams(
+    Object.entries(filters).filter((entry): entry is [string, string] => Boolean(entry[1])),
+  ).toString()
+  return useQuery({
+    queryKey: [...projectKeys.all(spaceId), 'list', params],
+    queryFn: () => api<Project[]>(`/spaces/${spaceId}/projects${params ? `?${params}` : ''}`),
+  })
+}
+
+export function useProject(spaceId: string, projectId: string) {
+  return useQuery({
+    queryKey: [...projectKeys.one(spaceId, projectId), 'detail'],
+    queryFn: () => api<Project>(`/spaces/${spaceId}/projects/${projectId}`),
+  })
+}
+
+export function useTasks(spaceId: string, projectId: string) {
+  return useQuery({
+    queryKey: [...projectKeys.one(spaceId, projectId), 'tasks'],
+    queryFn: () => api<Task[]>(`/spaces/${spaceId}/projects/${projectId}/tasks`),
+  })
+}
+
+export function useHistory(spaceId: string, projectId: string) {
+  return useQuery({
+    queryKey: [...projectKeys.one(spaceId, projectId), 'history'],
+    queryFn: () => api<HistoryEntry[]>(`/spaces/${spaceId}/projects/${projectId}/history`),
+  })
+}
+
+/** Toute écriture sur un projet rafraîchit la liste, la fiche, les tâches et l'historique. */
+function useRefreshProjects(spaceId: string) {
+  const queryClient = useQueryClient()
+  return () => queryClient.invalidateQueries({ queryKey: projectKeys.all(spaceId) })
+}
+
+export function useCreateProject(spaceId: string) {
+  const refresh = useRefreshProjects(spaceId)
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      api<Project>(`/spaces/${spaceId}/projects`, { method: 'POST', body }),
+    onSuccess: refresh,
+  })
+}
+
+export function useUpdateProject(spaceId: string, projectId: string) {
+  const refresh = useRefreshProjects(spaceId)
+  return useMutation({
+    mutationFn: (body: Record<string, unknown> & { version: number }) =>
+      api<Project>(`/spaces/${spaceId}/projects/${projectId}`, { method: 'PATCH', body }),
+    onSuccess: refresh,
+  })
+}
+
+export function useChangeProjectStatus(spaceId: string, projectId: string) {
+  const refresh = useRefreshProjects(spaceId)
+  return useMutation({
+    mutationFn: (body: { version: number; status: string; outcome?: string; reason?: string }) =>
+      api<Project>(`/spaces/${spaceId}/projects/${projectId}/status`, { method: 'POST', body }),
+    onSuccess: refresh,
+  })
+}
+
+export function useCreateTask(spaceId: string, projectId: string) {
+  const refresh = useRefreshProjects(spaceId)
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      api<Task>(`/spaces/${spaceId}/projects/${projectId}/tasks`, { method: 'POST', body }),
+    onSuccess: refresh,
+  })
+}
+
+export function useUpdateTask(spaceId: string) {
+  const refresh = useRefreshProjects(spaceId)
+  return useMutation({
+    mutationFn: ({ task, changes }: { task: Task; changes: Record<string, unknown> }) =>
+      api<Task>(`/spaces/${spaceId}/tasks/${task.id}`, {
+        method: 'PATCH',
+        body: { ...changes, version: task.version },
+      }),
+    onSettled: refresh,
   })
 }

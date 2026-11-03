@@ -108,17 +108,20 @@ Limites connues des offres gratuites, acceptées pour la phase de test :
 
 ## Phase 3 — Projets et tâches (CDC §6, §8, §21, §22)
 
-- [ ] Nature des types de projets : « standard » ou « événement » (le comportement dépend de la nature, pas du nom du type)
-- [ ] Modèle `Project` complet selon le dictionnaire CDC §21 (situation, prochaine étape et décision attendue séparées ; avancement nullable ; certitude de date)
-- [ ] Modèle `Task` (responsable, livrable, statut, échéance proposée ou confirmée)
-- [ ] Statuts : À cadrer, À lancer, En préparation, En cours, En attente de validation, Bloqué, Suspendu, Terminé, Annulé
-- [ ] Règles de transition : Terminé exige un bilan ; Annulé exige un motif et clôt les tâches ouvertes ; réouverture journalisée
-- [ ] Attribution du suivi : « Moi », un membre de l'espace ou un nom libre (sans création de compte)
-- [ ] Champ `version` + détection de conflit à l'enregistrement (formulaire préservé)
-- [ ] Journal avant/après pour chaque modification
-- [ ] Clic « Réessayer » sans doublon (clé d'idempotence)
+- [x] Nature des types de projets : « standard » ou « événement » (le comportement dépend de la nature, pas du nom du type)
+- [x] Modèle `Project` selon le dictionnaire CDC §21 : situation, prochaine étape et décision attendue séparées ; avancement facultatif (vide si inconnu) ; dates exactes, période à préciser et certitude ; vigilance ; lieu ; lien externe
+- [x] Modèle `Task` : livrable, responsable, statut, échéance proposée ou confirmée, retard calculé dans le fuseau de l'espace
+- [x] Statuts : À cadrer, À lancer, En préparation, En cours, En attente de validation, Bloqué, Suspendu, Terminé, Annulé
+- [x] Règles de transition : Terminé exige un bilan ; Annulé exige un motif et annule les tâches ouvertes (les tâches terminées restent) ; réouverture journalisée
+- [x] Attribution du suivi : un membre de l'espace ou un nom libre (« Mon assistante »), sans création de compte, signalé « sans compte »
+- [x] Champ `version` + détection de conflit ; la saisie est conservée et la version actuelle peut être rechargée
+- [x] Journal avant/après et historique lisible par projet
+- [x] « Réessayer » sans doublon (identifiant de requête envoyé par le formulaire)
+- [x] Écrans : liste filtrable (recherche, portefeuille, statut), création rapide, fiche projet complète, tâches ; vue d'ensemble alimentée par les vrais projets (retards, blocages, échéances à 7 jours, timeline, « À faire aujourd'hui »)
 
 **Terminé quand :** PRJ01, PRJ02, PRJ03 passent.
+
+✅ **Phase 3 terminée le 3 nov. 2026** (API : 17 tests dont PRJ01-03 ; interface : création avec nom libre, bilan obligatoire, conflit sans perte de saisie).
 
 ## Phase 3B — Événements (CDC §6, §12, §21)
 

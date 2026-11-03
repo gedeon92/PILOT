@@ -7,6 +7,8 @@ import { CreateSpacePage } from './pages/create-space'
 import { DashboardPage } from './pages/dashboard'
 import { InvitationPage } from './pages/invitation'
 import { MembersPage } from './pages/members'
+import { ProjectDetailPage } from './pages/project-detail'
+import { NewProjectPage, ProjectsPage } from './pages/projects'
 import { SettingsPage } from './pages/settings'
 import { SpaceLayout } from './pages/space-layout'
 import { StatusPage } from './pages/status'
@@ -67,6 +69,9 @@ export default function App() {
         element={<RequireAuth>{(me) => <SpaceLayout me={me} />}</RequireAuth>}
       >
         <Route index element={<DashboardPage />} />
+        <Route path="projets" element={<ProjectsPage />} />
+        <Route path="projets/nouveau" element={<NewProjectPage />} />
+        <Route path="projets/:projectId" element={<ProjectDetailPage />} />
         <Route path="membres" element={<MembersPage />} />
         <Route path="parametres" element={<SettingsPage />} />
       </Route>

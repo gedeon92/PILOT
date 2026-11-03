@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, useOutletContext } from 'react-router'
+import type { Project } from '../api/client'
+import { useProjects } from '../api/queries'
 import {
   BellIcon,
   BlockedIcon,
@@ -8,53 +10,80 @@ import {
   FolderIcon,
   PlusIcon,
 } from '../components/icons'
-import { PageHeader } from '../components/ui'
+import { ProjectTable } from '../components/project-table'
+import { PageHeader, type Tone } from '../components/ui'
+import { addDays, isClosedProject, PROJECT_STATUS, todayIso } from '../labels'
 import type { SpaceContext } from './space-layout'
 
 const DAY_MS = 86_400_000
 
-/** La date du jour dans le fuseau de l'espace, à minuit UTC (pour compter les jours sans décalage). */
-function todayIn(timeZone: string): Date {
-  const iso = new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date())
+function utc(iso: string) {
   return new Date(`${iso}T00:00:00Z`)
 }
 
-function formatUtc(date: Date, options: Intl.DateTimeFormatOptions) {
-  return new Intl.DateTimeFormat('fr-FR', { ...options, timeZone: 'UTC' }).format(date)
+function formatUtc(iso: string, options: Intl.DateTimeFormatOptions) {
+  return new Intl.DateTimeFormat('fr-FR', { ...options, timeZone: 'UTC' }).format(utc(iso))
 }
 
 function capitalize(text: string) {
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
-/** Trois mois centrés sur le mois en cours, et la position d'aujourd'hui dans cette période. */
-function timelineWindow(today: Date) {
-  const year = today.getUTCFullYear()
-  const month = today.getUTCMonth()
-  const start = new Date(Date.UTC(year, month - 1, 1))
-  const end = new Date(Date.UTC(year, month + 2, 1))
-  const total = (end.getTime() - start.getTime()) / DAY_MS
+/** Trois mois centrés sur le mois en cours. */
+function timelineWindow(today: string) {
+  const d = utc(today)
+  const year = d.getUTCFullYear()
+  const month = d.getUTCMonth()
+  const start = Date.UTC(year, month - 1, 1)
+  const end = Date.UTC(year, month + 2, 1)
   const months = [0, 1, 2].map((i) => {
-    const from = new Date(Date.UTC(year, month - 1 + i, 1))
-    const to = new Date(Date.UTC(year, month + i, 1))
+    const from = Date.UTC(year, month - 1 + i, 1)
+    const to = Date.UTC(year, month + i, 1)
     return {
-      label: capitalize(formatUtc(from, { month: 'long' })),
-      days: (to.getTime() - from.getTime()) / DAY_MS,
+      label: capitalize(
+        new Intl.DateTimeFormat('fr-FR', { month: 'long', timeZone: 'UTC' }).format(from),
+      ),
+      days: (to - from) / DAY_MS,
     }
   })
-  const todayOffset = (today.getTime() - start.getTime()) / DAY_MS + 0.5
-  return { months, todayPercent: (todayOffset / total) * 100 }
+  const percent = (iso: string) => ((utc(iso).getTime() - start) / (end - start)) * 100
+  return { months, percent, start, end }
+}
+
+const TONE_DOT: Record<Tone, string> = {
+  info: '#2563EB',
+  danger: '#DC2626',
+  warn: '#CA8A04',
+  violet: '#7C3AED',
+  ok: '#16A34A',
+  neutral: '#71717A',
+}
+
+/** Position d'un projet sur la timeline : dates de début/fin, échéance ou période à préciser. */
+function span(p: Project): { from: string; to: string; window: boolean } | null {
+  if (p.start_date || p.end_date) {
+    const from = p.start_date ?? p.end_date!
+    return { from, to: p.end_date ?? p.due_date ?? from, window: false }
+  }
+  if (p.window_start && p.window_end)
+    return { from: p.window_start, to: p.window_end, window: true }
+  if (p.due_date) return { from: p.due_date, to: p.due_date, window: false }
+  return null
 }
 
 function StatCard({
   icon,
   tone,
   title,
+  value,
+  to,
   children,
 }: {
   icon: ReactNode
   tone: 'danger' | 'action' | 'info'
   title: string
+  value: number
+  to?: string
   children: ReactNode
 }) {
   return (
@@ -63,18 +92,108 @@ function StatCard({
         <span className={`icon-tile icon-tile--${tone}`}>{icon}</span>
         <h2 className="stat-card__title">{title}</h2>
       </div>
-      <div className="stat-card__body">{children}</div>
+      <div className="stat-card__body">
+        <span className="stat-card__value">{value}</span>
+        {children}
+      </div>
+      {to && value > 0 && (
+        <Link className="stat-card__link" to={to}>
+          Voir la liste
+        </Link>
+      )}
     </section>
   )
 }
 
+function NameList({
+  projects,
+  spaceId,
+  detail,
+}: {
+  projects: Project[]
+  spaceId: string
+  detail: (p: Project) => string
+}) {
+  return (
+    <ul className="stat-card__list">
+      {projects.slice(0, 3).map((p) => (
+        <li key={p.id}>
+          <Link to={`/espaces/${spaceId}/projets/${p.id}`}>{p.title}</Link>
+          <span> · {detail(p)}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+type Todo = { project: Project; label: string; tone: Tone; text: string }
+
+function todos(open: Project[], today: string): Todo[] {
+  const items: Todo[] = []
+  for (const p of open) {
+    if (p.due_date === today)
+      items.push({
+        project: p,
+        label: 'Jour J',
+        tone: 'danger',
+        text: p.next_step ?? 'Échéance aujourd’hui',
+      })
+    else if (p.due_date && p.due_date < today)
+      items.push({
+        project: p,
+        label: 'En retard',
+        tone: 'danger',
+        text: p.next_step ?? 'Échéance dépassée',
+      })
+    if (p.status === 'blocked')
+      items.push({
+        project: p,
+        label: 'Bloqué',
+        tone: 'danger',
+        text: p.situation ?? 'Projet bloqué',
+      })
+    if (p.late_tasks > 0)
+      items.push({
+        project: p,
+        label: 'Tâches',
+        tone: 'warn',
+        text: `${p.late_tasks} tâche(s) en retard`,
+      })
+    if (p.decision_needed)
+      items.push({ project: p, label: 'Décision', tone: 'warn', text: p.decision_needed })
+    if (!p.owner.name || !p.next_step)
+      items.push({
+        project: p,
+        label: 'À compléter',
+        tone: 'neutral',
+        text: !p.owner.name ? 'Aucun responsable du suivi' : 'Aucune prochaine étape',
+      })
+  }
+  return items
+}
+
 export function DashboardPage() {
   const { space, me } = useOutletContext<SpaceContext>()
-  const today = todayIn(space.timezone)
-  const week = Array.from({ length: 7 }, (_, i) => new Date(today.getTime() + i * DAY_MS))
-  const { months, todayPercent } = timelineWindow(today)
+  const projects = useProjects(space.id)
+  const today = todayIso(space.timezone)
+  const all = projects.data ?? []
+  const open = all.filter((p) => !isClosedProject(p.status))
+  const late = open.filter((p) => (p.due_date !== null && p.due_date < today) || p.late_tasks > 0)
+  const blocked = open.filter((p) => p.status === 'blocked')
+  const week = Array.from({ length: 7 }, (_, i) => addDays(today, i))
+  const dueByDay = week.map((day) => open.filter((p) => p.due_date === day).length)
+  const dueThisWeek = dueByDay.reduce((a, b) => a + b, 0)
+  const timeline = timelineWindow(today)
+  const rows = open
+    .map((p) => ({ p, s: span(p) }))
+    .filter(
+      ({ s }) => s && utc(s.to).getTime() >= timeline.start && utc(s.from).getTime() < timeline.end,
+    )
+    .slice(0, 8)
+  const toDo = todos(open, today)
   const firstName = me.user.display_name.split(/\s+/)[0]
-  const isOwner = space.role === 'owner'
+  const base = `/espaces/${space.id}`
+  const clamp = (n: number) => Math.min(100, Math.max(0, n))
 
   return (
     <div className="page-content">
@@ -82,34 +201,60 @@ export function DashboardPage() {
         title={`Bonjour, ${firstName}`}
         subtitle={`${capitalize(formatUtc(today, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))} · ${space.name}`}
         actions={
-          isOwner && (
-            <Link className="button button--primary" to={`/espaces/${space.id}/membres`}>
-              Inviter des membres <PlusIcon />
+          space.role !== 'reader' && (
+            <Link className="button button--primary" to={`${base}/projets/nouveau`}>
+              Nouveau projet <PlusIcon />
             </Link>
           )
         }
       />
 
       <div className="stat-grid">
-        <StatCard icon={<ClockIcon />} tone="danger" title="En retard">
-          <span className="stat-card__value">0</span>
-          <span className="stat-card__note">Aucune échéance dépassée</span>
+        <StatCard icon={<ClockIcon />} tone="danger" title="En retard" value={late.length}>
+          {late.length ? (
+            <NameList
+              projects={late}
+              spaceId={space.id}
+              detail={(p) =>
+                p.due_date && p.due_date < today ? 'échéance dépassée' : `${p.late_tasks} tâche(s)`
+              }
+            />
+          ) : (
+            <span className="stat-card__note">Aucune échéance dépassée</span>
+          )}
         </StatCard>
-        <StatCard icon={<BlockedIcon />} tone="action" title="Bloqués">
-          <span className="stat-card__value">0</span>
-          <span className="stat-card__note">Aucun projet bloqué</span>
+        <StatCard
+          icon={<BlockedIcon />}
+          tone="action"
+          title="Bloqués"
+          value={blocked.length}
+          to={`${base}/projets`}
+        >
+          {blocked.length ? (
+            <NameList
+              projects={blocked}
+              spaceId={space.id}
+              detail={(p) => p.situation ?? 'à débloquer'}
+            />
+          ) : (
+            <span className="stat-card__note">Aucun projet bloqué</span>
+          )}
         </StatCard>
-        <StatCard icon={<CalendarIcon />} tone="info" title="Échéances · 7 jours">
-          <span className="stat-card__value">0</span>
+        <StatCard
+          icon={<CalendarIcon />}
+          tone="info"
+          title="Échéances · 7 jours"
+          value={dueThisWeek}
+        >
           <div
             className="dot-week"
             role="img"
-            aria-label="Aucune échéance dans les sept prochains jours"
+            aria-label={`Échéances par jour : ${week.map((d, i) => `${formatUtc(d, { weekday: 'long' })} ${dueByDay[i]}`).join(', ')}`}
           >
-            {week.map((day) => (
-              <div key={day.toISOString()} className="dot-week__day">
-                {[0, 1, 2, 3].map((slot) => (
-                  <span key={slot} className="dot" />
+            {week.map((day, i) => (
+              <div key={day} className="dot-week__day">
+                {[3, 2, 1, 0].map((slot) => (
+                  <span key={slot} className={slot < dueByDay[i] ? 'dot dot--on' : 'dot'} />
                 ))}
                 <span className="dot-week__label">
                   {capitalize(formatUtc(day, { weekday: 'short' }).slice(0, 2))}
@@ -129,22 +274,62 @@ export function DashboardPage() {
             </span>
           </div>
           <div className="timeline">
-            <div
-              className="timeline__months"
-              style={{ gridTemplateColumns: months.map((m) => `${m.days}fr`).join(' ') }}
-            >
-              {months.map((m) => (
-                <span key={m.label}>{m.label}</span>
-              ))}
-            </div>
-            <div className="timeline__track">
+            <div className="timeline__grid">
+              <span />
               <div
-                className="timeline__today"
-                style={{ left: `${todayPercent}%` }}
-                aria-hidden="true"
-              />
-              <p className="timeline__empty">Aucun projet daté pour l’instant.</p>
+                className="timeline__months"
+                style={{ gridTemplateColumns: timeline.months.map((m) => `${m.days}fr`).join(' ') }}
+              >
+                {timeline.months.map((m) => (
+                  <span key={m.label}>{m.label}</span>
+                ))}
+              </div>
             </div>
+            {rows.length === 0 ? (
+              <div className="timeline__track">
+                <div
+                  className="timeline__today"
+                  style={{ left: `${timeline.percent(today)}%` }}
+                  aria-hidden="true"
+                />
+                <p className="timeline__empty">Aucun projet daté sur cette période.</p>
+              </div>
+            ) : (
+              <div className="timeline__rows">
+                <div
+                  className="timeline__today timeline__today--rows"
+                  style={{
+                    left: `calc(140px + (100% - 140px) * ${timeline.percent(today) / 100})`,
+                  }}
+                  aria-hidden="true"
+                />
+                {rows.map(({ p, s }) => {
+                  const left = clamp(timeline.percent(s!.from))
+                  const right = clamp(timeline.percent(addDays(s!.to, 1)))
+                  const color = TONE_DOT[PROJECT_STATUS[p.status].tone]
+                  return (
+                    <div key={p.id} className="timeline__row">
+                      <Link className="timeline__label" to={`${base}/projets/${p.id}`}>
+                        {p.title}
+                      </Link>
+                      <div className="timeline__lane">
+                        <span
+                          className={
+                            s!.window ? 'timeline__bar timeline__bar--window' : 'timeline__bar'
+                          }
+                          style={{
+                            left: `${left}%`,
+                            width: `max(${right - left}%, 10px)`,
+                            ['--bar' as string]: color,
+                          }}
+                          title={`${p.title} · ${PROJECT_STATUS[p.status].label}${s!.window ? ' · période à préciser' : ''}`}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
           <p className="card-panel__foot">
             Le calendrier montre les dates prévues. Il ne mesure pas l’avancement.
@@ -155,52 +340,63 @@ export function DashboardPage() {
           <div className="card-panel__head">
             <h2>À faire aujourd’hui</h2>
           </div>
-          <div className="mini-empty">
-            <span className="icon-tile icon-tile--neutral">
-              <BellIcon size={18} />
-            </span>
-            <p>
-              <strong>Rien à faire aujourd’hui.</strong>
-              <br />
-              Les rappels apparaîtront ici dès que les projets auront des échéances.
-            </p>
-          </div>
+          {toDo.length === 0 ? (
+            <div className="mini-empty">
+              <span className="icon-tile icon-tile--neutral">
+                <BellIcon size={18} />
+              </span>
+              <p>
+                <strong>Rien à faire aujourd’hui.</strong>
+                <br />
+                Les rappels apparaissent ici dès que les projets ont des échéances.
+              </p>
+            </div>
+          ) : (
+            <ul className="todo-list">
+              {toDo.slice(0, 6).map((item, i) => (
+                <li key={`${item.project.id}-${i}`}>
+                  <Link className="todo" to={`${base}/projets/${item.project.id}`}>
+                    <span className="todo__text">
+                      <span className="todo__title">{item.project.title}</span>
+                      <span className="todo__detail">{item.text}</span>
+                    </span>
+                    <span className={`todo__tag todo__tag--${item.tone}`}>{item.label}</span>
+                  </Link>
+                </li>
+              ))}
+              {toDo.length > 6 && <li className="muted">… et {toDo.length - 6} autre(s)</li>}
+            </ul>
+          )}
         </section>
       </div>
 
       <section className="card-panel card-panel--flush" aria-label="Projets actifs">
         <div className="card-panel__head card-panel__head--padded">
           <h2>Projets actifs</h2>
+          {open.length > 0 && (
+            <Link className="button button--small" to={`${base}/projets`}>
+              Tous les projets
+            </Link>
+          )}
         </div>
-        <div className="table-scroll table-scroll--flush">
-          <table className="table">
-            <thead>
-              <tr>
-                <th scope="col">Projet</th>
-                <th scope="col">Filiale</th>
-                <th scope="col">Responsable</th>
-                <th scope="col">Prochaine étape</th>
-                <th scope="col">Échéance</th>
-                <th scope="col">Statut</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colSpan={6}>
-                  <div className="table-empty">
-                    <span className="icon-tile icon-tile--action">
-                      <FolderIcon />
-                    </span>
-                    <span>
-                      <strong>Aucun projet pour l’instant.</strong> La création des projets et des
-                      tâches arrive à la prochaine étape.
-                    </span>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <ProjectTable
+          projects={open.slice(0, 8)}
+          spaceId={space.id}
+          today={today}
+          empty={
+            <div className="table-empty">
+              <span className="icon-tile icon-tile--action">
+                <FolderIcon />
+              </span>
+              <span>
+                <strong>{projects.isPending ? 'Chargement…' : 'Aucun projet actif.'}</strong>{' '}
+                {!projects.isPending &&
+                  space.role !== 'reader' &&
+                  'Créez le premier avec « Nouveau projet ».'}
+              </span>
+            </div>
+          }
+        />
       </section>
     </div>
   )

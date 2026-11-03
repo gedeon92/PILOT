@@ -103,7 +103,10 @@ function Sidebar({ me, space }: SpaceContext) {
             <DashboardIcon />
             <span className="nav__label">Vue d’ensemble</span>
           </NavLink>
-          <SoonLink icon={<FolderIcon />} label="Projets" />
+          <NavLink to={`${base}/projets`} className={linkClass}>
+            <FolderIcon />
+            <span className="nav__label">Projets</span>
+          </NavLink>
           <SoonLink icon={<TasksIcon />} label="Tâches" />
           <SoonLink icon={<TimelineIcon />} label="Timeline" />
           <SoonLink icon={<DocumentIcon />} label="Documents" />

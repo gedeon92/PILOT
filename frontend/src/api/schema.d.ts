@@ -315,6 +315,115 @@ export interface paths {
         patch: operations["update_item_api_spaces__space_id__project_types__item_id__patch"];
         trace?: never;
     };
+    "/api/spaces/{space_id}/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Projects */
+        get: operations["list_projects_api_spaces__space_id__projects_get"];
+        put?: never;
+        /** Create Project */
+        post: operations["create_project_api_spaces__space_id__projects_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/projects/{project_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project */
+        get: operations["get_project_api_spaces__space_id__projects__project_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Project */
+        patch: operations["update_project_api_spaces__space_id__projects__project_id__patch"];
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/projects/{project_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change Status
+         * @description Règles de transition (CDC §22) : bilan pour Terminé, motif et clôture des tâches
+         *     ouvertes pour Annulé, réouverture explicite et journalisée.
+         */
+        post: operations["change_status_api_spaces__space_id__projects__project_id__status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/projects/{project_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Project History */
+        get: operations["project_history_api_spaces__space_id__projects__project_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/projects/{project_id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Tasks */
+        get: operations["list_tasks_api_spaces__space_id__projects__project_id__tasks_get"];
+        put?: never;
+        /** Create Task */
+        post: operations["create_task_api_spaces__space_id__projects__project_id__tasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Task */
+        patch: operations["update_task_api_spaces__space_id__tasks__task_id__patch"];
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -336,6 +445,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * DateCertainty
+         * @enum {string}
+         */
+        DateCertainty: "proposed" | "announced" | "confirmed";
         /** EntityCreate */
         EntityCreate: {
             /** Name */
@@ -391,6 +505,33 @@ export interface components {
              * @enum {string}
              */
             database: "ok" | "unavailable" | "not_configured";
+        };
+        /** HistoryEntry */
+        HistoryEntry: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Action */
+            action: string;
+            /** Target Type */
+            target_type: string;
+            /** Actor Name */
+            actor_name: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Before */
+            before: {
+                [key: string]: unknown;
+            } | null;
+            /** After */
+            after: {
+                [key: string]: unknown;
+            } | null;
         };
         /** InvitationCreate */
         InvitationCreate: {
@@ -486,6 +627,18 @@ export interface components {
          * @enum {string}
          */
         MembershipStatus: "invited" | "active";
+        /**
+         * PersonRef
+         * @description Responsable : un membre de l'espace (`member_id`) ou un simple nom saisi.
+         */
+        PersonRef: {
+            /** Member Id */
+            member_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Has Account */
+            has_account: boolean;
+        };
         /** PortfolioCreate */
         PortfolioCreate: {
             /** Name */
@@ -517,6 +670,18 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** PortfolioRef */
+        PortfolioRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Color */
+            color: string;
+        };
         /** PortfolioUpdate */
         PortfolioUpdate: {
             /** Version */
@@ -530,10 +695,159 @@ export interface components {
             /** Color */
             color?: ("orange" | "blue" | "violet" | "green" | "teal" | "pink" | "gray") | null;
         };
+        /** ProjectCreate */
+        ProjectCreate: {
+            /** Entity Id */
+            entity_id?: string | null;
+            /** Project Type Id */
+            project_type_id?: string | null;
+            /** Owner Member Id */
+            owner_member_id?: string | null;
+            /** Owner Label */
+            owner_label?: string | null;
+            /** Situation */
+            situation?: string | null;
+            /** Next Step */
+            next_step?: string | null;
+            /** Decision Needed */
+            decision_needed?: string | null;
+            /** Decision Maker */
+            decision_maker?: string | null;
+            /** Objective */
+            objective?: string | null;
+            /** Deliverables */
+            deliverables?: string | null;
+            /** Progress */
+            progress?: number | null;
+            risk_level?: components["schemas"]["RiskLevel"] | null;
+            /** Risk Note */
+            risk_note?: string | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            date_certainty?: components["schemas"]["DateCertainty"] | null;
+            /** Window Start */
+            window_start?: string | null;
+            /** Window End */
+            window_end?: string | null;
+            /** Country */
+            country?: string | null;
+            /** City */
+            city?: string | null;
+            /** External Url */
+            external_url?: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Portfolio Id
+             * Format: uuid
+             */
+            portfolio_id: string;
+            /** @default to_frame */
+            status: components["schemas"]["ProjectStatus"];
+            /** Client Request Id */
+            client_request_id?: string | null;
+        };
+        /**
+         * ProjectKind
+         * @enum {string}
+         */
+        ProjectKind: "standard" | "event";
+        /** ProjectOut */
+        ProjectOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            status: components["schemas"]["ProjectStatus"];
+            portfolio: components["schemas"]["PortfolioRef"];
+            entity: components["schemas"]["RefOut"] | null;
+            project_type: components["schemas"]["ProjectTypeRef"] | null;
+            owner: components["schemas"]["PersonRef"];
+            /** Situation */
+            situation: string | null;
+            /** Situation Updated At */
+            situation_updated_at: string | null;
+            /** Next Step */
+            next_step: string | null;
+            /** Decision Needed */
+            decision_needed: string | null;
+            /** Decision Maker */
+            decision_maker: string | null;
+            /** Objective */
+            objective: string | null;
+            /** Deliverables */
+            deliverables: string | null;
+            /** Progress */
+            progress: number | null;
+            risk_level: components["schemas"]["RiskLevel"] | null;
+            /** Risk Note */
+            risk_note: string | null;
+            /** Start Date */
+            start_date: string | null;
+            /** End Date */
+            end_date: string | null;
+            /** Due Date */
+            due_date: string | null;
+            date_certainty: components["schemas"]["DateCertainty"] | null;
+            /** Window Start */
+            window_start: string | null;
+            /** Window End */
+            window_end: string | null;
+            /** Country */
+            country: string | null;
+            /** City */
+            city: string | null;
+            /** External Url */
+            external_url: string | null;
+            /** Outcome */
+            outcome: string | null;
+            /** Cancel Reason */
+            cancel_reason: string | null;
+            /** Open Tasks */
+            open_tasks: number;
+            /** Late Tasks */
+            late_tasks: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version */
+            version: number;
+        };
+        /**
+         * ProjectStatus
+         * @enum {string}
+         */
+        ProjectStatus: "to_frame" | "to_launch" | "preparing" | "in_progress" | "awaiting_validation" | "blocked" | "suspended" | "done" | "cancelled";
+        /** ProjectStatusChange */
+        ProjectStatusChange: {
+            /** Version */
+            version: number;
+            status: components["schemas"]["ProjectStatus"];
+            /** Outcome */
+            outcome?: string | null;
+            /** Reason */
+            reason?: string | null;
+        };
         /** ProjectTypeCreate */
         ProjectTypeCreate: {
             /** Name */
             name: string;
+            /** @default standard */
+            kind: components["schemas"]["ProjectKind"];
         };
         /** ProjectTypeOut */
         ProjectTypeOut: {
@@ -544,10 +858,22 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            kind: components["schemas"]["ProjectKind"];
             /** Archived */
             archived: boolean;
             /** Version */
             version: number;
+        };
+        /** ProjectTypeRef */
+        ProjectTypeRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            kind: components["schemas"]["ProjectKind"];
         };
         /** ProjectTypeUpdate */
         ProjectTypeUpdate: {
@@ -557,6 +883,68 @@ export interface components {
             name?: string | null;
             /** Archived */
             archived?: boolean | null;
+            kind?: components["schemas"]["ProjectKind"] | null;
+        };
+        /** ProjectUpdate */
+        ProjectUpdate: {
+            /** Entity Id */
+            entity_id?: string | null;
+            /** Project Type Id */
+            project_type_id?: string | null;
+            /** Owner Member Id */
+            owner_member_id?: string | null;
+            /** Owner Label */
+            owner_label?: string | null;
+            /** Situation */
+            situation?: string | null;
+            /** Next Step */
+            next_step?: string | null;
+            /** Decision Needed */
+            decision_needed?: string | null;
+            /** Decision Maker */
+            decision_maker?: string | null;
+            /** Objective */
+            objective?: string | null;
+            /** Deliverables */
+            deliverables?: string | null;
+            /** Progress */
+            progress?: number | null;
+            risk_level?: components["schemas"]["RiskLevel"] | null;
+            /** Risk Note */
+            risk_note?: string | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            date_certainty?: components["schemas"]["DateCertainty"] | null;
+            /** Window Start */
+            window_start?: string | null;
+            /** Window End */
+            window_end?: string | null;
+            /** Country */
+            country?: string | null;
+            /** City */
+            city?: string | null;
+            /** External Url */
+            external_url?: string | null;
+            /** Version */
+            version: number;
+            /** Title */
+            title?: string | null;
+            /** Portfolio Id */
+            portfolio_id?: string | null;
+        };
+        /** RefOut */
+        RefOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
         };
         /** RegisterIn */
         RegisterIn: {
@@ -570,6 +958,11 @@ export interface components {
             /** Display Name */
             display_name: string;
         };
+        /**
+         * RiskLevel
+         * @enum {string}
+         */
+        RiskLevel: "watch" | "high";
         /**
          * Role
          * @enum {string}
@@ -619,6 +1012,72 @@ export interface components {
             name?: string | null;
             /** Timezone */
             timezone?: string | null;
+        };
+        /** TaskCreate */
+        TaskCreate: {
+            /** Deliverable */
+            deliverable?: string | null;
+            /** Assignee Member Id */
+            assignee_member_id?: string | null;
+            /** Assignee Label */
+            assignee_label?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            due_certainty?: components["schemas"]["DateCertainty"] | null;
+            /** Title */
+            title: string;
+            /** @default todo */
+            status: components["schemas"]["TaskStatus"];
+        };
+        /** TaskOut */
+        TaskOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Title */
+            title: string;
+            /** Deliverable */
+            deliverable: string | null;
+            status: components["schemas"]["TaskStatus"];
+            assignee: components["schemas"]["PersonRef"];
+            /** Due Date */
+            due_date: string | null;
+            due_certainty: components["schemas"]["DateCertainty"] | null;
+            /** Late */
+            late: boolean;
+            /** Closed At */
+            closed_at: string | null;
+            /** Version */
+            version: number;
+        };
+        /**
+         * TaskStatus
+         * @enum {string}
+         */
+        TaskStatus: "todo" | "in_progress" | "done" | "cancelled";
+        /** TaskUpdate */
+        TaskUpdate: {
+            /** Deliverable */
+            deliverable?: string | null;
+            /** Assignee Member Id */
+            assignee_member_id?: string | null;
+            /** Assignee Label */
+            assignee_label?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            due_certainty?: components["schemas"]["DateCertainty"] | null;
+            /** Version */
+            version: number;
+            /** Title */
+            title?: string | null;
+            status?: components["schemas"]["TaskStatus"] | null;
         };
         /** UserOut */
         UserOut: {
@@ -1386,6 +1845,317 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectTypeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_projects_api_spaces__space_id__projects_get: {
+        parameters: {
+            query?: {
+                portfolio_id?: string | null;
+                entity_id?: string | null;
+                status?: components["schemas"]["ProjectStatus"] | null;
+                q?: string | null;
+            };
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_project_api_spaces__space_id__projects_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_project_api_spaces__space_id__projects__project_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_project_api_spaces__space_id__projects__project_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_status_api_spaces__space_id__projects__project_id__status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectStatusChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    project_history_api_spaces__space_id__projects__project_id__history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tasks_api_spaces__space_id__projects__project_id__tasks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_task_api_spaces__space_id__projects__project_id__tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_task_api_spaces__space_id__tasks__task_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
                 };
             };
             /** @description Validation Error */
