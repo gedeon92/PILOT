@@ -21,6 +21,7 @@ from pilot_api.models import (
     CLOSED_TASK_STATUSES,
     EVENT_FOLLOW_UP_DAYS,
     AuditLog,
+    Document,
     Entity,
     EventDetails,
     Membership,
@@ -531,6 +532,9 @@ def project_history(
 ) -> list[HistoryEntry]:
     project = _load_project(db, membership.space_id, project_id)
     task_ids = [str(t) for t in db.scalars(select(Task.id).where(Task.project_id == project.id))]
+    document_ids = [
+        str(d) for d in db.scalars(select(Document.id).where(Document.project_id == project.id))
+    ]
     rows = db.execute(
         select(AuditLog, User.display_name)
         .outerjoin(User, User.id == AuditLog.actor_id)
@@ -539,6 +543,7 @@ def project_history(
             or_(
                 and_(AuditLog.target_type == "project", AuditLog.target_id == str(project.id)),
                 and_(AuditLog.target_type == "task", AuditLog.target_id.in_(task_ids)),
+                and_(AuditLog.target_type == "document", AuditLog.target_id.in_(document_ids)),
             ),
         )
         .order_by(AuditLog.created_at.desc())

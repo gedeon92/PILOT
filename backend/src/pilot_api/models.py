@@ -11,6 +11,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -351,3 +352,39 @@ class Task(Base):
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     assignee_member: Mapped[Membership | None] = relationship()
+
+
+class Document(Base):
+    """Pièce du dossier d'un projet. Le contenu est stocké à part (voir `storage`),
+    sous une clé technique indépendante du nom du fichier (CDC §11)."""
+
+    __tablename__ = "documents"
+    __table_args__ = (Index("ix_documents_project", "project_id", "archived_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
+    filename: Mapped[str] = mapped_column(String(255))
+    content_type: Mapped[str] = mapped_column(String(120))
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(String(64))
+    storage_key: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), unique=True)
+    uploaded_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # Pas de suppression définitive : un document retiré reste dans la base et au journal.
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    uploaded_by: Mapped[User | None] = relationship()
+
+
+class StoredFile(Base):
+    """Contenu des fichiers pendant la phase de test (stockage dans PostgreSQL)."""
+
+    __tablename__ = "stored_files"
+
+    key: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    data: Mapped[bytes] = mapped_column(LargeBinary)

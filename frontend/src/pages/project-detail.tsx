@@ -13,6 +13,7 @@ import {
   useUpdateTask,
 } from '../api/queries'
 import { colorHex } from '../colors'
+import { DocumentsSection } from '../components/documents'
 import { PlusIcon } from '../components/icons'
 import { PersonField } from '../components/person-field'
 import { Alert, FullPageLoader, StatusPill } from '../components/ui'
@@ -725,6 +726,10 @@ function describe(entry: HistoryEntry): { what: string; detail?: string } {
           : 'Tâche modifiée',
         detail: after.status ? undefined : fields,
       }
+    case 'document.uploaded':
+      return { what: 'Document ajouté', detail: after.filename as string }
+    case 'document.archived':
+      return { what: 'Document retiré', detail: before.filename as string }
     default:
       return { what: entry.action }
   }
@@ -965,6 +970,7 @@ export function ProjectDetailPage() {
               </div>
             </section>
             <TasksSection project={p} spaceId={space.id} canWrite={canWrite} />
+            <DocumentsSection spaceId={space.id} projectId={p.id} canWrite={canWrite} />
           </div>
 
           <aside className="detail-columns__side">

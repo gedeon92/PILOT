@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   api,
   ApiError,
+  type DocumentItem,
   type HistoryEntry,
   type InvitationInfo,
   type InvitationLink,
@@ -320,4 +321,49 @@ export function useUpdateTask(spaceId: string) {
       }),
     onSettled: refresh,
   })
+}
+
+// ---------- Documents ----------
+
+export function useProjectDocuments(spaceId: string, projectId: string) {
+  return useQuery({
+    queryKey: [...projectKeys.one(spaceId, projectId), 'documents'],
+    queryFn: () => api<DocumentItem[]>(`/spaces/${spaceId}/projects/${projectId}/documents`),
+  })
+}
+
+export function useSpaceDocuments(spaceId: string, q: string) {
+  return useQuery({
+    queryKey: [...projectKeys.all(spaceId), 'documents', q],
+    queryFn: () =>
+      api<DocumentItem[]>(`/spaces/${spaceId}/documents${q ? `?q=${encodeURIComponent(q)}` : ''}`),
+  })
+}
+
+export function useUploadDocument(spaceId: string, projectId: string) {
+  const refresh = useRefreshProjects(spaceId)
+  return useMutation({
+    mutationFn: (file: File) => {
+      const body = new FormData()
+      body.append('file', file)
+      return api<DocumentItem>(`/spaces/${spaceId}/projects/${projectId}/documents`, {
+        method: 'POST',
+        body,
+      })
+    },
+    onSettled: refresh,
+  })
+}
+
+export function useArchiveDocument(spaceId: string) {
+  const refresh = useRefreshProjects(spaceId)
+  return useMutation({
+    mutationFn: (documentId: string) =>
+      api<DocumentItem>(`/spaces/${spaceId}/documents/${documentId}/archive`, { method: 'POST' }),
+    onSettled: refresh,
+  })
+}
+
+export function downloadUrl(spaceId: string, documentId: string) {
+  return `/api/spaces/${spaceId}/documents/${documentId}/download`
 }

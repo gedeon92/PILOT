@@ -60,6 +60,7 @@ function routes(extra: Record<string, (body: unknown) => { status: number; json?
     [`GET ${base}/projects/pr1`]: () => ({ status: 200, json: PROJECT }),
     [`GET ${base}/projects/pr1/tasks`]: () => ({ status: 200, json: [] }),
     [`GET ${base}/projects/pr1/history`]: () => ({ status: 200, json: [] }),
+    [`GET ${base}/projects/pr1/documents`]: () => ({ status: 200, json: [] }),
     ...extra,
   }
 }
@@ -143,5 +144,42 @@ describe('projets', () => {
 
     expect(await screen.findByText(/Vos saisies sont conservées/)).toBeInTheDocument()
     expect(screen.getByLabelText('Situation')).toHaveValue('Devis reçu')
+  })
+})
+
+describe('documents du projet', () => {
+  it('envoie un fichier et refuse un fichier trop volumineux sans l’envoyer', async () => {
+    const calls = mockApi(
+      routes({
+        [`POST ${base}/projects/pr1/documents`]: () => ({
+          status: 201,
+          json: {
+            id: 'd1',
+            project_id: 'pr1',
+            project_title: 'Salon Dakar Tech',
+            filename: 'Programme.pdf',
+            content_type: 'application/pdf',
+            size_bytes: 12,
+            uploaded_by: 'Aïcha Ndiaye',
+            created_at: '2026-11-03T10:00:00Z',
+            archived: false,
+          },
+        }),
+      }),
+    )
+    renderApp(`/espaces/${SPACE_ID}/projets/pr1`)
+    const user = userEvent.setup()
+
+    const picker = await screen.findByLabelText('Ajouter des documents')
+    const small = new File(['contenu test'], 'Programme.pdf', { type: 'application/pdf' })
+    const big = new File([new Uint8Array(4 * 1024 * 1024 + 1)], 'Vidéo.mp4', { type: 'video/mp4' })
+    await user.upload(picker, [small, big])
+
+    expect(await screen.findByText('Enregistré')).toBeInTheDocument()
+    expect(await screen.findByText(/Non enregistré : Trop volumineux/)).toBeInTheDocument()
+    const sent = calls.filter((c) => c.key === `POST ${base}/projects/pr1/documents`)
+    expect(sent).toHaveLength(1)
+    expect(sent[0].headers['X-PILOT-CSRF']).toBe('1')
+    expect(sent[0].headers['Content-Type']).toBeUndefined()
   })
 })

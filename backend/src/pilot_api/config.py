@@ -11,6 +11,8 @@ class Settings(BaseSettings):
 
     session_days: int = 30
     invitation_days: int = 14
+    # Phase de test : fichiers stockés dans Neon (1 Go gratuit) et relayés par Vercel.
+    max_upload_mb: float = 4
 
     @property
     def cookie_secure(self) -> bool:

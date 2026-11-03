@@ -142,13 +142,19 @@ Demande du 3 nov. 2026 : suivre l'organisation des événements, les voir dans u
 
 ## Phase 4 — Documents du projet (CDC §11)
 
-- [ ] Modèle `Document` (nom, format, taille, clé technique, rattachement, date)
-- [ ] Téléversement et téléchargement avec contrôle des droits
-- [ ] Limites : 3 fichiers de 15 Mo par demande ; refus clair au-delà
-- [ ] Séparation entre dossier partagé du projet et sources privées de mise à jour
-- [ ] Stockage des fichiers : **décision D2 à prendre**
+- [x] Modèle `Document` (nom, format, taille, empreinte SHA-256, clé technique indépendante du nom, projet, auteur, date)
+- [x] Téléversement et téléchargement avec contrôle des droits : tous les membres téléchargent ; contributeurs et propriétaire ajoutent et retirent
+- [x] Limites de la phase de test : 3 fichiers par envoi, 4 Mo par fichier (réglage `MAX_UPLOAD_MB`) ; refus clair au-delà, vérifié aussi avant l'envoi
+- [x] Sécurité : fichier toujours servi en pièce jointe (`nosniff`, jamais affiché dans la page) ; le nom n'est qu'un libellé nettoyé
+- [x] Retrait sans suppression définitive, journalisé dans l'historique du projet
+- [x] Page « Documents » : toutes les pièces de l'espace, recherche par nom
+- [x] Stockage des fichiers : décision D2 appliquée (PostgreSQL/Neon derrière l'interface `FileStorage`)
+- [ ] Séparation dossier partagé / sources privées de mise à jour : à construire avec la boîte de mise à jour (phase 8)
+- [ ] Remplacement d'un document avec conservation de la version précédente
 
 **Terminé quand :** DOC01 passe, et un fichier reste disponible depuis un autre appareil.
+
+✅ **Phase 4 terminée le 3 nov. 2026** (tests `test_upload_then_download_returns_the_same_file`, `test_file_is_available_from_another_device`).
 
 ## Phase 5 — Tableau de bord, recherche et filtres (CDC §7, §13)
 
@@ -247,7 +253,7 @@ Chacun de ces sujets demande une décision explicite avant d'être lancé (CDC �
 | # | Question | Recommandation | Statut |
 |---|---|---|---|
 | D1 | Mode de connexion | E-mail + mot de passe pour la V1 (aucun service d'e-mail nécessaire). Lien magique plus tard. | Décidé |
-| D2 | Stockage des fichiers | Phase de test (gratuite) : fichiers stockés dans Neon, avec les limites de taille du CDC, derrière une interface `FileStorage` unique. Avant la production : passer à un stockage objet en changeant seulement l'implémentation de cette interface. Piste à étudier en phase 4 : le « stockage d'objets » proposé par Neon dans le même projet (sinon S3, R2 ou Vercel Blob). | À valider |
+| D2 | Stockage des fichiers | Phase de test (gratuite) : fichiers stockés dans Neon, avec les limites de taille du CDC, derrière une interface `FileStorage` unique. Avant la production : passer à un stockage objet en changeant seulement l'implémentation de cette interface. Piste pour plus tard : le « stockage d'objets » proposé par Neon dans le même projet (sinon S3, R2 ou Vercel Blob). | Décidé pour la phase de test |
 | D3 | Invitations | Sans service d'e-mail : la propriétaire saisit l'adresse et obtient un lien d'invitation à transmettre ; la personne crée son compte avec cette adresse et rejoint l'espace. Envoi automatique de l'e-mail par Brevo plus tard. | Décidé |
 | D4 | Contributeurs et validation | Un contributeur valide ses propres propositions (comme dans le CDC). | Décidé |
 | D5 | Droits par projet ou par filiale | Pas en V1 : les droits s'appliquent à tout l'espace. | Décidé |

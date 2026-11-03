@@ -24,7 +24,8 @@ export async function api<T>(path: string, options: { method?: Method; body?: un
   const method = options.method ?? 'GET'
   const headers: Record<string, string> = {}
   if (method !== 'GET') headers['X-PILOT-CSRF'] = '1' // exigé par l'API pour toute écriture
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json'
+  const isForm = options.body instanceof FormData
+  if (options.body !== undefined && !isForm) headers['Content-Type'] = 'application/json'
 
   let response: Response
   try {
@@ -32,7 +33,12 @@ export async function api<T>(path: string, options: { method?: Method; body?: un
       method,
       headers,
       credentials: 'same-origin',
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body:
+        options.body === undefined
+          ? undefined
+          : isForm
+            ? (options.body as FormData)
+            : JSON.stringify(options.body),
     })
   } catch {
     throw new ApiError(0, 'Le serveur ne répond pas. Vérifiez votre connexion et réessayez.')
@@ -65,3 +71,4 @@ export type Project = Schemas['ProjectOut']
 export type Task = Schemas['TaskOut']
 export type HistoryEntry = Schemas['HistoryEntry']
 export type PersonRef = Schemas['PersonRef']
+export type DocumentItem = Schemas['DocumentOut']

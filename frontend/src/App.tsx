@@ -6,6 +6,7 @@ import { LoginPage, RegisterPage } from './pages/auth'
 import { CreateSpacePage } from './pages/create-space'
 import { DashboardPage } from './pages/dashboard'
 import { InvitationPage } from './pages/invitation'
+import { DocumentsPage } from './pages/documents'
 import { EventsPage } from './pages/events'
 import { MembersPage } from './pages/members'
 import { ProjectDetailPage } from './pages/project-detail'
@@ -72,6 +73,7 @@ export default function App() {
         <Route index element={<DashboardPage />} />
         <Route path="projets" element={<ProjectsPage />} />
         <Route path="evenements" element={<EventsPage />} />
+        <Route path="documents" element={<DocumentsPage />} />
         <Route path="projets/nouveau" element={<NewProjectPage />} />
         <Route path="projets/:projectId" element={<ProjectDetailPage />} />
         <Route path="membres" element={<MembersPage />} />

@@ -390,3 +390,18 @@ class HistoryEntry(BaseModel):
     created_at: datetime
     before: dict | None
     after: dict | None
+
+
+# ---------- Documents ----------
+
+
+class DocumentOut(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    project_title: str
+    filename: str
+    content_type: str
+    size_bytes: int
+    uploaded_by: str | None
+    created_at: datetime
+    archived: bool
