@@ -12,7 +12,7 @@
   background: var(--color-panel);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
-  padding: 32px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -25,14 +25,14 @@
 }
 
 .brand__name {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
 
 .intro h1 {
   margin: 0 0 6px;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -40,7 +40,7 @@
 .intro p,
 .note {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--color-muted);
 }
 
@@ -66,7 +66,7 @@
 }
 
 .check__label {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -159,7 +159,7 @@
   align-items: center;
   gap: 14px;
   color: var(--color-muted);
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .alert {
@@ -189,14 +189,14 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 44px;
+  min-height: 40px;
   padding: 0 18px;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-control);
   background: var(--color-panel);
   color: var(--color-ink);
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -221,7 +221,7 @@
   color: #fff;
 }
 .button--small {
-  min-height: 36px;
+  min-height: 32px;
   padding: 0 12px;
   font-size: 13px;
   border-radius: 10px;
@@ -249,14 +249,14 @@
 
 input,
 select {
-  min-height: 44px;
+  min-height: 40px;
   padding: 0 14px;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-control);
   background: var(--color-panel);
   color: var(--color-ink);
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
 }
 input:focus-visible,
 select:focus-visible {
@@ -270,13 +270,13 @@ select:focus-visible {
 }
 .auth-card__intro h1 {
   margin: 0 0 6px;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 .auth-card__intro p {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--color-muted);
 }
@@ -301,17 +301,17 @@ select:focus-visible {
 }
 
 .sidebar {
-  flex: 1 1 264px;
+  flex: 1 1 240px;
   max-width: 100%;
   box-sizing: border-box;
-  padding: 24px 16px;
+  padding: 20px 12px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 @media (min-width: 900px) {
   .sidebar {
-    flex: 0 0 264px;
+    flex: 0 0 240px;
   }
 }
 .sidebar .brand {
@@ -348,14 +348,14 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 44px;
+  min-height: 40px;
   padding: 0 12px;
   border: none;
   border-radius: 10px;
   background: transparent;
   color: var(--color-ink-soft);
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   text-decoration: none;
   text-align: left;
@@ -389,7 +389,7 @@ select:focus-visible {
   min-width: 0;
 }
 .user-card__name {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -400,8 +400,8 @@ select:focus-visible {
 
 .avatar {
   flex-shrink: 0;
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -415,27 +415,27 @@ select:focus-visible {
 .app__main {
   flex: 999 1 560px;
   min-width: 0;
-  padding: 16px;
+  padding: 12px;
 }
 .app__panel {
   max-width: none;
-  min-height: calc(100vh - 32px);
+  min-height: calc(100vh - 24px);
 }
 
 .page-content {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 .page-header h1 {
   margin: 0 0 6px;
-  font-size: 32px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 .page-header p {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--color-muted);
 }
@@ -449,7 +449,7 @@ select:focus-visible {
 .empty-state h2,
 .link-panel h2 {
   margin: 0;
-  font-size: 19px;
+  font-size: 17px;
   font-weight: 600;
 }
 
@@ -463,7 +463,7 @@ select:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 20px 22px;
+  padding: 16px 18px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
   color: inherit;
@@ -473,12 +473,12 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-ink-soft);
 }
 .card__value {
-  font-size: 34px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -495,14 +495,14 @@ select:focus-visible {
   flex-direction: column;
   align-items: flex-start;
   gap: 12px;
-  padding: 28px;
+  padding: 24px;
   border: 1.5px dashed var(--color-border-strong);
   border-radius: var(--radius-card);
 }
 .empty-state p {
   margin: 0;
   max-width: 560px;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.6;
   color: var(--color-muted);
 }
@@ -588,7 +588,7 @@ select:focus-visible {
   border-bottom: 1px solid var(--color-border);
 }
 .table td {
-  padding: 14px 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid #f0f0f2;
   vertical-align: middle;
 }
@@ -599,7 +599,7 @@ select:focus-visible {
   margin-top: 8px;
 }
 .table select {
-  min-height: 38px;
+  min-height: 34px;
   font-size: 14px;
 }
 .actions {
