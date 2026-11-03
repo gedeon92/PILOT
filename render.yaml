@@ -1,0 +1,17 @@
+# Blueprint Render : API de recette, offre gratuite (WORKFLOW.md, phase 0).
+services:
+  - type: web
+    name: pilot-api-staging
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install uv && uv sync --frozen --no-dev
+    startCommand: uv run --no-sync uvicorn pilot_api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    # Déploie seulement quand les vérifications GitHub (CI) sont passées.
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: ENVIRONMENT
+        value: staging
+      - key: DATABASE_URL
+        sync: false # à saisir dans le tableau de bord Render (branche Neon « staging »)

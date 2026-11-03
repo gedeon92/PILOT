@@ -1,0 +1,26 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Système
+.DS_Store
+
+# Documents de travail locaux
+~$*
+
+# Documents de référence gardés hors du dépôt public
+PILOT_Cahier_complet_de_conception_et_workflows.docx
+4eb2950829ff621189b9d820b3e9d34c.webp

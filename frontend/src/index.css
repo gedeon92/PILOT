@@ -1,0 +1,52 @@
+/* Charte PILOT (décision D7 du WORKFLOW). */
+:root {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-page: #f4f4f5;
+  --color-panel: #ffffff;
+  --color-border: #ececee;
+  --color-border-strong: #e4e4e7;
+  --color-ink: #18181b;
+  --color-ink-soft: #3f3f46;
+  --color-muted: #6b7280;
+
+  --color-brand: #f26a1b;
+  --color-action: #d0450a; /* boutons : contraste suffisant pour le texte blanc */
+  --color-action-tint: #fff1e8;
+
+  --tone-ok-bg: #f0fdf4;
+  --tone-ok-fg: #15803d;
+  --tone-ok-dot: #16a34a;
+  --tone-warn-bg: #fefce8;
+  --tone-warn-fg: #854d0e;
+  --tone-warn-dot: #ca8a04;
+  --tone-danger-bg: #fef2f2;
+  --tone-danger-fg: #b91c1c;
+  --tone-danger-dot: #dc2626;
+  --tone-neutral-bg: #f4f4f5;
+  --tone-neutral-fg: #3f3f46;
+  --tone-neutral-dot: #71717a;
+
+  --radius-panel: 20px;
+  --radius-card: 16px;
+  --radius-control: 12px;
+
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-page);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-page);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-action);
+  outline-offset: 2px;
+}
