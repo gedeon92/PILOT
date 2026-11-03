@@ -315,6 +315,41 @@ export interface paths {
         patch: operations["update_item_api_spaces__space_id__project_types__item_id__patch"];
         trace?: never;
     };
+    "/api/spaces/{space_id}/programs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Items */
+        get: operations["list_items_api_spaces__space_id__programs_get"];
+        put?: never;
+        /** Create Item */
+        post: operations["create_item_api_spaces__space_id__programs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/programs/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Item */
+        patch: operations["update_item_api_spaces__space_id__programs__item_id__patch"];
+        trace?: never;
+    };
     "/api/spaces/{space_id}/projects": {
         parameters: {
             query?: never;
@@ -483,6 +518,36 @@ export interface components {
             archived?: boolean | null;
             /** Country */
             country?: string | null;
+        };
+        /**
+         * EventIn
+         * @description Détails d'un événement ; seuls les champs envoyés sont modifiés.
+         */
+        EventIn: {
+            /** Venue */
+            venue?: string | null;
+            /** Audience */
+            audience?: string | null;
+            /** Expected Attendance */
+            expected_attendance?: number | null;
+            /** Program Id */
+            program_id?: string | null;
+            /** Edition Label */
+            edition_label?: string | null;
+        };
+        /** EventOut */
+        EventOut: {
+            /** Venue */
+            venue: string | null;
+            /** Audience */
+            audience: string | null;
+            /** Expected Attendance */
+            expected_attendance: number | null;
+            program: components["schemas"]["RefOut"] | null;
+            /** Edition Label */
+            edition_label: string | null;
+            /** Follow Up Until */
+            follow_up_until: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -695,6 +760,40 @@ export interface components {
             /** Color */
             color?: ("orange" | "blue" | "violet" | "green" | "teal" | "pink" | "gray") | null;
         };
+        /** ProgramCreate */
+        ProgramCreate: {
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+        };
+        /** ProgramOut */
+        ProgramOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Archived */
+            archived: boolean;
+            /** Version */
+            version: number;
+        };
+        /** ProgramUpdate */
+        ProgramUpdate: {
+            /** Version */
+            version: number;
+            /** Name */
+            name?: string | null;
+            /** Archived */
+            archived?: boolean | null;
+            /** Description */
+            description?: string | null;
+        };
         /** ProjectCreate */
         ProjectCreate: {
             /** Entity Id */
@@ -739,6 +838,7 @@ export interface components {
             city?: string | null;
             /** External Url */
             external_url?: string | null;
+            event?: components["schemas"]["EventIn"] | null;
             /** Title */
             title: string;
             /**
@@ -770,6 +870,7 @@ export interface components {
             entity: components["schemas"]["RefOut"] | null;
             project_type: components["schemas"]["ProjectTypeRef"] | null;
             owner: components["schemas"]["PersonRef"];
+            event: components["schemas"]["EventOut"] | null;
             /** Situation */
             situation: string | null;
             /** Situation Updated At */
@@ -929,6 +1030,7 @@ export interface components {
             city?: string | null;
             /** External Url */
             external_url?: string | null;
+            event?: components["schemas"]["EventIn"] | null;
             /** Version */
             version: number;
             /** Title */
@@ -1858,12 +1960,118 @@ export interface operations {
             };
         };
     };
+    list_items_api_spaces__space_id__programs_get: {
+        parameters: {
+            query?: {
+                include_archived?: boolean;
+            };
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgramOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_item_api_spaces__space_id__programs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProgramCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgramOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_item_api_spaces__space_id__programs__item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProgramUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgramOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_projects_api_spaces__space_id__projects_get: {
         parameters: {
             query?: {
                 portfolio_id?: string | null;
                 entity_id?: string | null;
                 status?: components["schemas"]["ProjectStatus"] | null;
+                kind?: components["schemas"]["ProjectKind"] | null;
+                program_id?: string | null;
                 q?: string | null;
             };
             header?: never;

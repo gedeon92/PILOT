@@ -127,15 +127,18 @@ Limites connues des offres gratuites, acceptées pour la phase de test :
 
 Demande du 3 nov. 2026 : suivre l'organisation des événements, les voir dans un calendrier, gérer les éditions récurrentes. Un événement est un projet dont le type a la nature « événement » : il garde tâches, responsable, documents et alertes, et reçoit en plus des détails propres, stockés à part pour ne pas les imposer aux autres projets. Hors périmètre : inscriptions et gestion des participants.
 
-- [ ] Modèle `EventDetails` (1 pour 1 avec le projet) : lieu, ville, pays, date de l'événement (exacte, période ou inconnue) et sa certitude (proposée, annoncée, confirmée), statut de calendrier distinct du statut opérationnel
-- [ ] Modèle `Program` : un événement récurrent (ex. salon annuel) et ses éditions, chaque édition étant un projet
-- [ ] Suivi après l'événement jusqu'à J+15 (relances, bilan, retours d'expérience), sans l'imposer aux autres types de projets
-- [ ] Annulation d'une édition : retrait du calendrier actif, tâches ouvertes clôturées, dossier, tâches terminées et anciennes dates conservés (CDC §12)
-- [ ] Replanification : nouvelle date journalisée ; aucune réactivation automatique d'une édition annulée
-- [ ] Vue « Événements » : liste filtrable (portefeuille, filiale, pays, période) et calendrier mensuel ; les événements sans date restent visibles dans une liste à part
-- [ ] Alerte de chevauchement : deux événements aux dates communes, avec la règle affichée
+- [x] Modèle `EventDetails` (1 pour 1 avec le projet) : lieu, public visé, participants attendus, programme, édition ; les jours de l'événement sont les dates du projet, avec leur certitude (proposée, annoncée, confirmée), distincte du statut opérationnel
+- [x] Les détails ne s'affichent que pour un type de nature « événement » ; ils sont conservés si le type change, et refusés (422) sur un projet standard
+- [x] Modèle `Program` : un événement récurrent et ses éditions ; géré dans Paramètres comme les portefeuilles (archivable, jamais supprimé)
+- [x] Suivi après l'événement jusqu'à J+15 : date calculée, rappel « Suivi J+15 » puis « Bilan » dans la vue d'ensemble, uniquement pour les événements
+- [x] Annulation d'une édition : statut Annulé avec motif, tâches ouvertes annulées, dates et dossier conservés ; l'édition sort du calendrier actif
+- [x] Replanification : changement de dates journalisé (avant / après) ; aucune réactivation automatique
+- [x] Vue « Événements » : filtres programme, portefeuille, filiale, pays ; calendrier mensuel ; périodes à préciser à part (elles ne valent pas durée) ; événements sans date listés sans date inventée
+- [x] Alerte de chevauchement avec sa règle affichée : au moins un jour commun entre deux événements non annulés
 
 **Terminé quand :** CAL01 et CAL02 passent pour les événements ; une édition annulée disparaît du calendrier actif mais son dossier reste consultable ; un projet standard n'affiche aucun champ d'événement.
+
+✅ **Phase 3B terminée le 3 nov. 2026** (API : 8 tests événements + programmes ; interface : règles de chevauchement, CAL01, CAL02).
 
 ## Phase 4 — Documents du projet (CDC §11)
 

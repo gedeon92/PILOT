@@ -12,7 +12,7 @@ import {
 } from '../components/icons'
 import { ProjectTable } from '../components/project-table'
 import { PageHeader, type Tone } from '../components/ui'
-import { addDays, isClosedProject, PROJECT_STATUS, todayIso } from '../labels'
+import { addDays, formatDay, isClosedProject, PROJECT_STATUS, todayIso } from '../labels'
 import type { SpaceContext } from './space-layout'
 
 const DAY_MS = 86_400_000
@@ -131,6 +131,25 @@ type Todo = { project: Project; label: string; tone: Tone; text: string }
 function todos(open: Project[], today: string): Todo[] {
   const items: Todo[] = []
   for (const p of open) {
+    // Événement passé : suivi de 15 jours (relances, exploitation, bilan), puis bilan attendu.
+    const eventEnd = p.event ? (p.end_date ?? p.start_date ?? p.due_date) : null
+    if (p.event?.follow_up_until && eventEnd && today > eventEnd) {
+      if (today <= p.event.follow_up_until)
+        items.push({
+          project: p,
+          label: 'Suivi J+15',
+          tone: 'warn',
+          text: `Relances et bilan jusqu’au ${formatDay(p.event.follow_up_until)}`,
+        })
+      else
+        items.push({
+          project: p,
+          label: 'Bilan',
+          tone: 'danger',
+          text: 'Suivi terminé : bilan à rédiger',
+        })
+      continue
+    }
     if (p.due_date === today)
       items.push({
         project: p,

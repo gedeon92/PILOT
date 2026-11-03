@@ -1584,3 +1584,103 @@ textarea:focus-visible {
 .todo__tag--neutral {
   color: #52525b;
 }
+
+/* ---------- Événements ---------- */
+
+.card-panel--warn {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+.card-panel--event {
+  border-color: #dbe5ff;
+}
+.overlaps {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+.overlaps a,
+.windows a {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.calendar-scroll {
+  overflow-x: auto;
+}
+.calendar {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.calendar th {
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #52525b;
+  text-align: left;
+}
+.calendar__day {
+  height: 96px;
+  padding: 6px;
+  vertical-align: top;
+  border: 1px solid #f0f0f2;
+}
+.calendar__day--out {
+  background: #fafafa;
+}
+.calendar__day--out .calendar__num {
+  color: #a1a1aa;
+}
+.calendar__day--today .calendar__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: #fff;
+}
+.calendar__num {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.calendar__event {
+  display: block;
+  margin-top: 3px;
+  padding: 3px 6px;
+  border-left: 3px solid var(--bar);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bar) 12%, white);
+  color: var(--color-ink);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.calendar__event--cancelled {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+.windows {
+  padding-top: 14px;
+  border-top: 1px solid #f0f0f2;
+}
+.windows h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.windows ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 14px;
+}

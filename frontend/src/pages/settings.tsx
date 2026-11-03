@@ -15,7 +15,11 @@ import { allTimezones } from '../timezones'
 import { COLORS, colorHex } from '../colors'
 import type { SpaceContext } from './space-layout'
 
-type Field = { key: 'description' | 'country' | 'color'; label: string; maxLength?: number }
+type Field = {
+  key: 'description' | 'country' | 'color' | 'kind'
+  label: string
+  maxLength?: number
+}
 
 type Config = {
   resource: CatalogResource
@@ -56,8 +60,22 @@ const SECTIONS: Config[] = [
     addLabel: 'Ajouter le type',
     emptyLabel: 'Aucun type de projet pour l’instant.',
     placeholder: 'Ex. : Campagne',
-    fields: [],
+    fields: [{ key: 'kind', label: 'Nature' }],
   },
+  {
+    resource: 'programs',
+    title: 'Programmes d’événements',
+    help: 'Un événement qui revient (ex. salon annuel). Chaque édition est un projet rattaché au programme.',
+    addLabel: 'Ajouter le programme',
+    emptyLabel: 'Aucun programme pour l’instant.',
+    placeholder: 'Ex. : Salon Dakar Tech',
+    fields: [{ key: 'description', label: 'Description', maxLength: 500 }],
+  },
+]
+
+const KINDS: { value: string; label: string }[] = [
+  { value: 'standard', label: 'Projet standard' },
+  { value: 'event', label: 'Événement' },
 ]
 
 function Swatch({ color }: { color?: string }) {
@@ -77,6 +95,17 @@ function FieldInput({
   onChange: (value: string) => void
   id: string
 }) {
+  if (field.key === 'kind') {
+    return (
+      <select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
+        {KINDS.map((k) => (
+          <option key={k.value} value={k.value}>
+            {k.label}
+          </option>
+        ))}
+      </select>
+    )
+  }
   if (field.key === 'color') {
     return (
       <select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
@@ -102,7 +131,8 @@ function emptyValues(config: Config, item?: CatalogItem): Record<string, string>
   const values: Record<string, string> = { name: item?.name ?? '' }
   for (const field of config.fields) {
     values[field.key] =
-      (item?.[field.key] as string | null | undefined) ?? (field.key === 'color' ? 'orange' : '')
+      (item?.[field.key] as string | null | undefined) ??
+      (field.key === 'color' ? 'orange' : field.key === 'kind' ? 'standard' : '')
   }
   return values
 }
@@ -186,7 +216,7 @@ function ItemRow({
   const update = useUpdateCatalogItem(spaceId, config.resource)
   const [editing, setEditing] = useState(false)
   const details = config.fields
-    .filter((f) => f.key !== 'color')
+    .filter((f) => f.key !== 'color' && f.key !== 'kind')
     .map((f) => item[f.key])
     .filter(Boolean)
     .join(' · ')
@@ -217,6 +247,7 @@ function ItemRow({
         <span className="item-row__name">{item.name}</span>
         {details && <span className="item-row__details">{details}</span>}
       </span>
+      {item.kind === 'event' && <StatusPill tone="info">Événement</StatusPill>}
       {item.archived && <StatusPill tone="neutral">Archivé</StatusPill>}
       {canManage && (
         <span className="item-row__actions">

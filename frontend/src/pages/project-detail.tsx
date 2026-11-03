@@ -182,6 +182,17 @@ function ProjectEditForm({
   const members = useMembers(spaceId)
   const [form, setForm] = useState(() => initialForm(project))
   const [owner, setOwner] = useState<PersonValue>(() => personValue(project.owner))
+  const programs = useCatalog(spaceId, 'programs')
+  const [eventForm, setEventForm] = useState(() => ({
+    venue: project.event?.venue ?? '',
+    audience: project.event?.audience ?? '',
+    expected_attendance:
+      project.event?.expected_attendance == null ? '' : String(project.event.expected_attendance),
+    program_id: project.event?.program?.id ?? '',
+    edition_label: project.event?.edition_label ?? '',
+  }))
+  // Les champs d'événement n'apparaissent que si le type choisi est de nature « événement ».
+  const isEvent = types.data?.find((t) => t.id === form.project_type_id)?.kind === 'event'
   const conflict = update.error instanceof ApiError && update.error.status === 409
 
   const input = (key: string, label: string, props: Record<string, unknown> = {}) => (
@@ -248,6 +259,16 @@ function ProjectEditForm({
     body.risk_level = form.risk_level || null
     body.progress = form.progress === '' ? null : Number(form.progress)
     Object.assign(body, personPayload(owner, 'owner'))
+    if (isEvent) {
+      body.event = {
+        venue: eventForm.venue.trim() || null,
+        audience: eventForm.audience.trim() || null,
+        expected_attendance:
+          eventForm.expected_attendance === '' ? null : Number(eventForm.expected_attendance),
+        program_id: eventForm.program_id || null,
+        edition_label: eventForm.edition_label.trim() || null,
+      }
+    }
     update.mutate(body as Record<string, unknown> & { version: number }, { onSuccess: onDone })
   }
 
@@ -301,6 +322,71 @@ function ProjectEditForm({
         Une période indique une fenêtre où les jours restent à choisir : elle ne vaut pas date
         exacte.
       </p>
+
+      {isEvent && (
+        <>
+          <h3 className="form-grid__full form-grid__title">Événement</h3>
+          <div className="field form-grid__full">
+            <label htmlFor="edit-venue">Lieu</label>
+            <input
+              id="edit-venue"
+              maxLength={200}
+              placeholder="Ex. : Centre de conférences"
+              value={eventForm.venue}
+              onChange={(e) => setEventForm({ ...eventForm, venue: e.target.value })}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="edit-program">Programme</label>
+            <select
+              id="edit-program"
+              value={eventForm.program_id}
+              onChange={(e) => setEventForm({ ...eventForm, program_id: e.target.value })}
+            >
+              <option value="">Aucun (événement unique)</option>
+              {withCurrent(programs.data, project.event?.program).map(([id, name]) => (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="edit-edition">Édition</label>
+            <input
+              id="edit-edition"
+              maxLength={40}
+              placeholder="Ex. : 2026"
+              value={eventForm.edition_label}
+              onChange={(e) => setEventForm({ ...eventForm, edition_label: e.target.value })}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="edit-audience">Public visé</label>
+            <input
+              id="edit-audience"
+              maxLength={300}
+              value={eventForm.audience}
+              onChange={(e) => setEventForm({ ...eventForm, audience: e.target.value })}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="edit-attendance">Participants attendus</label>
+            <input
+              id="edit-attendance"
+              type="number"
+              min={0}
+              placeholder="Non renseigné"
+              value={eventForm.expected_attendance}
+              onChange={(e) => setEventForm({ ...eventForm, expected_attendance: e.target.value })}
+            />
+          </div>
+          <p className="field__hint form-grid__full">
+            Les jours de l’événement sont les dates de début et de fin ci-dessus. Le suivi se
+            prolonge 15 jours après la fin.
+          </p>
+        </>
+      )}
 
       <h3 className="form-grid__full form-grid__title">Cadrage</h3>
       {textarea('objective', 'Objectif')}
@@ -671,6 +757,62 @@ function HistorySection({ spaceId, projectId }: { spaceId: string; projectId: st
 
 // ---------- Page ----------
 
+function EventCard({ project, today }: { project: Project; today: string }) {
+  const event = project.event!
+  const end = project.end_date ?? project.start_date ?? project.due_date
+  let followUp: ReactNode = null
+  if (event.follow_up_until && end && today > end && !isClosedProject(project.status)) {
+    followUp =
+      today <= event.follow_up_until ? (
+        <Alert tone="warn">
+          Suivi après l’événement en cours jusqu’au {formatDay(event.follow_up_until)} : relances,
+          exploitation, bilan.
+        </Alert>
+      ) : (
+        <Alert tone="warn">Le suivi de 15 jours est terminé : bilan à rédiger pour clôturer.</Alert>
+      )
+  }
+  return (
+    <section className="card-panel card-panel--event" aria-labelledby="event-title">
+      <h2 id="event-title">Événement</h2>
+      {followUp}
+      <dl className="infos">
+        <Info
+          label="Jours de l’événement"
+          value={
+            project.start_date
+              ? `${formatDay(project.start_date)}${project.end_date && project.end_date !== project.start_date ? ` → ${formatDay(project.end_date)}` : ''}${project.date_certainty ? ` · ${CERTAINTY[project.date_certainty]}` : ''}`
+              : project.window_start
+                ? `Période : ${formatDay(project.window_start)} – ${formatDay(project.window_end)}`
+                : 'Date à fixer'
+          }
+        />
+        <Info
+          label="Lieu"
+          value={[event.venue, project.city, project.country].filter(Boolean).join(', ')}
+        />
+        <Info
+          label="Programme"
+          value={
+            event.program
+              ? `${event.program.name}${event.edition_label ? ` · édition ${event.edition_label}` : ''}`
+              : event.edition_label && `Édition ${event.edition_label}`
+          }
+        />
+        <Info label="Public visé" value={event.audience} />
+        <Info
+          label="Participants attendus"
+          value={event.expected_attendance === null ? null : String(event.expected_attendance)}
+        />
+        <Info
+          label="Fin du suivi (J+15)"
+          value={event.follow_up_until && formatDay(event.follow_up_until)}
+        />
+      </dl>
+    </section>
+  )
+}
+
 function Landmark({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="landmark">
@@ -777,7 +919,7 @@ export function ProjectDetailPage() {
           {p.owner.name ?? <span className="warn-text">Non attribué</span>}
           {p.owner.name && !p.owner.has_account && <span className="owner__note">Sans compte</span>}
         </Landmark>
-        <Landmark label="Échéance">
+        <Landmark label={p.due_date || !p.start_date ? 'Échéance' : 'Dates'}>
           {p.due_date ? (
             <>
               <span className={late ? 'due__date--late' : ''}>{formatDay(p.due_date)}</span>
@@ -785,6 +927,8 @@ export function ProjectDetailPage() {
                 <span className="chip chip--small">{CERTAINTY[p.date_certainty]}</span>
               )}
             </>
+          ) : p.start_date ? (
+            `${formatDay(p.start_date)}${p.end_date && p.end_date !== p.start_date ? ` → ${formatDay(p.end_date)}` : ''}`
           ) : p.window_start ? (
             `${formatDay(p.window_start)} – ${formatDay(p.window_end)}`
           ) : (
@@ -824,6 +968,7 @@ export function ProjectDetailPage() {
           </div>
 
           <aside className="detail-columns__side">
+            {p.event && <EventCard project={p} today={today} />}
             <section className="card-panel" aria-labelledby="info-title">
               <h2 id="info-title">Informations</h2>
               <dl className="infos">

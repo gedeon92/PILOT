@@ -6,6 +6,7 @@ import { colorHex } from '../colors'
 import {
   BellIcon,
   BuildingIcon,
+  CalendarIcon,
   ChevronsIcon,
   DashboardIcon,
   DocumentIcon,
@@ -106,6 +107,10 @@ function Sidebar({ me, space }: SpaceContext) {
           <NavLink to={`${base}/projets`} className={linkClass}>
             <FolderIcon />
             <span className="nav__label">Projets</span>
+          </NavLink>
+          <NavLink to={`${base}/evenements`} className={linkClass}>
+            <CalendarIcon />
+            <span className="nav__label">Événements</span>
           </NavLink>
           <SoonLink icon={<TasksIcon />} label="Tâches" />
           <SoonLink icon={<TimelineIcon />} label="Timeline" />

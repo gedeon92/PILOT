@@ -156,6 +156,15 @@ class Entity(_CatalogItem, Base):
     country: Mapped[str | None] = mapped_column(String(80))
 
 
+class Program(_CatalogItem, Base):
+    """Événement récurrent (ex. salon annuel) ; chacune de ses éditions est un projet."""
+
+    __tablename__ = "programs"
+    __table_args__ = (UniqueConstraint("space_id", "name", name="uq_programs_space_name"),)
+
+    description: Mapped[str | None] = mapped_column(String(500))
+
+
 class ProjectKind(enum.StrEnum):
     STANDARD = "standard"
     # Un projet de cette nature recevra les détails d'événement (phase 3B).
@@ -288,6 +297,32 @@ class Project(Base):
     entity: Mapped[Entity | None] = relationship()
     project_type: Mapped[ProjectType | None] = relationship()
     owner_member: Mapped[Membership | None] = relationship()
+    event_details: Mapped["EventDetails | None"] = relationship(
+        back_populates="project", uselist=False, cascade="all, delete-orphan"
+    )
+
+
+class EventDetails(Base):
+    """Informations propres aux événements, stockées à part pour ne pas les imposer
+    aux autres projets (CDC §21). Les dates restent celles du projet."""
+
+    __tablename__ = "event_details"
+
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), primary_key=True
+    )
+    venue: Mapped[str | None] = mapped_column(String(200))
+    audience: Mapped[str | None] = mapped_column(String(300))
+    expected_attendance: Mapped[int | None] = mapped_column(Integer)
+    program_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("programs.id"), index=True)
+    edition_label: Mapped[str | None] = mapped_column(String(40))
+
+    project: Mapped[Project] = relationship(back_populates="event_details")
+    program: Mapped[Program | None] = relationship()
+
+
+# Durée du suivi après un événement : relances, exploitation, bilan (CDC §6).
+EVENT_FOLLOW_UP_DAYS = 15
 
 
 class Task(Base):

@@ -47,6 +47,21 @@ function Due({ project, today }: { project: Project; today: string }) {
       </span>
     )
   }
+  if (project.start_date) {
+    const end =
+      project.end_date && project.end_date !== project.start_date ? project.end_date : null
+    return (
+      <span className="due">
+        <span className="due__date">
+          {formatDay(project.start_date)}
+          {end && ` → ${formatDay(end)}`}
+        </span>
+        <span className="due__note">
+          {project.date_certainty ? CERTAINTY[project.date_certainty] : 'Dates prévues'}
+        </span>
+      </span>
+    )
+  }
   if (project.window_start && project.window_end) {
     return (
       <span className="due">

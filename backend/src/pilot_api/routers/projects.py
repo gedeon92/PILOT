@@ -5,7 +5,7 @@ Chaque modification incrémente la version (conflits détectés) et laisse une t
 """
 
 import uuid
-from datetime import date
+from datetime import date, timedelta
 from enum import Enum
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -19,12 +19,16 @@ from pilot_api.deps import CurrentMembership, DbSession, WriterMembership
 from pilot_api.models import (
     CLOSED_PROJECT_STATUSES,
     CLOSED_TASK_STATUSES,
+    EVENT_FOLLOW_UP_DAYS,
     AuditLog,
     Entity,
+    EventDetails,
     Membership,
     MembershipStatus,
     Portfolio,
+    Program,
     Project,
+    ProjectKind,
     ProjectStatus,
     ProjectType,
     Space,
@@ -34,6 +38,7 @@ from pilot_api.models import (
     utcnow,
 )
 from pilot_api.schemas import (
+    EventOut,
     HistoryEntry,
     PersonRef,
     PortfolioRef,
@@ -83,6 +88,7 @@ PROJECT_AUDIT_FIELDS = [
     "outcome",
     "cancel_reason",
 ]
+EVENT_FIELDS = ["venue", "audience", "expected_attendance", "program_id", "edition_label"]
 TASK_PLAIN_FIELDS = ["title", "deliverable", "due_date", "due_certainty"]
 TASK_AUDIT_FIELDS = [*TASK_PLAIN_FIELDS, "status", "assignee_member_id", "assignee_label"]
 
@@ -102,6 +108,13 @@ def _json(value: Any) -> Any:
 
 def _snapshot(obj: Any, fields: list[str]) -> dict[str, Any]:
     return {name: _json(getattr(obj, name)) for name in fields}
+
+
+def _project_snapshot(project: Project) -> dict[str, Any]:
+    data = _snapshot(project, PROJECT_AUDIT_FIELDS)
+    if project.event_details is not None:
+        data |= {f"event_{k}": v for k, v in _snapshot(project.event_details, EVENT_FIELDS).items()}
+    return data
 
 
 def _diff(before: dict[str, Any], after: dict[str, Any]) -> tuple[dict, dict]:
@@ -182,7 +195,30 @@ def _project_query():
             selectinload(Project.entity),
             selectinload(Project.project_type),
             selectinload(Project.owner_member).selectinload(Membership.user),
+            selectinload(Project.event_details).selectinload(EventDetails.program),
         )
+    )
+
+
+def _is_event(project: Project) -> bool:
+    return project.project_type is not None and project.project_type.kind == ProjectKind.EVENT
+
+
+def _event_out(project: Project) -> EventOut | None:
+    """Détails visibles seulement si le type est de nature « événement ». Si le type change,
+    les détails sont conservés en base et réapparaissent quand le projet redevient un événement."""
+    if not _is_event(project):
+        return None
+    details = project.event_details
+    reference = project.end_date or project.start_date or project.due_date
+    program = details.program if details else None
+    return EventOut(
+        venue=details.venue if details else None,
+        audience=details.audience if details else None,
+        expected_attendance=details.expected_attendance if details else None,
+        program=RefOut(id=program.id, name=program.name) if program else None,
+        edition_label=details.edition_label if details else None,
+        follow_up_until=reference + timedelta(days=EVENT_FOLLOW_UP_DAYS) if reference else None,
     )
 
 
@@ -198,13 +234,23 @@ def _project_out(project: Project, counts: tuple[int, int] = (0, 0)) -> ProjectO
         if ptype
         else None,
         owner=_person(project.owner_member, project.owner_label),
+        event=_event_out(project),
         open_tasks=counts[0],
         late_tasks=counts[1],
         **{
             name: getattr(project, name)
             for name in ProjectOut.model_fields
             if name
-            not in {"id", "title", "status", "portfolio", "entity", "project_type", "owner"}
+            not in {
+                "id",
+                "title",
+                "status",
+                "portfolio",
+                "entity",
+                "project_type",
+                "owner",
+                "event",
+            }
             | {"open_tasks", "late_tasks"}
         },
     )
@@ -285,7 +331,26 @@ def _apply_project_fields(db: Session, project: Project, body: Any, sent: set[st
         project.owner_member_id, project.owner_label = _resolve_person(
             db, space_id, body.owner_member_id, body.owner_label
         )
+    if "event" in sent and body.event is not None:
+        _apply_event_fields(db, project, body.event)
     _check_dates(project)
+
+
+def _apply_event_fields(db: Session, project: Project, event: Any) -> None:
+    ptype = db.get(ProjectType, project.project_type_id) if project.project_type_id else None
+    if ptype is None or ptype.kind != ProjectKind.EVENT:
+        raise HTTPException(
+            422, "Les détails d'événement demandent un type de projet de nature « événement »."
+        )
+    details = project.event_details or EventDetails()
+    for name in event.model_fields_set & set(EVENT_FIELDS):
+        value = getattr(event, name)
+        if isinstance(value, str) and value == "":
+            value = None
+        if name == "program_id" and value is not None and value != details.program_id:
+            _check_ref(db, Program, project.space_id, value, "Le programme")
+        setattr(details, name, value)
+    project.event_details = details
 
 
 # ---------- Projets ----------
@@ -298,9 +363,19 @@ def list_projects(
     portfolio_id: uuid.UUID | None = None,
     entity_id: uuid.UUID | None = None,
     status: ProjectStatus | None = None,
+    kind: ProjectKind | None = None,
+    program_id: uuid.UUID | None = None,
     q: str | None = None,
 ) -> list[ProjectOut]:
     query = _project_query().where(Project.space_id == membership.space_id)
+    if kind:
+        query = query.join(ProjectType, ProjectType.id == Project.project_type_id).where(
+            ProjectType.kind == kind
+        )
+    if program_id:
+        query = query.join(EventDetails, EventDetails.project_id == Project.id).where(
+            EventDetails.program_id == program_id
+        )
     if portfolio_id:
         query = query.where(Project.portfolio_id == portfolio_id)
     if entity_id:
@@ -353,7 +428,7 @@ def create_project(body: ProjectCreate, membership: WriterMembership, db: DbSess
         space_id=space_id,
         target_type="project",
         target_id=project.id,
-        after={k: v for k, v in _snapshot(project, PROJECT_AUDIT_FIELDS).items() if v is not None},
+        after={k: v for k, v in _project_snapshot(project).items() if v is not None},
     )
     db.commit()
     return _project_with_counts(db, membership, _load_project(db, space_id, project.id))
@@ -372,9 +447,9 @@ def update_project(
     project = _load_project(db, membership.space_id, project_id)
     if project.version != body.version:
         raise HTTPException(409, CONFLICT)
-    before = _snapshot(project, PROJECT_AUDIT_FIELDS)
+    before = _project_snapshot(project)
     _apply_project_fields(db, project, body, body.model_fields_set - {"version"})
-    old, new = _diff(before, _snapshot(project, PROJECT_AUDIT_FIELDS))
+    old, new = _diff(before, _project_snapshot(project))
     if new:
         if "situation" in new:
             project.situation_updated_at = utcnow()

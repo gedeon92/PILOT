@@ -186,6 +186,23 @@ class ProjectTypeOut(BaseModel):
     version: int
 
 
+class ProgramCreate(BaseModel):
+    name: Name
+    description: Description | None = None
+
+
+class ProgramUpdate(_CatalogUpdate):
+    description: Description | None = None
+
+
+class ProgramOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    description: str | None
+    archived: bool
+    version: int
+
+
 # ---------- Projets et tâches ----------
 
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
@@ -215,6 +232,28 @@ class ProjectTypeRef(RefOut):
     kind: ProjectKind
 
 
+class EventIn(BaseModel):
+    """Détails d'un événement ; seuls les champs envoyés sont modifiés."""
+
+    venue: Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)] | None = None
+    audience: Annotated[str, StringConstraints(strip_whitespace=True, max_length=300)] | None = None
+    expected_attendance: Annotated[int, Field(ge=0, le=10_000_000)] | None = None
+    program_id: uuid.UUID | None = None
+    edition_label: (
+        Annotated[str, StringConstraints(strip_whitespace=True, max_length=40)] | None
+    ) = None
+
+
+class EventOut(BaseModel):
+    venue: str | None
+    audience: str | None
+    expected_attendance: int | None
+    program: RefOut | None
+    edition_label: str | None
+    # Fin du suivi après l'événement (J+15) ; vide tant que la date n'est pas connue.
+    follow_up_until: date | None
+
+
 class _ProjectFields(BaseModel):
     """Champs modifiables d'un projet. Seuls les champs envoyés sont pris en compte ;
     `null` efface une valeur (une information inconnue reste vide)."""
@@ -241,6 +280,7 @@ class _ProjectFields(BaseModel):
     country: Country | None = None
     city: Label | None = None
     external_url: HttpUrl | None = None
+    event: EventIn | None = None
 
 
 class ProjectCreate(_ProjectFields):
@@ -278,6 +318,7 @@ class ProjectOut(BaseModel):
     entity: RefOut | None
     project_type: ProjectTypeRef | None
     owner: PersonRef
+    event: EventOut | None
     situation: str | None
     situation_updated_at: datetime | None
     next_step: str | None

@@ -160,7 +160,7 @@ export function useAcceptInvitation() {
 
 // ---------- Structure de l'espace ----------
 
-export type CatalogResource = 'portfolios' | 'entities' | 'project-types'
+export type CatalogResource = 'portfolios' | 'entities' | 'project-types' | 'programs'
 
 /** Forme commune des portefeuilles, filiales et types de projets. */
 export type CatalogItem = {
@@ -171,6 +171,7 @@ export type CatalogItem = {
   description?: string | null
   color?: string
   country?: string | null
+  kind?: string
 }
 
 export function useCatalog(spaceId: string, resource: CatalogResource, includeArchived = false) {
@@ -228,7 +229,13 @@ const projectKeys = {
   one: (spaceId: string, projectId: string) => ['space', spaceId, 'projects', projectId] as const,
 }
 
-export type ProjectFilters = { portfolio_id?: string; status?: string; q?: string }
+export type ProjectFilters = {
+  portfolio_id?: string
+  status?: string
+  q?: string
+  kind?: string
+  program_id?: string
+}
 
 export function useProjects(spaceId: string, filters: ProjectFilters = {}) {
   const params = new URLSearchParams(

@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from pilot_api.audit import record
 from pilot_api.deps import CurrentMembership, DbSession, OwnerMembership
-from pilot_api.models import Entity, Portfolio, ProjectType, utcnow
+from pilot_api.models import Entity, Portfolio, Program, ProjectType, utcnow
 from pilot_api.schemas import (
     EntityCreate,
     EntityOut,
@@ -24,6 +24,9 @@ from pilot_api.schemas import (
     PortfolioCreate,
     PortfolioOut,
     PortfolioUpdate,
+    ProgramCreate,
+    ProgramOut,
+    ProgramUpdate,
     ProjectTypeCreate,
     ProjectTypeOut,
     ProjectTypeUpdate,
@@ -42,7 +45,7 @@ def sort_key(name: str) -> str:
 def catalog_router(
     *,
     path: str,
-    model: type[Portfolio | Entity | ProjectType],
+    model: type[Portfolio | Entity | ProjectType | Program],
     create_schema: type[BaseModel],
     update_schema: type[BaseModel],
     out_schema: type[BaseModel],
@@ -185,4 +188,13 @@ project_types = catalog_router(
     out_schema=ProjectTypeOut,
     target_type="project_type",
     label="Le type de projet",
+)
+programs = catalog_router(
+    path="programs",
+    model=Program,
+    create_schema=ProgramCreate,
+    update_schema=ProgramUpdate,
+    out_schema=ProgramOut,
+    target_type="program",
+    label="Le programme",
 )

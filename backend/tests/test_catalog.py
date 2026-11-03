@@ -1,7 +1,7 @@
 import pytest
 from conftest import create_space, invite_and_join, register
 
-RESOURCES = ["portfolios", "entities", "project-types"]
+RESOURCES = ["portfolios", "entities", "project-types", "programs"]
 
 
 def _owner_space(make_client):

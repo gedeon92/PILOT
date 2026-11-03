@@ -27,7 +27,8 @@ def engine() -> Iterator[Engine]:
     url = to_sqlalchemy_url(url).replace("-pooler.", ".")
     schema = f"test_{uuid.uuid4().hex[:12]}"
 
-    admin = create_engine(url)
+    # pool_pre_ping : la connexion reste inactive pendant les tests et Neon peut la fermer.
+    admin = create_engine(url, pool_pre_ping=True)
     with admin.begin() as conn:
         conn.execute(text(f'CREATE SCHEMA "{schema}"'))
 

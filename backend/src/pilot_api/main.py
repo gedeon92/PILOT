@@ -23,6 +23,7 @@ app.include_router(invitations.router)
 app.include_router(catalog.portfolios)
 app.include_router(catalog.entities)
 app.include_router(catalog.project_types)
+app.include_router(catalog.programs)
 app.include_router(projects.router)
 
 
