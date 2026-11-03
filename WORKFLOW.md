@@ -52,18 +52,19 @@ Limites connues des offres gratuites, acceptées pour la phase de test :
 - Render gratuit met l'API en veille après environ 15 minutes sans visite ; le premier appel suivant prend 30 à 60 secondes. Le frontend doit afficher un état « démarrage du serveur ».
 - Render gratuit ne garde pas les fichiers écrits sur disque entre deux déploiements (voir D2).
 - Vercel Hobby est réservé à un usage non commercial : passer à l'offre Pro avant une ouverture publique payante.
-- Neon gratuit : 0,5 Go de stockage par projet.
+- Neon gratuit : 1 Go de stockage, 10 branches par projet, mise en veille de la base quand elle est inactive (constaté le 3 nov. 2026). Région retenue : Europe (Frankfurt), comme l'API Render.
 
 ---
 
 ## Phase 0 — Préparation
 
 - [x] Dépôt git local avec `backend/` et `frontend/`
-- [ ] Dépôt GitHub créé et code poussé
+- [x] Dépôt GitHub créé et code poussé (https://github.com/gedeon92/PILOT, CI verte)
 - [x] Backend : `pyproject.toml` (uv), ruff, application FastAPI minimale avec route `/api/health` (vérifie la base), tests pytest
 - [x] Frontend : Vite + React + TypeScript, oxlint, Prettier, Vitest ; page d'état qui appelle `/api/health` et gère le réveil de Render
 - [x] Génération des types TypeScript depuis l'OpenAPI du backend (`npm run gen:api`)
-- [ ] Projet Neon + branches `dev`, `test`, `staging`, `main`
+- [x] Projet Neon `PILOT` créé (Frankfurt, PostgreSQL 18), connexion vérifiée depuis l'API
+- [ ] Branches Neon `dev` et `staging` (et `test` pour la CI plus tard) ; `main` reste réservée à la production
 - [x] Variables d'environnement documentées dans `backend/.env.example`, `.env` exclu de git
 - [x] `render.yaml` prêt (service `pilot-api-staging`, offre gratuite)
 - [ ] Service Render créé depuis le `render.yaml`, `DATABASE_URL` renseignée
@@ -212,7 +213,7 @@ Chacun de ces sujets demande une décision explicite avant d'être lancé (CDC �
 | # | Question | Recommandation | Statut |
 |---|---|---|---|
 | D1 | Mode de connexion | E-mail + mot de passe pour la V1 (aucun service d'e-mail nécessaire). Lien magique plus tard. | À valider |
-| D2 | Stockage des fichiers | Phase de test (gratuite) : fichiers stockés dans Neon, avec les limites de taille du CDC, derrière une interface `FileStorage` unique. Avant la production : passer à un stockage objet (S3, R2 ou Vercel Blob) en changeant seulement l'implémentation de cette interface. | À valider |
+| D2 | Stockage des fichiers | Phase de test (gratuite) : fichiers stockés dans Neon, avec les limites de taille du CDC, derrière une interface `FileStorage` unique. Avant la production : passer à un stockage objet en changeant seulement l'implémentation de cette interface. Piste à étudier en phase 4 : le « stockage d'objets » proposé par Neon dans le même projet (sinon S3, R2 ou Vercel Blob). | À valider |
 | D3 | Invitations | Sans service d'e-mail : la propriétaire ajoute l'adresse, la personne s'inscrit avec cette adresse et rejoint l'espace. | À valider |
 | D4 | Contributeurs et validation | Un contributeur valide ses propres propositions (comme dans le CDC). | À valider |
 | D5 | Droits par projet ou par filiale | Pas en V1 : les droits s'appliquent à tout l'espace. | À valider |
