@@ -46,7 +46,7 @@ Phase de test : tout tourne sur les offres gratuites.
 | Local | branche `dev` | `localhost:8000` | `localhost:5173` (proxy Vite vers l'API) |
 | Tests automatiques | branche `test` (vidée à chaque exécution) | — | — |
 | Recette | branche `staging` | `pilot-api-staging` | déploiements de prévisualisation Vercel |
-| Production (plus tard) | branche `main` | `pilot-api` | domaine de production Vercel |
+| Production (plus tard) | branche `production` | `pilot-api` | domaine de production Vercel |
 
 Limites connues des offres gratuites, acceptées pour la phase de test :
 - Render gratuit met l'API en veille après environ 15 minutes sans visite ; le premier appel suivant prend 30 à 60 secondes. Le frontend doit afficher un état « démarrage du serveur ».
@@ -64,10 +64,10 @@ Limites connues des offres gratuites, acceptées pour la phase de test :
 - [x] Frontend : Vite + React + TypeScript, oxlint, Prettier, Vitest ; page d'état qui appelle `/api/health` et gère le réveil de Render
 - [x] Génération des types TypeScript depuis l'OpenAPI du backend (`npm run gen:api`)
 - [x] Projet Neon `PILOT` créé (Frankfurt, PostgreSQL 18), connexion vérifiée depuis l'API
-- [ ] Branches Neon `dev` et `staging` (et `test` pour la CI plus tard) ; `main` reste réservée à la production
+- [x] Branches Neon créées dès maintenant (décision du 3 nov. 2026) : `dev` (ordinateur), `staging` (Render), sans suppression automatique ; la branche d'origine `production` est réservée à la production
 - [x] Variables d'environnement documentées dans `backend/.env.example`, `.env` exclu de git
 - [x] `render.yaml` prêt (service `pilot-api-staging`, offre gratuite)
-- [ ] Service Render créé depuis le `render.yaml`, `DATABASE_URL` renseignée
+- [x] Service Render créé depuis le `render.yaml` (Blueprint « PILOT »), `DATABASE_URL` = branche Neon `staging` ; https://pilot-api-staging.onrender.com/api/health répond « database: ok »
 - [x] `vercel.json` prêt (redirection `/api/*` vers Render)
 - [ ] Projet Vercel créé et relié au dossier `frontend/`
 - [x] CI GitHub Actions : lint, tests et build backend + frontend, contrôle des types générés ; Render ne déploie que si la CI passe
@@ -195,6 +195,7 @@ Règles d'alerte (seuils réglables par espace) :
 
 ## Phase 10 — Mise en production
 
+- [ ] Changer le mot de passe de la base Neon (il a circulé pendant la mise en place)
 - [ ] Recette complète sur `pilot-staging`
 - [ ] Domaine, HTTPS, variables de production
 - [ ] Publication puis vérification des données réellement disponibles
