@@ -78,15 +78,19 @@ Limites connues des offres gratuites, acceptées pour la phase de test :
 
 ## Phase 1 — Comptes, espaces et droits (CDC §4, §15)
 
-- [ ] Modèle : `User`, `Space`, `Membership` (rôle : lecteur / contributeur / propriétaire), `AuditLog`
-- [ ] Inscription, connexion, déconnexion, sessions sécurisées (cookie HttpOnly, protection CSRF)
-- [ ] Création d'un espace → son créateur devient propriétaire
-- [ ] Invitation d'un membre par e-mail avec choix du rôle ; changement de rôle ; retrait
-- [ ] Dépendance serveur qui vérifie espace + rôle sur chaque route
-- [ ] Isolation stricte entre espaces
-- [ ] Journal des actions sensibles
+- [x] Modèle : `User`, `AuthSession`, `Space`, `Membership` (rôle : lecteur / contributeur / propriétaire ; statut : invité / actif), `AuditLog` ; première migration Alembic, appliquée automatiquement au démarrage sur Render
+- [x] Inscription, connexion, déconnexion ; mots de passe hachés (Argon2) ; session serveur dans un cookie HttpOnly, SameSite=Lax, Secure en ligne ; protection CSRF par en-tête obligatoire sur toute écriture
+- [x] Création d'un espace → son créateur devient propriétaire ; fuseau horaire choisi à la création
+- [x] Invitation par lien à usage unique (14 jours), valable seulement pour le compte de l'adresse invitée ; nouveau lien ; changement de rôle avec contrôle de version ; retrait
+- [x] Dépendance serveur qui relit l'espace et le rôle en base à chaque requête (un retrait s'applique à la requête suivante)
+- [x] Isolation stricte entre espaces (réponse 404 pour un non-membre)
+- [x] Journal des actions sensibles (inscription, espace, invitations, rôles, retraits)
+- [x] Écrans : connexion, inscription, création d'espace, vue d'ensemble, accès et membres, acceptation d'invitation
+- [x] Tests : 29 côté API (base PostgreSQL réelle, schéma temporaire), 7 côté interface
 
 **Terminé quand :** ACC01, ACC02, ACC03 passent, et un utilisateur d'un espace A ne peut lire aucune donnée de l'espace B, même en forgeant la requête.
+
+✅ **Phase 1 terminée le 3 nov. 2026** (tests `test_reader_cannot_write_through_the_api`, `test_contributor_cannot_manage_access`, `test_revoking_contribution_applies_on_next_request`, `test_spaces_are_isolated`).
 
 ## Phase 2 — Structure de l'espace (CDC §5)
 
@@ -215,10 +219,10 @@ Chacun de ces sujets demande une décision explicite avant d'être lancé (CDC �
 
 | # | Question | Recommandation | Statut |
 |---|---|---|---|
-| D1 | Mode de connexion | E-mail + mot de passe pour la V1 (aucun service d'e-mail nécessaire). Lien magique plus tard. | À valider |
+| D1 | Mode de connexion | E-mail + mot de passe pour la V1 (aucun service d'e-mail nécessaire). Lien magique plus tard. | Décidé |
 | D2 | Stockage des fichiers | Phase de test (gratuite) : fichiers stockés dans Neon, avec les limites de taille du CDC, derrière une interface `FileStorage` unique. Avant la production : passer à un stockage objet en changeant seulement l'implémentation de cette interface. Piste à étudier en phase 4 : le « stockage d'objets » proposé par Neon dans le même projet (sinon S3, R2 ou Vercel Blob). | À valider |
-| D3 | Invitations | Sans service d'e-mail : la propriétaire ajoute l'adresse, la personne s'inscrit avec cette adresse et rejoint l'espace. | À valider |
-| D4 | Contributeurs et validation | Un contributeur valide ses propres propositions (comme dans le CDC). | À valider |
-| D5 | Droits par projet ou par filiale | Pas en V1 : les droits s'appliquent à tout l'espace. | À valider |
+| D3 | Invitations | Sans service d'e-mail : la propriétaire saisit l'adresse et obtient un lien d'invitation à transmettre ; la personne crée son compte avec cette adresse et rejoint l'espace. Envoi automatique de l'e-mail par Brevo plus tard. | Décidé |
+| D4 | Contributeurs et validation | Un contributeur valide ses propres propositions (comme dans le CDC). | Décidé |
+| D5 | Droits par projet ou par filiale | Pas en V1 : les droits s'appliquent à tout l'espace. | Décidé |
 | D6 | Canal des rappels | Alertes dans l'application + e-mail via **Brevo** (offre gratuite). Clé API Brevo stockée uniquement dans les variables d'environnement Render. Brevo servira aussi, si souhaité, aux e-mails d'invitation et de réinitialisation du mot de passe. | Décidé |
 | D7 | Style visuel | Inspiré de l'image de référence `4eb2950829ff621189b9d820b3e9d34c.webp` : police Plus Jakarta Sans, fond gris clair #F4F4F5, panneaux blancs à coins arrondis (16–20 px), bordures fines #ECECEE, orange #F26A1B pour la marque, #D0450A pour les boutons (contraste suffisant pour le texte blanc), statuts en pastilles (point + texte). Maquette : https://claude.ai/artifact/ReTWXj3VRy4WHS5EMBqXAL | Décidé (validé le 3 nov. 2026) |

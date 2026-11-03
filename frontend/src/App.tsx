@@ -1,113 +1,75 @@
-import { useEffect, useState } from 'react'
-import { fetchHealth, type Health } from './api/health'
-import './App.css'
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
+import type { Me } from './api/client'
+import { useMe } from './api/queries'
+import { Alert, AuthCard, FullPageLoader } from './components/ui'
+import { LoginPage, RegisterPage } from './pages/auth'
+import { CreateSpacePage } from './pages/create-space'
+import { DashboardPage } from './pages/dashboard'
+import { InvitationPage } from './pages/invitation'
+import { MembersPage } from './pages/members'
+import { SpaceLayout } from './pages/space-layout'
+import { StatusPage } from './pages/status'
 
-type ApiState =
-  { kind: 'loading' } | { kind: 'waking' } | { kind: 'ready'; health: Health } | { kind: 'error' }
+/** Affiche `children(me)` si quelqu'un est connecté, sinon renvoie vers la connexion. */
+function RequireAuth({ children }: { children: (me: Me) => React.ReactNode }) {
+  const me = useMe()
+  const location = useLocation()
 
-// Au-delà de ce délai sans réponse, on suppose que Render réveille l'API.
-const WAKING_HINT_MS = 3_000
-
-type Tone = 'ok' | 'warn' | 'danger' | 'neutral'
-
-function StatusPill({ tone, children }: { tone: Tone; children: string }) {
-  return (
-    <span className={`pill pill--${tone}`}>
-      <span className="pill__dot" aria-hidden="true" />
-      {children}
-    </span>
-  )
+  if (me.isPending) return <FullPageLoader />
+  if (me.isError) {
+    return (
+      <AuthCard title="Serveur indisponible">
+        <Alert>{me.error.message}</Alert>
+        <button className="button" type="button" onClick={() => me.refetch()}>
+          Réessayer
+        </button>
+      </AuthCard>
+    )
+  }
+  if (!me.data) {
+    const next = location.pathname + location.search
+    return <Navigate to={`/connexion?next=${encodeURIComponent(next)}`} replace />
+  }
+  return <>{children(me.data)}</>
 }
 
-function apiStatus(state: ApiState): { tone: Tone; label: string } {
-  switch (state.kind) {
-    case 'loading':
-      return { tone: 'neutral', label: 'Vérification…' }
-    case 'waking':
-      return { tone: 'warn', label: 'Démarrage du serveur…' }
-    case 'ready':
-      return { tone: 'ok', label: 'Opérationnelle' }
-    case 'error':
-      return { tone: 'danger', label: 'Injoignable' }
-  }
+/** Les pages de connexion n'ont pas de sens si l'on est déjà connecté. */
+function GuestOnly() {
+  const me = useMe()
+  if (me.isPending) return <FullPageLoader />
+  if (me.data) return <Navigate to="/" replace />
+  return <Outlet />
 }
 
-function databaseStatus(state: ApiState): { tone: Tone; label: string } {
-  if (state.kind !== 'ready') return { tone: 'neutral', label: 'En attente de l’API' }
-  switch (state.health.database) {
-    case 'ok':
-      return { tone: 'ok', label: 'Connectée' }
-    case 'not_configured':
-      return { tone: 'warn', label: 'Non configurée' }
-    case 'unavailable':
-      return { tone: 'danger', label: 'Indisponible' }
-  }
+function Home({ me }: { me: Me }) {
+  const first = me.spaces[0]
+  return <Navigate to={first ? `/espaces/${first.id}` : '/espaces/nouveau'} replace />
 }
 
 export default function App() {
-  const [state, setState] = useState<ApiState>({ kind: 'loading' })
-
-  useEffect(() => {
-    const controller = new AbortController()
-    const wakingTimer = setTimeout(() => {
-      setState((current) => (current.kind === 'loading' ? { kind: 'waking' } : current))
-    }, WAKING_HINT_MS)
-
-    fetchHealth(controller.signal)
-      .then((health) => setState({ kind: 'ready', health }))
-      .catch(() => {
-        if (!controller.signal.aborted) setState({ kind: 'error' })
-      })
-      .finally(() => clearTimeout(wakingTimer))
-
-    return () => {
-      controller.abort()
-      clearTimeout(wakingTimer)
-    }
-  }, [])
-
-  const api = apiStatus(state)
-  const database = databaseStatus(state)
-
   return (
-    <main className="page">
-      <div className="panel">
-        <header className="brand">
-          <img src="/favicon.svg" alt="" width="36" height="36" />
-          <span className="brand__name">PILOT</span>
-        </header>
+    <Routes>
+      <Route element={<GuestOnly />}>
+        <Route path="/connexion" element={<LoginPage />} />
+        <Route path="/inscription" element={<RegisterPage />} />
+      </Route>
+      <Route path="/invitation/:token" element={<InvitationPage />} />
+      <Route path="/etat" element={<StatusPage />} />
 
-        <div className="intro">
-          <h1>État de la plateforme</h1>
-          <p>Phase 0 : vérification de la chaîne interface → API → base de données.</p>
-        </div>
+      <Route path="/" element={<RequireAuth>{(me) => <Home me={me} />}</RequireAuth>} />
+      <Route
+        path="/espaces/nouveau"
+        element={<RequireAuth>{() => <CreateSpacePage />}</RequireAuth>}
+      />
+      <Route
+        path="/espaces/:spaceId"
+        element={<RequireAuth>{(me) => <SpaceLayout me={me} />}</RequireAuth>}
+      >
+        <Route index element={<DashboardPage />} />
+        <Route path="membres" element={<MembersPage />} />
+      </Route>
 
-        <ul className="checks" aria-live="polite">
-          <li className="check">
-            <span className="check__label">Interface (Vercel)</span>
-            <StatusPill tone="ok">En ligne</StatusPill>
-          </li>
-          <li className="check">
-            <span className="check__label">API (Render)</span>
-            <StatusPill tone={api.tone}>{api.label}</StatusPill>
-          </li>
-          <li className="check">
-            <span className="check__label">Base de données (Neon)</span>
-            <StatusPill tone={database.tone}>{database.label}</StatusPill>
-          </li>
-        </ul>
-
-        {state.kind === 'waking' && (
-          <p className="note">
-            L’API était en veille. Le premier chargement peut prendre jusqu’à une minute.
-          </p>
-        )}
-        {state.kind === 'ready' && (
-          <p className="note">
-            Version {state.health.version} · environnement {state.health.environment}
-          </p>
-        )}
-      </div>
-    </main>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }

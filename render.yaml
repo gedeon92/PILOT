@@ -7,7 +7,8 @@ services:
     region: frankfurt # même région que la base Neon (eu-central-1)
     rootDir: backend
     buildCommand: pip install uv && uv sync --frozen --no-dev
-    startCommand: uv run --no-sync uvicorn pilot_api.main:app --host 0.0.0.0 --port $PORT
+    # Les migrations s'appliquent avant le démarrage (la commande « pre-deploy » est payante).
+    startCommand: uv run --no-sync alembic upgrade head && uv run --no-sync uvicorn pilot_api.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
     # Déploie seulement quand les vérifications GitHub (CI) sont passées.
     autoDeployTrigger: checksPass

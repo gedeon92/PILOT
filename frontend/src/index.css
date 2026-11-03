@@ -26,6 +26,9 @@
   --tone-neutral-bg: #f4f4f5;
   --tone-neutral-fg: #3f3f46;
   --tone-neutral-dot: #71717a;
+  --tone-info-bg: #eff4ff;
+  --tone-info-fg: #1d4ed8;
+  --tone-info-dot: #2563eb;
 
   --radius-panel: 20px;
   --radius-card: 16px;
