@@ -895,3 +895,136 @@ select:focus-visible {
   font-size: 13px;
   color: var(--color-muted);
 }
+
+/* ---------- Paramètres et structure ---------- */
+
+.swatch {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.nav__section--with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 4px;
+}
+.icon-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #52525b;
+}
+.icon-button:hover {
+  background: #ececee;
+}
+.nav__link--static,
+.nav__link--static:hover {
+  cursor: default;
+  background: transparent;
+}
+.nav__empty {
+  padding: 4px 12px;
+  font-size: 13px;
+  color: #8a8f98;
+}
+
+.card-panel__help {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+.item-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+.item-row + .item-row {
+  border-top: 1px solid #f0f0f2;
+}
+.item-row--archived .item-row__name {
+  color: var(--color-muted);
+}
+.item-row--editing {
+  display: block;
+  background: #fafafa;
+}
+.item-row--editing .alert {
+  margin-top: 10px;
+}
+.item-row > .alert {
+  flex-basis: 100%;
+}
+.item-row__text {
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.item-row__name {
+  font-size: 14px;
+  font-weight: 600;
+}
+.item-row__details {
+  font-size: 13px;
+  color: var(--color-muted);
+}
+.item-row__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.item-add {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #fafafa;
+}
+.item-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+.item-form__name {
+  flex: 1 1 240px;
+}
+.item-form__wide {
+  flex: 2 1 320px;
+}
+.item-form__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+}
+.checkbox input {
+  min-height: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-action);
+}

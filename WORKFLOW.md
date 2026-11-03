@@ -94,11 +94,17 @@ Limites connues des offres gratuites, acceptées pour la phase de test :
 
 ## Phase 2 — Structure de l'espace (CDC §5)
 
-- [ ] Modèles : `Portfolio`, `Entity` (filiale), `ProjectType`, paramètres de l'espace (fuseau, langue)
-- [ ] Écrans de gestion réservés à la propriétaire : créer, renommer, archiver sans perte de projets
-- [ ] Identifiants stables indépendants des noms
+- [x] Modèles : `Portfolio` (nom, description, couleur), `Entity` (filiale, pays), `ProjectType` ; nom unique par espace sans tenir compte des majuscules
+- [x] Types de projets proposés par défaut : Événement, Produit, Mission, Autre (ajoutés aussi aux espaces existants par la migration)
+- [x] Page « Paramètres et structure » : nom et fuseau de l'espace, portefeuilles, filiales, types ; créer, modifier, archiver, restaurer ; affichage des éléments archivés
+- [x] Pas de suppression : un élément archivé n'est plus proposé mais garde ses projets
+- [x] Portefeuilles affichés dans le menu latéral avec leur couleur
+- [x] Identifiants stables indépendants des noms ; contrôle de version sur chaque modification ; journal des créations, modifications, archivages
+- [ ] Langue de l'espace : français seulement pour l'instant
 
 **Terminé quand :** renommer un portefeuille ou une entité ne casse aucun lien, et un contributeur reçoit un refus serveur sur ces écrans.
+
+✅ **Phase 2 terminée le 3 nov. 2026** (tests `test_rename_keeps_the_same_identifier`, `test_only_owner_changes_the_structure`, `test_structure_is_isolated_between_spaces`).
 
 ## Phase 3 — Projets et tâches (CDC §6, §8, §21, §22)
 

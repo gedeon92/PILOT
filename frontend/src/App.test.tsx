@@ -108,3 +108,68 @@ describe('accès et membres', () => {
     expect(within(table).queryByRole('button')).not.toBeInTheDocument()
   })
 })
+
+describe('paramètres et structure', () => {
+  const base = `/api/spaces/${SPACE_ID}`
+  const types = [{ id: 't1', name: 'Événement', archived: false, version: 1 }]
+
+  function structureRoutes(role: 'owner' | 'reader', portfolios: unknown[]) {
+    return {
+      'GET /api/auth/me': () => ({ status: 200, json: meWith(role) }),
+      [`GET ${base}`]: () => ({ status: 200, json: spaceWith(role) }),
+      [`GET ${base}/members`]: () => ({ status: 200, json: [OWNER_MEMBER] }),
+      [`GET ${base}/portfolios`]: () => ({ status: 200, json: portfolios }),
+      [`GET ${base}/entities`]: () => ({ status: 200, json: [] }),
+      [`GET ${base}/project-types`]: () => ({ status: 200, json: types }),
+    }
+  }
+
+  it('la propriétaire ajoute un portefeuille avec sa couleur', async () => {
+    const portfolios: unknown[] = []
+    const calls = mockApi({
+      ...structureRoutes('owner', portfolios),
+      [`POST ${base}/portfolios`]: (body) => {
+        const created = { id: 'p1', archived: false, version: 1, ...(body as object) }
+        portfolios.push(created)
+        return { status: 201, json: created }
+      },
+    })
+    renderApp(`/espaces/${SPACE_ID}/parametres`)
+    const user = userEvent.setup()
+
+    const section = await screen.findByRole('region', { name: 'Portefeuilles' })
+    await user.click(within(section).getByRole('button', { name: /Ajouter/ }))
+    await user.type(within(section).getByLabelText('Nom'), 'Événements')
+    await user.selectOptions(within(section).getByLabelText('Couleur'), 'blue')
+    await user.click(within(section).getByRole('button', { name: 'Ajouter le portefeuille' }))
+
+    expect(calls.find((c) => c.key === `POST ${base}/portfolios`)?.body).toEqual({
+      name: 'Événements',
+      color: 'blue',
+      description: '',
+    })
+    expect(await within(section).findByText('Événements')).toBeInTheDocument()
+  })
+
+  it('un lecteur consulte la structure sans pouvoir la modifier', async () => {
+    mockApi(
+      structureRoutes('reader', [
+        {
+          id: 'p1',
+          name: 'Événements',
+          color: 'orange',
+          description: null,
+          archived: false,
+          version: 1,
+        },
+      ]),
+    )
+
+    renderApp(`/espaces/${SPACE_ID}/parametres`)
+
+    const section = await screen.findByRole('region', { name: 'Portefeuilles' })
+    expect(await within(section).findByText('Événements')).toBeInTheDocument()
+    expect(within(section).queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Nom de l’espace')).toBeDisabled()
+  })
+})

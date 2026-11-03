@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router'
 import { ROLE_LABELS, type Me, type Space } from '../api/client'
-import { useLogout, useMembers, useSpace } from '../api/queries'
+import { useCatalog, useLogout, useMembers, useSpace } from '../api/queries'
+import { colorHex } from '../colors'
 import {
   BellIcon,
   BuildingIcon,
@@ -13,6 +14,8 @@ import {
   Logo,
   LogoutIcon,
   MembersIcon,
+  PlusIcon,
+  SettingsIcon,
   TasksIcon,
   TimelineIcon,
 } from '../components/icons'
@@ -47,6 +50,7 @@ function Sidebar({ me, space }: SpaceContext) {
   const navigate = useNavigate()
   const logout = useLogout()
   const members = useMembers(space.id)
+  const portfolios = useCatalog(space.id, 'portfolios')
   const base = `/espaces/${space.id}`
   const pending = members.data?.filter((m) => m.status === 'invited').length ?? 0
   // Sur téléphone, le menu est replié derrière un bouton ; il se referme à chaque changement de page.
@@ -110,7 +114,35 @@ function Sidebar({ me, space }: SpaceContext) {
         <div className="sidebar__divider" />
 
         <div className="nav">
-          <span className="nav__section">Équipe</span>
+          <span className="nav__section nav__section--with-action">
+            Portefeuilles
+            {space.role === 'owner' && (
+              <NavLink
+                to={`${base}/parametres`}
+                className="icon-button"
+                aria-label="Ajouter ou modifier les portefeuilles"
+              >
+                <PlusIcon />
+              </NavLink>
+            )}
+          </span>
+          {portfolios.data?.length === 0 && <span className="nav__empty">Aucun portefeuille</span>}
+          {portfolios.data?.map((portfolio) => (
+            <span key={portfolio.id} className="nav__link nav__link--static">
+              <span
+                className="swatch"
+                style={{ background: colorHex(portfolio.color) }}
+                aria-hidden="true"
+              />
+              <span className="nav__label">{portfolio.name}</span>
+            </span>
+          ))}
+        </div>
+
+        <div className="sidebar__divider" />
+
+        <div className="nav">
+          <span className="nav__section">Espace</span>
           <NavLink to={`${base}/membres`} className={linkClass}>
             <MembersIcon />
             <span className="nav__label">Accès et membres</span>
@@ -119,6 +151,10 @@ function Sidebar({ me, space }: SpaceContext) {
                 {pending}
               </span>
             )}
+          </NavLink>
+          <NavLink to={`${base}/parametres`} className={linkClass}>
+            <SettingsIcon />
+            <span className="nav__label">Paramètres et structure</span>
           </NavLink>
         </div>
 

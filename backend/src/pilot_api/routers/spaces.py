@@ -8,7 +8,15 @@ from sqlalchemy.orm import Session, selectinload
 from pilot_api.audit import record
 from pilot_api.config import get_settings
 from pilot_api.deps import CurrentMembership, CurrentUser, DbSession, OwnerMembership
-from pilot_api.models import Membership, MembershipStatus, Role, Space, utcnow
+from pilot_api.models import (
+    DEFAULT_PROJECT_TYPES,
+    Membership,
+    MembershipStatus,
+    ProjectType,
+    Role,
+    Space,
+    utcnow,
+)
 from pilot_api.schemas import (
     InvitationCreate,
     InvitationLink,
@@ -76,6 +84,7 @@ def create_space(body: SpaceCreate, user: CurrentUser, db: DbSession) -> SpaceOu
             joined_at=utcnow(),
         )
     )
+    db.add_all(ProjectType(space_id=space.id, name=name) for name in DEFAULT_PROJECT_TYPES)
     record(
         db,
         action="space.created",

@@ -108,3 +108,68 @@ class InvitationInfo(BaseModel):
     invited_by: str | None
     expired: bool
     email_matches: bool
+
+
+Color = Literal["orange", "blue", "violet", "green", "teal", "pink", "gray"]
+Description = Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)]
+Country = Annotated[str, StringConstraints(strip_whitespace=True, max_length=80)]
+
+
+class _CatalogUpdate(BaseModel):
+    """Seuls les champs envoyés sont modifiés ; `archived` archive ou restaure l'élément."""
+
+    version: int
+    name: Name | None = None
+    archived: bool | None = None
+
+
+class PortfolioCreate(BaseModel):
+    name: Name
+    description: Description | None = None
+    color: Color = "orange"
+
+
+class PortfolioUpdate(_CatalogUpdate):
+    description: Description | None = None
+    color: Color | None = None
+
+
+class PortfolioOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    description: str | None
+    color: str
+    archived: bool
+    version: int
+
+
+class EntityCreate(BaseModel):
+    name: Name
+    country: Country | None = None
+
+
+class EntityUpdate(_CatalogUpdate):
+    country: Country | None = None
+
+
+class EntityOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    country: str | None
+    archived: bool
+    version: int
+
+
+class ProjectTypeCreate(BaseModel):
+    name: Name
+
+
+class ProjectTypeUpdate(_CatalogUpdate):
+    pass
+
+
+class ProjectTypeOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    archived: bool
+    version: int

@@ -7,6 +7,7 @@ import { CreateSpacePage } from './pages/create-space'
 import { DashboardPage } from './pages/dashboard'
 import { InvitationPage } from './pages/invitation'
 import { MembersPage } from './pages/members'
+import { SettingsPage } from './pages/settings'
 import { SpaceLayout } from './pages/space-layout'
 import { StatusPage } from './pages/status'
 
@@ -67,6 +68,7 @@ export default function App() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="membres" element={<MembersPage />} />
+        <Route path="parametres" element={<SettingsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

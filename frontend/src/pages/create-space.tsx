@@ -3,20 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { errorMessage } from '../api/client'
 import { useCreateSpace, useMe } from '../api/queries'
 import { Alert, AuthCard } from '../components/ui'
-
-function detectedTimezone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-  } catch {
-    return 'UTC'
-  }
-}
-
-function allTimezones(current: string): string[] {
-  const zones =
-    typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : []
-  return Array.from(new Set([current, 'UTC', ...zones]))
-}
+import { allTimezones, detectedTimezone } from '../timezones'
 
 export function CreateSpacePage() {
   const me = useMe()

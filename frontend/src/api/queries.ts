@@ -154,3 +154,66 @@ export function useAcceptInvitation() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.me }),
   })
 }
+
+// ---------- Structure de l'espace ----------
+
+export type CatalogResource = 'portfolios' | 'entities' | 'project-types'
+
+/** Forme commune des portefeuilles, filiales et types de projets. */
+export type CatalogItem = {
+  id: string
+  name: string
+  archived: boolean
+  version: number
+  description?: string | null
+  color?: string
+  country?: string | null
+}
+
+export function useCatalog(spaceId: string, resource: CatalogResource, includeArchived = false) {
+  return useQuery({
+    queryKey: ['space', spaceId, resource, includeArchived],
+    queryFn: () =>
+      api<CatalogItem[]>(
+        `/spaces/${spaceId}/${resource}${includeArchived ? '?include_archived=true' : ''}`,
+      ),
+  })
+}
+
+function useRefreshCatalog(spaceId: string, resource: CatalogResource) {
+  const queryClient = useQueryClient()
+  return () => queryClient.invalidateQueries({ queryKey: ['space', spaceId, resource] })
+}
+
+export function useCreateCatalogItem(spaceId: string, resource: CatalogResource) {
+  const refresh = useRefreshCatalog(spaceId, resource)
+  return useMutation({
+    mutationFn: (body: Record<string, string | null>) =>
+      api<CatalogItem>(`/spaces/${spaceId}/${resource}`, { method: 'POST', body }),
+    onSuccess: refresh,
+  })
+}
+
+export function useUpdateCatalogItem(spaceId: string, resource: CatalogResource) {
+  const refresh = useRefreshCatalog(spaceId, resource)
+  return useMutation({
+    mutationFn: ({ item, changes }: { item: CatalogItem; changes: Record<string, unknown> }) =>
+      api<CatalogItem>(`/spaces/${spaceId}/${resource}/${item.id}`, {
+        method: 'PATCH',
+        body: { ...changes, version: item.version },
+      }),
+    onSettled: refresh,
+  })
+}
+
+export function useUpdateSpace(spaceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (body: { name: string; timezone: string; version: number }) =>
+      api<Space>(`/spaces/${spaceId}`, { method: 'PATCH', body }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: keys.space(spaceId) })
+      queryClient.invalidateQueries({ queryKey: keys.me })
+    },
+  })
+}

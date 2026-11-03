@@ -147,3 +147,12 @@ export const ChevronsIcon = () => (
     <path d="m8 9 4-4 4 4M8 15l4 4 4-4" />
   </Icon>
 )
+
+export const SettingsIcon = () => (
+  <Icon>
+    <path d="M4 6h9M18 6h2M4 12h3M11 12h9M4 18h11M19 18h1" />
+    <circle cx="15.5" cy="6" r="2" />
+    <circle cx="9" cy="12" r="2" />
+    <circle cx="17" cy="18" r="2" />
+  </Icon>
+)

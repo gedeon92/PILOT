@@ -112,3 +112,43 @@ class AuditLog(Base):
     before: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     after: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class _CatalogItem:
+    """Élément de structure d'un espace : jamais supprimé, seulement archivé,
+    pour que les projets qui y sont rattachés restent cohérents."""
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String(120))
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class Portfolio(_CatalogItem, Base):
+    __tablename__ = "portfolios"
+    __table_args__ = (UniqueConstraint("space_id", "name", name="uq_portfolios_space_name"),)
+
+    description: Mapped[str | None] = mapped_column(String(500))
+    color: Mapped[str] = mapped_column(String(20), default="orange")
+
+
+class Entity(_CatalogItem, Base):
+    """Filiale ou entité responsable d'un projet (distincte du portefeuille, CDC §5)."""
+
+    __tablename__ = "entities"
+    __table_args__ = (UniqueConstraint("space_id", "name", name="uq_entities_space_name"),)
+
+    country: Mapped[str | None] = mapped_column(String(80))
+
+
+class ProjectType(_CatalogItem, Base):
+    __tablename__ = "project_types"
+    __table_args__ = (UniqueConstraint("space_id", "name", name="uq_project_types_space_name"),)
+
+
+# Proposés à la création d'un espace ; le rôle Propriétaire peut les renommer ou les archiver.
+DEFAULT_PROJECT_TYPES = ("Événement", "Produit", "Mission", "Autre")
