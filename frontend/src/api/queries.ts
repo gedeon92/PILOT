@@ -367,3 +367,11 @@ export function useArchiveDocument(spaceId: string) {
 export function downloadUrl(spaceId: string, documentId: string) {
   return `/api/spaces/${spaceId}/documents/${documentId}/download`
 }
+
+/** Tâches ouvertes de tout l'espace (jalons de la timeline). */
+export function useSpaceTasks(spaceId: string) {
+  return useQuery({
+    queryKey: [...projectKeys.all(spaceId), 'open-tasks'],
+    queryFn: () => api<Task[]>(`/spaces/${spaceId}/tasks`),
+  })
+}

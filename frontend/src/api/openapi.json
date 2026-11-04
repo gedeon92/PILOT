@@ -1715,6 +1715,64 @@
         }
       }
     },
+    "/api/spaces/{space_id}/tasks": {
+      "get": {
+        "tags": [
+          "projets"
+        ],
+        "summary": "List Space Tasks",
+        "description": "Tâches de tout l'espace (timeline, rappels). Par défaut, seulement les tâches ouvertes.",
+        "operationId": "list_space_tasks_api_spaces__space_id__tasks_get",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          },
+          {
+            "name": "include_closed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Closed"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskOut"
+                  },
+                  "title": "Response List Space Tasks Api Spaces  Space Id  Tasks Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/spaces/{space_id}/projects/{project_id}/tasks": {
       "get": {
         "tags": [

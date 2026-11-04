@@ -308,3 +308,19 @@ def test_project_list_filters(make_client):
     assert [p["title"] for p in by_portfolio] == ["Salon Dakar"]
     assert [p["title"] for p in by_status] == ["Refonte du site"]
     assert [p["title"] for p in by_text] == ["Salon Dakar"]
+
+
+def test_space_task_list_shows_open_tasks_only(make_client):
+    owner, _, base, portfolio = _setup(make_client)
+    project = _create(owner, base, portfolio)
+    tasks_url = f"{base}/projects/{project['id']}/tasks"
+    open_task = owner.post(tasks_url, json={"title": "Ouverte", "due_date": "2026-11-20"}).json()
+    done = owner.post(tasks_url, json={"title": "Faite"}).json()
+    owner.patch(f"{base}/tasks/{done['id']}", json={"version": 1, "status": "done"})
+
+    listed = owner.get(f"{base}/tasks").json()
+    everything = owner.get(f"{base}/tasks", params={"include_closed": True}).json()
+
+    assert [t["id"] for t in listed] == [open_task["id"]]
+    assert listed[0]["project_id"] == project["id"]
+    assert len(everything) == 2

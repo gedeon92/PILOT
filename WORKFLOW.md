@@ -171,12 +171,13 @@ Demande du 3 nov. 2026 : suivre l'organisation des événements, les voir dans u
 
 ## Phase 6 — Timeline et calendrier (CDC §12)
 
-- [ ] Trois natures de dates : exacte, période, inconnue
-- [ ] Statut de calendrier distinct du statut opérationnel
-- [ ] Timeline : changement de famille, filtres, zoom, bouton « aujourd'hui », ouverture de fiche
+- [x] Trois natures de dates : exacte, période, inconnue (période en pointillés, projets sans date comptés à part)
+- [x] Statut de calendrier distinct du statut opérationnel (certitude de la date)
+- [x] Timeline « vivante » (4 nov. 2026, à la demande de l'utilisateur) : regroupement par portefeuille, dates sur les barres, échéance en losange (rouge et pulsée si dépassée), tâches en points, infobulle détaillée au survol ou au clavier, zoom mois / trimestre / semestre, navigation, ligne « Aujourd'hui », week-ends et semaines en vue mois, animation d'ouverture (désactivée si l'utilisateur réduit les animations)
+- [x] Page « Timeline » : filtres portefeuille, filiale, nature (projets / événements), projets terminés ; version compacte sur la vue d'ensemble
 - [ ] Liste des projets sans date
-- [ ] Fuseau horaire de l'espace
-- [ ] Annulation : retrait du calendrier actif, dossier et anciennes dates conservés
+- [x] Fuseau horaire de l'espace
+- [x] Annulation : retrait du calendrier actif, dossier et anciennes dates conservés
 
 **Terminé quand :** CAL01 et CAL02 passent.
 

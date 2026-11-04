@@ -566,6 +566,23 @@ def project_history(
 # ---------- Tâches ----------
 
 
+@router.get("/tasks")
+def list_space_tasks(
+    membership: CurrentMembership, db: DbSession, include_closed: bool = False
+) -> list[TaskOut]:
+    """Tâches de tout l'espace (timeline, rappels). Par défaut, seulement les tâches ouvertes."""
+    query = (
+        select(Task)
+        .options(selectinload(Task.assignee_member).selectinload(Membership.user))
+        .where(Task.space_id == membership.space_id)
+    )
+    if not include_closed:
+        query = query.where(Task.status.not_in(CLOSED_TASK_STATUSES))
+    tasks = db.scalars(query.order_by(Task.due_date.asc().nulls_last()).limit(2000)).all()
+    today = today_in(membership.space)
+    return [_task_out(task, today) for task in tasks]
+
+
 @router.get("/projects/{project_id}/tasks")
 def list_tasks(
     project_id: uuid.UUID, membership: CurrentMembership, db: DbSession

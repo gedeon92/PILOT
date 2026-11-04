@@ -424,6 +424,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/spaces/{space_id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Space Tasks
+         * @description Tâches de tout l'espace (timeline, rappels). Par défaut, seulement les tâches ouvertes.
+         */
+        get: operations["list_space_tasks_api_spaces__space_id__tasks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/spaces/{space_id}/projects/{project_id}/tasks": {
         parameters: {
             query?: never;
@@ -2364,6 +2384,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HistoryEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_space_tasks_api_spaces__space_id__tasks_get: {
+        parameters: {
+            query?: {
+                include_closed?: boolean;
+            };
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"][];
                 };
             };
             /** @description Validation Error */

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, useOutletContext } from 'react-router'
 import type { Project } from '../api/client'
-import { useProjects } from '../api/queries'
+import { useProjects, useSpaceTasks } from '../api/queries'
 import {
   BellIcon,
   BlockedIcon,
@@ -11,11 +11,10 @@ import {
   PlusIcon,
 } from '../components/icons'
 import { ProjectTable } from '../components/project-table'
+import { ProjectTimeline } from '../components/timeline'
 import { PageHeader, type Tone } from '../components/ui'
-import { addDays, formatDay, isClosedProject, PROJECT_STATUS, todayIso } from '../labels'
+import { addDays, formatDay, isClosedProject, todayIso } from '../labels'
 import type { SpaceContext } from './space-layout'
-
-const DAY_MS = 86_400_000
 
 function utc(iso: string) {
   return new Date(`${iso}T00:00:00Z`)
@@ -27,48 +26,6 @@ function formatUtc(iso: string, options: Intl.DateTimeFormatOptions) {
 
 function capitalize(text: string) {
   return text.charAt(0).toUpperCase() + text.slice(1)
-}
-
-/** Trois mois centrés sur le mois en cours. */
-function timelineWindow(today: string) {
-  const d = utc(today)
-  const year = d.getUTCFullYear()
-  const month = d.getUTCMonth()
-  const start = Date.UTC(year, month - 1, 1)
-  const end = Date.UTC(year, month + 2, 1)
-  const months = [0, 1, 2].map((i) => {
-    const from = Date.UTC(year, month - 1 + i, 1)
-    const to = Date.UTC(year, month + i, 1)
-    return {
-      label: capitalize(
-        new Intl.DateTimeFormat('fr-FR', { month: 'long', timeZone: 'UTC' }).format(from),
-      ),
-      days: (to - from) / DAY_MS,
-    }
-  })
-  const percent = (iso: string) => ((utc(iso).getTime() - start) / (end - start)) * 100
-  return { months, percent, start, end }
-}
-
-const TONE_DOT: Record<Tone, string> = {
-  info: '#2563EB',
-  danger: '#DC2626',
-  warn: '#CA8A04',
-  violet: '#7C3AED',
-  ok: '#16A34A',
-  neutral: '#71717A',
-}
-
-/** Position d'un projet sur la timeline : dates de début/fin, échéance ou période à préciser. */
-function span(p: Project): { from: string; to: string; window: boolean } | null {
-  if (p.start_date || p.end_date) {
-    const from = p.start_date ?? p.end_date!
-    return { from, to: p.end_date ?? p.due_date ?? from, window: false }
-  }
-  if (p.window_start && p.window_end)
-    return { from: p.window_start, to: p.window_end, window: true }
-  if (p.due_date) return { from: p.due_date, to: p.due_date, window: false }
-  return null
 }
 
 function StatCard({
@@ -194,6 +151,7 @@ function todos(open: Project[], today: string): Todo[] {
 export function DashboardPage() {
   const { space, me } = useOutletContext<SpaceContext>()
   const projects = useProjects(space.id)
+  const tasks = useSpaceTasks(space.id)
   const today = todayIso(space.timezone)
   const all = projects.data ?? []
   const open = all.filter((p) => !isClosedProject(p.status))
@@ -202,17 +160,9 @@ export function DashboardPage() {
   const week = Array.from({ length: 7 }, (_, i) => addDays(today, i))
   const dueByDay = week.map((day) => open.filter((p) => p.due_date === day).length)
   const dueThisWeek = dueByDay.reduce((a, b) => a + b, 0)
-  const timeline = timelineWindow(today)
-  const rows = open
-    .map((p) => ({ p, s: span(p) }))
-    .filter(
-      ({ s }) => s && utc(s.to).getTime() >= timeline.start && utc(s.from).getTime() < timeline.end,
-    )
-    .slice(0, 8)
   const toDo = todos(open, today)
   const firstName = me.user.display_name.split(/\s+/)[0]
   const base = `/espaces/${space.id}`
-  const clamp = (n: number) => Math.min(100, Math.max(0, n))
 
   return (
     <div className="page-content">
@@ -284,77 +234,26 @@ export function DashboardPage() {
         </StatCard>
       </div>
 
-      <div className="dashboard-row">
-        <section className="card-panel dashboard-row__main" aria-label="Timeline des projets">
-          <div className="card-panel__head">
-            <h2>Timeline des projets</h2>
-            <span className="chip chip--action">
-              Aujourd’hui · {formatUtc(today, { day: 'numeric', month: 'short' })}
-            </span>
-          </div>
-          <div className="timeline">
-            <div className="timeline__grid">
-              <span />
-              <div
-                className="timeline__months"
-                style={{ gridTemplateColumns: timeline.months.map((m) => `${m.days}fr`).join(' ') }}
-              >
-                {timeline.months.map((m) => (
-                  <span key={m.label}>{m.label}</span>
-                ))}
-              </div>
-            </div>
-            {rows.length === 0 ? (
-              <div className="timeline__track">
-                <div
-                  className="timeline__today"
-                  style={{ left: `${timeline.percent(today)}%` }}
-                  aria-hidden="true"
-                />
-                <p className="timeline__empty">Aucun projet daté sur cette période.</p>
-              </div>
-            ) : (
-              <div className="timeline__rows">
-                <div
-                  className="timeline__today timeline__today--rows"
-                  style={{
-                    left: `calc(140px + (100% - 140px) * ${timeline.percent(today) / 100})`,
-                  }}
-                  aria-hidden="true"
-                />
-                {rows.map(({ p, s }) => {
-                  const left = clamp(timeline.percent(s!.from))
-                  const right = clamp(timeline.percent(addDays(s!.to, 1)))
-                  const color = TONE_DOT[PROJECT_STATUS[p.status].tone]
-                  return (
-                    <div key={p.id} className="timeline__row">
-                      <Link className="timeline__label" to={`${base}/projets/${p.id}`}>
-                        {p.title}
-                      </Link>
-                      <div className="timeline__lane">
-                        <span
-                          className={
-                            s!.window ? 'timeline__bar timeline__bar--window' : 'timeline__bar'
-                          }
-                          style={{
-                            left: `${left}%`,
-                            width: `max(${right - left}%, 10px)`,
-                            ['--bar' as string]: color,
-                          }}
-                          title={`${p.title} · ${PROJECT_STATUS[p.status].label}${s!.window ? ' · période à préciser' : ''}`}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-          <p className="card-panel__foot">
-            Le calendrier montre les dates prévues. Il ne mesure pas l’avancement.
-          </p>
-        </section>
+      <section className="card-panel" aria-label="Timeline des projets">
+        <div className="card-panel__head">
+          <h2>Timeline des projets</h2>
+          <Link className="button button--small" to={`${base}/timeline`}>
+            Timeline complète
+          </Link>
+        </div>
+        <ProjectTimeline
+          projects={open}
+          tasks={tasks.data ?? []}
+          today={today}
+          spaceId={space.id}
+          compact
+        />
+        <p className="card-panel__foot">
+          Le calendrier montre les dates prévues. Il ne mesure pas l’avancement.
+        </p>
+      </section>
 
+      <div className="dashboard-row">
         <section className="card-panel dashboard-row__side" aria-label="À faire aujourd’hui">
           <div className="card-panel__head">
             <h2>À faire aujourd’hui</h2>

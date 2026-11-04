@@ -14,6 +14,7 @@ import { NewProjectPage, ProjectsPage } from './pages/projects'
 import { SettingsPage } from './pages/settings'
 import { SpaceLayout } from './pages/space-layout'
 import { StatusPage } from './pages/status'
+import { TimelinePage } from './pages/timeline'
 
 /** Affiche `children(me)` si quelqu'un est connecté, sinon renvoie vers la connexion. */
 function RequireAuth({ children }: { children: (me: Me) => React.ReactNode }) {
@@ -73,6 +74,7 @@ export default function App() {
         <Route index element={<DashboardPage />} />
         <Route path="projets" element={<ProjectsPage />} />
         <Route path="evenements" element={<EventsPage />} />
+        <Route path="timeline" element={<TimelinePage />} />
         <Route path="documents" element={<DocumentsPage />} />
         <Route path="projets/nouveau" element={<NewProjectPage />} />
         <Route path="projets/:projectId" element={<ProjectDetailPage />} />
