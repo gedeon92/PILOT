@@ -230,12 +230,13 @@ def compute_alerts(db: Session, space: Space, today: date) -> int:
 
     if not rows:
         return 0
-    result = db.execute(
+    created = db.execute(
         insert(Alert)
         .values(rows)
         .on_conflict_do_nothing(constraint="uq_alerts_user_rule_target_day")
-    )
-    return result.rowcount or 0
+        .returning(Alert.id)
+    ).all()
+    return len(created)
 
 
 def preference_for(db: Session, user_id: uuid.UUID, space_id: uuid.UUID) -> AlertPreference:
