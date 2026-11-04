@@ -156,3 +156,10 @@ export const SettingsIcon = () => (
     <circle cx="17" cy="18" r="2" />
   </Icon>
 )
+
+export const SearchIcon = () => (
+  <Icon size={18}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="m20 20-3.5-3.5" />
+  </Icon>
+)

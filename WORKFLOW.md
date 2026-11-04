@@ -158,16 +158,18 @@ Demande du 3 nov. 2026 : suivre l'organisation des événements, les voir dans u
 
 ## Phase 5 — Tableau de bord, recherche et filtres (CDC §7, §13)
 
-- [ ] Tableau de bord : sujets d'attention (retard, blocage, risque, échéance proche), prochaines échéances, projets sans responsable ou sans prochaine action
-- [ ] Règle de priorité écrite et affichable
-- [ ] Chaque indicateur ouvre la liste filtrée correspondante
-- [ ] Cartes projet : titre, entité, statut, responsable, prochaine étape
-- [ ] Recherche globale + raccourci clavier
-- [ ] Filtres : portefeuille, entité, pays, statut, période
-- [ ] Identité visuelle : Nunito + Manrope, bleu roi et jaune ; états chargement, vide, erreur, accès refusé, conflit
-- [ ] Responsive (ordinateur, tablette, téléphone) et accessibilité clavier
+- [x] Tableau de bord : retards, blocages, vigilance élevée, échéances à 7 jours, décisions en attente, suivi J+15, projets sans responsable ou sans prochaine étape ; tient dans la hauteur de l'écran sur ordinateur (demande du 4 nov. 2026)
+- [x] Règle de priorité écrite et affichable (« Comment c'est calculé ? »), règles partagées dans `attention.ts`
+- [x] Chaque carte de chiffre ouvre la liste filtrée correspondante (`/projets?attention=…`)
+- [x] Liste et timeline des projets : titre, portefeuille, filiale, statut, responsable, prochaine étape, échéance
+- [x] Recherche globale ⌘K / Ctrl+K (projets, documents, pages ; sans tenir compte des accents ; clavier : flèches, Entrée, Échap)
+- [x] Filtres : recherche, signal d'attention, portefeuille, filiale, pays, statut, période ; gardés dans l'adresse (partage, favoris)
+- [x] Identité visuelle : remplacée par la charte D7 (Plus Jakarta Sans, orange) ; états chargement, vide, erreur, accès refusé, conflit présents sur les écrans
+- [x] Responsive (menu replié sur téléphone, vue d'ensemble défilante sur petit écran) et accessibilité clavier (lien « Aller au contenu », focus visible, infobulles au clavier)
 
 **Terminé quand :** on passe d'un signal d'attention à la fiche, à la source, puis à la prochaine action en quelques clics, sur ordinateur comme sur téléphone.
+
+✅ **Phase 5 terminée le 4 nov. 2026** (tests : recherche ⌘K, filtres lus dans l'adresse, cartes vers listes filtrées).
 
 ## Phase 6 — Timeline et calendrier (CDC §12)
 

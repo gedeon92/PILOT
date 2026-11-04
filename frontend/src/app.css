@@ -2605,3 +2605,190 @@ textarea:focus-visible {
 .dashboard-stack .tl--compact {
   --label-w: 300px;
 }
+
+/* ---------- Filtres (phase 5) ---------- */
+.filters__date {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-ink-soft);
+}
+.filters__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin-top: -6px;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+.filters__summary strong {
+  color: var(--color-ink);
+}
+
+/* Cartes cliquables et règle de calcul (phase 5). */
+.stat-card--link {
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.stat-card--link:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: 0 4px 14px rgb(24 24 27 / 0.06);
+}
+.stat-card__list strong {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+.rules {
+  font-size: 13px;
+  color: var(--color-ink-soft);
+}
+.rules summary {
+  cursor: pointer;
+  width: max-content;
+  color: var(--color-muted);
+}
+.rules ul {
+  margin: 8px 0;
+  padding-left: 18px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 4px 24px;
+}
+.rules p {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+/* ---------- Recherche globale ⌘K ---------- */
+.search-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-panel);
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.search-button__label {
+  flex-grow: 1;
+  text-align: left;
+}
+kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: #fafafa;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: #52525b;
+}
+.palette-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 12vh 16px 16px;
+  background: rgb(24 24 27 / 0.35);
+}
+.palette {
+  width: 100%;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: var(--color-panel);
+  box-shadow: 0 24px 60px rgb(24 24 27 / 0.25);
+  overflow: hidden;
+  animation: tl-fade 0.12s ease-out both;
+}
+.palette__input {
+  min-height: 56px;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  padding: 0 18px;
+  font-size: 16px;
+}
+.palette__input:focus-visible {
+  outline: none;
+}
+.palette__results {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+.palette__group {
+  padding: 10px 12px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+.palette__item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.palette__item--on {
+  background: var(--color-action-tint);
+}
+.palette__title {
+  font-size: 14px;
+  font-weight: 600;
+}
+.palette__detail {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.palette__empty {
+  padding: 18px 12px;
+  font-size: 14px;
+  color: var(--color-muted);
+}
+.palette__help {
+  display: flex;
+  gap: 16px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--color-border);
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+/* ---------- Accessibilité ---------- */
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 300;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--color-ink);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 12px;
+}
+.app__main:focus {
+  outline: none;
+}

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate, useOutletContext } from 'react-router'
+import { Link, useNavigate, useOutletContext, useSearchParams } from 'react-router'
 import { errorMessage } from '../api/client'
 import { useCatalog, useCreateProject, useMembers, useProjects } from '../api/queries'
 import { FolderIcon, PlusIcon } from '../components/icons'
@@ -13,18 +13,63 @@ import {
   todayIso,
   type ProjectStatus,
 } from '../labels'
+import { ATTENTION, inPeriod, matchesAttention, type Attention } from '../attention'
 import { personPayload } from '../person'
 import type { SpaceContext } from './space-layout'
 
+/** Filtres gardés dans l'adresse : une vue filtrée peut être partagée ou mise en favori. */
+const FILTER_KEYS = [
+  'q',
+  'portefeuille',
+  'filiale',
+  'pays',
+  'statut',
+  'attention',
+  'du',
+  'au',
+] as const
+type FilterKey = (typeof FILTER_KEYS)[number]
+
 export function ProjectsPage() {
   const { space } = useOutletContext<SpaceContext>()
-  const [q, setQ] = useState('')
-  const [portfolio, setPortfolio] = useState('')
-  const [status, setStatus] = useState('')
+  const [params, setParams] = useSearchParams()
+  const get = (key: FilterKey) => params.get(key) ?? ''
+  const set = (key: FilterKey, value: string) =>
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        if (value) next.set(key, value)
+        else next.delete(key)
+        return next
+      },
+      { replace: true },
+    )
   const portfolios = useCatalog(space.id, 'portfolios')
-  const projects = useProjects(space.id, { q, portfolio_id: portfolio, status })
+  const entities = useCatalog(space.id, 'entities')
+  const projects = useProjects(space.id)
   const canWrite = space.role !== 'reader'
-  const filtered = Boolean(q || portfolio || status)
+  const today = todayIso(space.timezone)
+
+  const all = projects.data ?? []
+  const countries = [
+    ...new Set(all.map((p) => p.country).filter((c): c is string => Boolean(c))),
+  ].sort()
+  const q = get('q').trim().toLowerCase()
+  const attention = get('attention') as Attention | ''
+  const filtered = all.filter(
+    (p) =>
+      (!q ||
+        p.title.toLowerCase().includes(q) ||
+        (p.next_step ?? '').toLowerCase().includes(q) ||
+        (p.owner.name ?? '').toLowerCase().includes(q)) &&
+      (!get('portefeuille') || p.portfolio.id === get('portefeuille')) &&
+      (!get('filiale') || p.entity?.id === get('filiale')) &&
+      (!get('pays') || p.country === get('pays')) &&
+      (!get('statut') || p.status === get('statut')) &&
+      (!attention || matchesAttention(p, attention, today)) &&
+      (!(get('du') || get('au')) || inPeriod(p, get('du'), get('au'))),
+  )
+  const active = FILTER_KEYS.filter((k) => get(k))
 
   return (
     <div className="page-content">
@@ -40,38 +85,94 @@ export function ProjectsPage() {
         }
       />
 
-      <div className="filters" role="search">
+      <div className="filters" role="search" aria-label="Filtrer les projets">
         <label className="filters__search">
           <span className="visually-hidden">Rechercher un projet</span>
           <input
             type="search"
-            placeholder="Rechercher un projet…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
+            placeholder="Rechercher : titre, prochaine étape, responsable…"
+            value={get('q')}
+            onChange={(e) => set('q', e.target.value)}
           />
         </label>
-        <label>
-          <span className="visually-hidden">Portefeuille</span>
-          <select value={portfolio} onChange={(e) => setPortfolio(e.target.value)}>
-            <option value="">Tous les portefeuilles</option>
-            {portfolios.data?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+        <select
+          aria-label="Attention"
+          value={attention}
+          onChange={(e) => set('attention', e.target.value)}
+        >
+          <option value="">Tous les signaux</option>
+          {(Object.keys(ATTENTION) as Attention[]).map((a) => (
+            <option key={a} value={a}>
+              {ATTENTION[a].label}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Portefeuille"
+          value={get('portefeuille')}
+          onChange={(e) => set('portefeuille', e.target.value)}
+        >
+          <option value="">Tous les portefeuilles</option>
+          {portfolios.data?.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Filiale"
+          value={get('filiale')}
+          onChange={(e) => set('filiale', e.target.value)}
+        >
+          <option value="">Toutes les filiales</option>
+          {entities.data?.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.name}
+            </option>
+          ))}
+        </select>
+        <select aria-label="Pays" value={get('pays')} onChange={(e) => set('pays', e.target.value)}>
+          <option value="">Tous les pays</option>
+          {countries.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Statut"
+          value={get('statut')}
+          onChange={(e) => set('statut', e.target.value)}
+        >
+          <option value="">Tous les statuts</option>
+          {(Object.keys(PROJECT_STATUS) as ProjectStatus[]).map((s) => (
+            <option key={s} value={s}>
+              {PROJECT_STATUS[s].label}
+            </option>
+          ))}
+        </select>
+        <label className="filters__date">
+          Du
+          <input type="date" value={get('du')} onChange={(e) => set('du', e.target.value)} />
         </label>
-        <label>
-          <span className="visually-hidden">Statut</span>
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">Tous les statuts</option>
-            {(Object.keys(PROJECT_STATUS) as ProjectStatus[]).map((s) => (
-              <option key={s} value={s}>
-                {PROJECT_STATUS[s].label}
-              </option>
-            ))}
-          </select>
+        <label className="filters__date">
+          au
+          <input type="date" value={get('au')} onChange={(e) => set('au', e.target.value)} />
         </label>
+      </div>
+
+      <div className="filters__summary" aria-live="polite">
+        <strong>{filtered.length}</strong>&nbsp;projet(s)
+        {attention && ` · ${ATTENTION[attention].label} : ${ATTENTION[attention].rule}`}
+        {active.length > 0 && (
+          <button
+            type="button"
+            className="button button--small button--ghost"
+            onClick={() => setParams({}, { replace: true })}
+          >
+            Effacer les filtres
+          </button>
+        )}
       </div>
 
       <section className="card-panel card-panel--flush" aria-label="Liste des projets">
@@ -80,16 +181,16 @@ export function ProjectsPage() {
           <p className="muted table-loading">Chargement…</p>
         ) : (
           <ProjectTable
-            projects={projects.data ?? []}
+            projects={filtered}
             spaceId={space.id}
-            today={todayIso(space.timezone)}
+            today={today}
             empty={
               <div className="table-empty">
                 <span className="icon-tile icon-tile--action">
                   <FolderIcon />
                 </span>
                 <span>
-                  {filtered ? (
+                  {active.length ? (
                     'Aucun projet ne correspond à ces filtres.'
                   ) : (
                     <>

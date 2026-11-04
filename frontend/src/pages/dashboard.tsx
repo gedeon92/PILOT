@@ -14,6 +14,7 @@ import { ProjectTable } from '../components/project-table'
 import { ProjectTimeline } from '../components/timeline'
 import { PageHeader, type Tone } from '../components/ui'
 import { addDays, formatDay, isClosedProject, todayIso } from '../labels'
+import { ATTENTION, matchesAttention } from '../attention'
 import { useFitRows } from '../fit'
 import type { SpaceContext } from './space-layout'
 
@@ -44,8 +45,8 @@ function StatCard({
   to?: string
   children: ReactNode
 }) {
-  return (
-    <section className="stat-card" aria-label={title}>
+  const content = (
+    <>
       <div className="stat-card__head">
         <span className={`icon-tile icon-tile--${tone}`}>{icon}</span>
         <h2 className="stat-card__title">{title}</h2>
@@ -54,29 +55,31 @@ function StatCard({
         <span className="stat-card__value">{value}</span>
         {children}
       </div>
-      {to && value > 0 && (
-        <Link className="stat-card__link" to={to}>
-          Voir la liste
-        </Link>
-      )}
-    </section>
+    </>
+  )
+  if (!to)
+    return (
+      <section className="stat-card" aria-label={title}>
+        {content}
+      </section>
+    )
+  return (
+    <Link
+      className="stat-card stat-card--link"
+      to={to}
+      aria-label={`${title} : ${value}, voir la liste`}
+    >
+      {content}
+    </Link>
   )
 }
 
-function NameList({
-  projects,
-  spaceId,
-  detail,
-}: {
-  projects: Project[]
-  spaceId: string
-  detail: (p: Project) => string
-}) {
+function NameList({ projects, detail }: { projects: Project[]; detail: (p: Project) => string }) {
   return (
     <ul className="stat-card__list">
       {projects.slice(0, 2).map((p) => (
         <li key={p.id}>
-          <Link to={`/espaces/${spaceId}/projets/${p.id}`}>{p.title}</Link>
+          <strong>{p.title}</strong>
           <span> · {detail(p)}</span>
         </li>
       ))}
@@ -138,6 +141,13 @@ function todos(open: Project[], today: string): Todo[] {
       })
     if (p.decision_needed)
       items.push({ project: p, label: 'Décision', tone: 'warn', text: p.decision_needed })
+    if (p.risk_level === 'high')
+      items.push({
+        project: p,
+        label: 'Vigilance',
+        tone: 'danger',
+        text: p.risk_note ?? 'Vigilance élevée',
+      })
     if (!p.owner.name || !p.next_step)
       items.push({
         project: p,
@@ -156,8 +166,8 @@ export function DashboardPage() {
   const today = todayIso(space.timezone)
   const all = projects.data ?? []
   const open = all.filter((p) => !isClosedProject(p.status))
-  const late = open.filter((p) => (p.due_date !== null && p.due_date < today) || p.late_tasks > 0)
-  const blocked = open.filter((p) => p.status === 'blocked')
+  const late = open.filter((p) => matchesAttention(p, 'retard', today))
+  const blocked = open.filter((p) => matchesAttention(p, 'bloques', today))
   const week = Array.from({ length: 7 }, (_, i) => addDays(today, i))
   const dueByDay = week.map((day) => open.filter((p) => p.due_date === day).length)
   const dueThisWeek = dueByDay.reduce((a, b) => a + b, 0)
@@ -195,11 +205,16 @@ export function DashboardPage() {
       />
 
       <div className="stat-grid">
-        <StatCard icon={<ClockIcon />} tone="danger" title="En retard" value={late.length}>
+        <StatCard
+          icon={<ClockIcon />}
+          tone="danger"
+          title="En retard"
+          value={late.length}
+          to={`${base}/projets?attention=retard`}
+        >
           {late.length ? (
             <NameList
               projects={late}
-              spaceId={space.id}
               detail={(p) =>
                 p.due_date && p.due_date < today ? 'échéance dépassée' : `${p.late_tasks} tâche(s)`
               }
@@ -213,14 +228,10 @@ export function DashboardPage() {
           tone="action"
           title="Bloqués"
           value={blocked.length}
-          to={`${base}/projets`}
+          to={`${base}/projets?attention=bloques`}
         >
           {blocked.length ? (
-            <NameList
-              projects={blocked}
-              spaceId={space.id}
-              detail={(p) => p.situation ?? 'à débloquer'}
-            />
+            <NameList projects={blocked} detail={(p) => p.situation ?? 'à débloquer'} />
           ) : (
             <span className="stat-card__note">Aucun projet bloqué</span>
           )}
@@ -229,6 +240,7 @@ export function DashboardPage() {
           icon={<CalendarIcon />}
           tone="info"
           title="Échéances · 7 jours"
+          to={`${base}/projets?attention=semaine`}
           value={dueThisWeek}
         >
           <div
@@ -365,6 +377,38 @@ export function DashboardPage() {
               </ul>
             </>
           )}
+          <details className="rules">
+            <summary>Comment c’est calculé ?</summary>
+            <ul>
+              <li>
+                <strong>Jour J / En retard</strong> : échéance aujourd’hui ou dépassée (projet
+                ouvert).
+              </li>
+              <li>
+                <strong>Bloqué</strong> : {ATTENTION.bloques.rule}
+              </li>
+              <li>
+                <strong>Tâches</strong> : au moins une tâche ouverte dont l’échéance est passée.
+              </li>
+              <li>
+                <strong>Décision</strong> : une décision attendue est renseignée sur le projet.
+              </li>
+              <li>
+                <strong>Vigilance</strong> : vigilance « Élevé » sur le projet.
+              </li>
+              <li>
+                <strong>Suivi J+15 / Bilan</strong> : événement passé, dans les 15 jours qui
+                suivent, puis au-delà sans bilan.
+              </li>
+              <li>
+                <strong>À compléter</strong> : {ATTENTION['a-completer'].rule}
+              </li>
+            </ul>
+            <p>
+              Ordre : rouge (urgent), puis orange (à surveiller), puis gris. Les dates s’entendent
+              dans le fuseau de l’espace. Un signal invite à vérifier, il ne juge pas le projet.
+            </p>
+          </details>
         </section>
       </div>
     </div>

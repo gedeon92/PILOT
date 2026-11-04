@@ -16,10 +16,12 @@ import {
   LogoutIcon,
   MembersIcon,
   PlusIcon,
+  SearchIcon,
   SettingsIcon,
   TasksIcon,
   TimelineIcon,
 } from '../components/icons'
+import { CommandPalette } from '../components/command-palette'
 import { Alert, FullPageLoader } from '../components/ui'
 
 export type SpaceContext = { space: Space; me: Me }
@@ -47,7 +49,7 @@ function SoonLink({ icon, label }: { icon: ReactNode; label: string }) {
   )
 }
 
-function Sidebar({ me, space }: SpaceContext) {
+function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void }) {
   const navigate = useNavigate()
   const logout = useLogout()
   const members = useMembers(space.id)
@@ -78,6 +80,12 @@ function Sidebar({ me, space }: SpaceContext) {
       </div>
 
       <div className="sidebar__content" id="sidebar-content">
+        <button type="button" className="search-button" onClick={onSearch}>
+          <SearchIcon />
+          <span className="search-button__label">Rechercher</span>
+          <kbd>{navigator.platform.toLowerCase().includes('mac') ? '⌘K' : 'Ctrl K'}</kbd>
+        </button>
+
         <label className="space-switcher">
           <BuildingIcon />
           <span className="visually-hidden">Changer d’espace</span>
@@ -205,6 +213,7 @@ function Sidebar({ me, space }: SpaceContext) {
 export function SpaceLayout({ me }: { me: Me }) {
   const { spaceId = '' } = useParams()
   const space = useSpace(spaceId)
+  const [searching, setSearching] = useState(false)
 
   if (space.isPending) return <FullPageLoader />
   if (space.isError) {
@@ -223,10 +232,15 @@ export function SpaceLayout({ me }: { me: Me }) {
   const context: SpaceContext = { space: space.data, me }
   return (
     <div className="app">
-      <Sidebar {...context} />
-      <main className="app__main">
+      {/* Accès direct au contenu pour la navigation au clavier ou au lecteur d'écran. */}
+      <a className="skip-link" href="#contenu">
+        Aller au contenu
+      </a>
+      <Sidebar {...context} onSearch={() => setSearching(true)} />
+      <main className="app__main" id="contenu" tabIndex={-1}>
         <Outlet context={context} />
       </main>
+      <CommandPalette spaceId={space.data.id} open={searching} setOpen={setSearching} />
     </div>
   )
 }
