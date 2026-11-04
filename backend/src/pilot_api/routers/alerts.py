@@ -156,7 +156,13 @@ def send_test_email(
         )
     except MailError as error:
         return TestEmailResult(sent=False, message=str(error))
-    return TestEmailResult(sent=True, message=f"E-mail de test envoyé à {user.email}.")
+    return TestEmailResult(
+        sent=True,
+        message=(
+            f"E-mail de test transmis à Brevo pour {user.email}. S'il n'arrive pas, "
+            "consultez les journaux Brevo (Transactionnel > Logs)."
+        ),
+    )
 
 
 @cron_router.post("/daily")
