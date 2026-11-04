@@ -87,6 +87,7 @@ Limites connues des offres gratuites, acceptées pour la phase de test :
 - [x] Journal des actions sensibles (inscription, espace, invitations, rôles, retraits)
 - [x] Écrans : connexion, inscription, création d'espace, vue d'ensemble, accès et membres, acceptation d'invitation
 - [x] Tests : 29 côté API (base PostgreSQL réelle, schéma temporaire), 7 côté interface
+- [x] « Mon compte » (ajout du 4 nov. 2026) : nom affiché, mot de passe (ferme les autres sessions), changement d'adresse e-mail confirmé par un lien envoyé à la nouvelle adresse (Brevo), valable 24 h et seulement pour le compte demandeur
 
 **Terminé quand :** ACC01, ACC02, ACC03 passent, et un utilisateur d'un espace A ne peut lire aucune donnée de l'espace B, même en forgeant la requête.
 

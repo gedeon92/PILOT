@@ -207,6 +207,10 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
             </span>
           </div>
           <div className="user-card__actions">
+            <NavLink to={`${base}/compte`} className={linkClass}>
+              <SettingsIcon />
+              <span className="nav__label">Mon compte</span>
+            </NavLink>
             <button
               type="button"
               className="nav__link"

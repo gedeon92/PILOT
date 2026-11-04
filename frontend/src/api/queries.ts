@@ -443,3 +443,42 @@ export function useSendTestEmail(spaceId: string) {
       }),
   })
 }
+
+// ---------- Mon compte ----------
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (body: { display_name: string }) => api<Me>('/auth/me', { method: 'PATCH', body }),
+    onSuccess: (me) => queryClient.setQueryData(keys.me, me),
+  })
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (body: { current_password: string; new_password: string }) =>
+      api<void>('/auth/password', { method: 'POST', body }),
+  })
+}
+
+export function useRequestEmailChange() {
+  return useMutation({
+    mutationFn: (body: { new_email: string; password: string }) =>
+      api<{ sent_to: string; expires_hours: number }>('/auth/email-change', {
+        method: 'POST',
+        body,
+      }),
+  })
+}
+
+export function useConfirmEmailChange() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (token: string) =>
+      api<Me>('/auth/email-change/confirm', { method: 'POST', body: { token } }),
+    onSuccess: (me) => {
+      queryClient.setQueryData(keys.me, me)
+      queryClient.invalidateQueries({ queryKey: ['space'] })
+    },
+  })
+}

@@ -3,6 +3,7 @@ import type { Me } from './api/client'
 import { useMe } from './api/queries'
 import { Alert, AuthCard, FullPageLoader } from './components/ui'
 import { LoginPage, RegisterPage } from './pages/auth'
+import { AccountPage, ConfirmEmailPage } from './pages/account'
 import { AlertsPage } from './pages/alerts'
 import { CreateSpacePage } from './pages/create-space'
 import { DashboardPage } from './pages/dashboard'
@@ -62,6 +63,10 @@ export default function App() {
       </Route>
       <Route path="/invitation/:token" element={<InvitationPage />} />
       <Route path="/etat" element={<StatusPage />} />
+      <Route
+        path="/compte/confirmer-email"
+        element={<RequireAuth>{() => <ConfirmEmailPage />}</RequireAuth>}
+      />
 
       <Route path="/" element={<RequireAuth>{(me) => <Home me={me} />}</RequireAuth>} />
       <Route
@@ -78,6 +83,7 @@ export default function App() {
         <Route path="timeline" element={<TimelinePage />} />
         <Route path="documents" element={<DocumentsPage />} />
         <Route path="alertes" element={<AlertsPage />} />
+        <Route path="compte" element={<AccountPage />} />
         <Route path="projets/nouveau" element={<NewProjectPage />} />
         <Route path="projets/:projectId" element={<ProjectDetailPage />} />
         <Route path="membres" element={<MembersPage />} />

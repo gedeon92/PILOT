@@ -1,3 +1,4 @@
+import html
 from datetime import timedelta
 
 from fastapi import APIRouter, HTTPException, Request, Response
@@ -8,8 +9,28 @@ from sqlalchemy.orm import Session
 from pilot_api.audit import record
 from pilot_api.config import get_settings
 from pilot_api.deps import SESSION_COOKIE, CurrentUser, DbSession
-from pilot_api.models import AuthSession, Membership, MembershipStatus, Space, User, utcnow
-from pilot_api.schemas import LoginIn, MeOut, RegisterIn, SpaceSummary, UserOut
+from pilot_api.mailer import MailError, mail_configured, send_email
+from pilot_api.models import (
+    AuthSession,
+    EmailChange,
+    Membership,
+    MembershipStatus,
+    Space,
+    User,
+    utcnow,
+)
+from pilot_api.schemas import (
+    EmailChangeRequest,
+    EmailChangeSent,
+    InvitationToken,
+    LoginIn,
+    MeOut,
+    PasswordChange,
+    ProfileUpdate,
+    RegisterIn,
+    SpaceSummary,
+    UserOut,
+)
 from pilot_api.security import (
     hash_password,
     hash_token,
@@ -98,4 +119,151 @@ def logout(request: Request, response: Response, db: DbSession) -> None:
 
 @router.get("/me")
 def me(user: CurrentUser, db: DbSession) -> MeOut:
+    return build_me(db, user)
+
+
+# ---------- Mon compte ----------
+
+EMAIL_CHANGE_HOURS = 24
+
+
+def _check_password(user: User, password: str) -> None:
+    if not verify_password(user.password_hash, password):
+        raise HTTPException(400, "Mot de passe actuel incorrect.")
+
+
+@router.patch("/me")
+def update_profile(body: ProfileUpdate, user: CurrentUser, db: DbSession) -> MeOut:
+    if body.display_name != user.display_name:
+        record(
+            db,
+            action="user.renamed",
+            actor_id=user.id,
+            target_type="user",
+            target_id=user.id,
+            before={"display_name": user.display_name},
+            after={"display_name": body.display_name},
+        )
+        user.display_name = body.display_name
+        db.commit()
+    return build_me(db, user)
+
+
+@router.post("/password", status_code=204)
+def change_password(
+    body: PasswordChange, request: Request, user: CurrentUser, db: DbSession
+) -> None:
+    _check_password(user, body.current_password)
+    user.password_hash = hash_password(body.new_password)
+    # Par sécurité, les autres sessions ouvertes (autres appareils) sont fermées.
+    current = hash_token(request.cookies.get(SESSION_COOKIE, ""))
+    db.execute(
+        delete(AuthSession).where(AuthSession.user_id == user.id, AuthSession.token_hash != current)
+    )
+    record(
+        db, action="user.password_changed", actor_id=user.id, target_type="user", target_id=user.id
+    )
+    db.commit()
+
+
+@router.post("/email-change")
+def request_email_change(
+    body: EmailChangeRequest, user: CurrentUser, db: DbSession
+) -> EmailChangeSent:
+    _check_password(user, body.password)
+    new_email = normalize_email(body.new_email)
+    if new_email == user.email:
+        raise HTTPException(400, "C'est déjà l'adresse de votre compte.")
+    if db.scalar(select(User.id).where(User.email == new_email)) is not None:
+        raise HTTPException(409, "Un compte existe déjà avec cette adresse e-mail.")
+    if not mail_configured():
+        raise HTTPException(
+            503, "L'envoi d'e-mails n'est pas disponible : impossible de confirmer l'adresse."
+        )
+
+    token, token_hash = new_token()
+    db.execute(delete(EmailChange).where(EmailChange.user_id == user.id))
+    db.add(
+        EmailChange(
+            user_id=user.id,
+            new_email=new_email,
+            token_hash=token_hash,
+            expires_at=utcnow() + timedelta(hours=EMAIL_CHANGE_HOURS),
+        )
+    )
+    link = f"{get_settings().app_base_url.rstrip('/')}/compte/confirmer-email?jeton={token}"
+    text = (
+        f"Bonjour {user.display_name},\n\n"
+        f"Pour utiliser {new_email} comme adresse de votre compte PILOT, ouvrez ce lien "
+        f"(valable {EMAIL_CHANGE_HOURS} heures) :\n{link}\n\n"
+        "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail."
+    )
+    page = (
+        "<div style='font-family:Arial,sans-serif;color:#18181B;max-width:560px'>"
+        f"<p>Bonjour {html.escape(user.display_name)},</p>"
+        f"<p>Pour utiliser <strong>{html.escape(new_email)}</strong> comme adresse de votre compte "
+        f"PILOT, confirmez-la (lien valable {EMAIL_CHANGE_HOURS} heures) :</p>"
+        f"<p><a href='{html.escape(link)}' style='background:#D0450A;color:#fff;padding:10px 18px;"
+        "border-radius:10px;text-decoration:none;font-weight:700'>Confirmer mon adresse</a></p>"
+        "<p style='color:#6B7280;font-size:12px'>Si vous n'êtes pas à l'origine de cette demande, "
+        "ignorez cet e-mail : votre adresse actuelle reste inchangée.</p></div>"
+    )
+    try:
+        send_email(
+            to_email=new_email,
+            to_name=user.display_name,
+            subject="PILOT · Confirmez votre nouvelle adresse e-mail",
+            html=page,
+            text=text,
+        )
+    except MailError as error:
+        db.rollback()
+        raise HTTPException(502, str(error)) from None
+    record(
+        db,
+        action="user.email_change_requested",
+        actor_id=user.id,
+        target_type="user",
+        target_id=user.id,
+        after={"new_email": new_email},
+    )
+    db.commit()
+    return EmailChangeSent(sent_to=new_email, expires_hours=EMAIL_CHANGE_HOURS)
+
+
+@router.post("/email-change/confirm")
+def confirm_email_change(body: InvitationToken, user: CurrentUser, db: DbSession) -> MeOut:
+    change = db.scalar(select(EmailChange).where(EmailChange.token_hash == hash_token(body.token)))
+    # Le lien ne vaut que pour le compte qui a fait la demande.
+    if change is None or change.user_id != user.id:
+        raise HTTPException(404, "Lien de confirmation introuvable ou déjà utilisé.")
+    if change.expires_at <= utcnow():
+        raise HTTPException(410, "Ce lien a expiré. Refaites la demande depuis « Mon compte ».")
+    if db.scalar(select(User.id).where(User.email == change.new_email)) is not None:
+        raise HTTPException(409, "Un compte existe déjà avec cette adresse e-mail.")
+
+    old_email = user.email
+    memberships = db.scalars(select(Membership).where(Membership.user_id == user.id)).all()
+    for membership in memberships:
+        # Une invitation en attente pour la nouvelle adresse dans le même espace devient sans objet.
+        db.execute(
+            delete(Membership).where(
+                Membership.space_id == membership.space_id,
+                Membership.email == change.new_email,
+                Membership.user_id.is_(None),
+            )
+        )
+        membership.email = change.new_email
+    user.email = change.new_email
+    db.delete(change)
+    record(
+        db,
+        action="user.email_changed",
+        actor_id=user.id,
+        target_type="user",
+        target_id=user.id,
+        before={"email": old_email},
+        after={"email": change.new_email},
+    )
+    db.commit()
     return build_me(db, user)

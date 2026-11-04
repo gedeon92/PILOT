@@ -437,3 +437,19 @@ class AlertPreference(Base):
     digest_hour: Mapped[int] = mapped_column(Integer, default=7)
     # Dernier récapitulatif envoyé (jour de l'espace) : un seul envoi par jour.
     last_digest_date: Mapped[date | None] = mapped_column(Date)
+
+
+class EmailChange(Base):
+    """Demande de changement d'adresse : appliquée seulement quand le lien envoyé
+    à la nouvelle adresse est ouvert (preuve que la boîte appartient à la personne)."""
+
+    __tablename__ = "email_changes"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    new_email: Mapped[str] = mapped_column(String(320))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

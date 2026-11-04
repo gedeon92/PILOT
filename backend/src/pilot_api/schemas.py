@@ -444,3 +444,25 @@ class AlertPreferenceIn(BaseModel):
 class TestEmailResult(BaseModel):
     sent: bool
     message: str
+
+
+# ---------- Mon compte ----------
+
+
+class ProfileUpdate(BaseModel):
+    display_name: Name
+
+
+class PasswordChange(BaseModel):
+    current_password: Annotated[str, StringConstraints(min_length=1, max_length=128)]
+    new_password: Password
+
+
+class EmailChangeRequest(BaseModel):
+    new_email: EmailStr
+    password: Annotated[str, StringConstraints(min_length=1, max_length=128)]
+
+
+class EmailChangeSent(BaseModel):
+    sent_to: str
+    expires_hours: int
