@@ -176,7 +176,7 @@ export function DashboardPage() {
   const [view, setView] = useState<'timeline' | 'list'>('timeline')
   // La page tient dans l'écran : la timeline affiche autant de lignes que la hauteur le permet.
   const stackRef = useRef<HTMLDivElement>(null)
-  const fitRows = useFitRows(stackRef, { rowHeight: 38, reserved: 345, fallback: 12 })
+  const fitRows = useFitRows(stackRef, { rowHeight: 50, reserved: 360, fallback: 12 })
   const [allTodos, setAllTodos] = useState(false)
   const TODO_STRIP = 3
 

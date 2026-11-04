@@ -2557,3 +2557,51 @@ textarea:focus-visible {
     overflow: visible;
   }
 }
+
+/* Timeline de la vue d’ensemble agrandie (4 nov. 2026). */
+.dashboard-stack .tl--compact .tl__row,
+.page-content--fit .dashboard-stack .tl--compact .tl__row {
+  min-height: 50px;
+}
+.dashboard-stack .tl--compact .tl__lane {
+  height: 34px;
+}
+.dashboard-stack .tl--compact .tl__title {
+  font-size: 15px;
+}
+.dashboard-stack .tl--compact .tl__status {
+  font-size: 12px;
+}
+.dashboard-stack .tl--compact .tl__avatar {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+.dashboard-stack .tl--compact .tl__bar-text,
+.dashboard-stack .tl--compact .tl__bar-outside {
+  font-size: 12.5px;
+}
+.dashboard-stack .tl--compact .tl__month {
+  font-size: 13px;
+}
+.dashboard-stack .tl--compact .tl__group-head {
+  font-size: 12.5px;
+  padding-top: 10px;
+}
+.dashboard-stack .tl--compact .tl__due {
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+}
+.dashboard-stack .tl--compact .tl__task {
+  width: 10px;
+  height: 10px;
+  margin: 10px 0 0 -5px;
+}
+/* Hauteur minimale : la timeline reste confortable même avec peu de projets. */
+.dashboard-stack .tl--compact .tl__body {
+  min-height: 220px;
+}
+.dashboard-stack .tl--compact {
+  --label-w: 300px;
+}
