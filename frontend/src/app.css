@@ -2546,3 +2546,14 @@ textarea:focus-visible {
     min-height: 0;
   }
 }
+/* La fiche de survol flotte au-dessus de la page : jamais coupée, jamais à faire défiler. */
+.tl__floating {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+}
+@media (min-width: 900px) and (min-height: 600px) {
+  .page-content--fit .dashboard-row__main {
+    overflow: visible;
+  }
+}

@@ -1,4 +1,5 @@
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router'
 import type { Project, Task } from '../api/client'
 import { colorHex } from '../colors'
@@ -106,6 +107,23 @@ function Tooltip({ row, today }: { row: Row; today: string }) {
   )
 }
 
+const TIP_WIDTH = 300
+const TIP_HEIGHT = 230
+
+/** Fiche affichée sous la barre, ou au-dessus si elle sortirait de l'écran. */
+function FloatingTip({ anchor, row, today }: { anchor: DOMRect; row: Row; today: string }) {
+  const left = Math.min(Math.max(8, anchor.left), window.innerWidth - TIP_WIDTH - 8)
+  const below = anchor.bottom + 8 + TIP_HEIGHT <= window.innerHeight
+  const style: CSSProperties = below
+    ? { left, top: anchor.bottom + 8 }
+    : { left, bottom: window.innerHeight - anchor.top + 8 }
+  return (
+    <div className="tl__floating" style={style}>
+      <Tooltip row={row} today={today} />
+    </div>
+  )
+}
+
 export function ProjectTimeline({
   projects,
   tasks,
@@ -127,6 +145,26 @@ export function ProjectTimeline({
   const [zoom, setZoom] = useState<Zoom>(defaultZoom)
   const [offset, setOffset] = useState(0)
   const [active, setActive] = useState<string | null>(null)
+  // Position de la barre survolée à l'écran : la fiche s'affiche par-dessus la page,
+  // jamais coupée par le cadre de la timeline.
+  const [anchor, setAnchor] = useState<DOMRect | null>(null)
+  const show = (id: string, element: HTMLElement) => {
+    setActive(id)
+    setAnchor(element.getBoundingClientRect())
+  }
+  const hide = () => {
+    setActive(null)
+    setAnchor(null)
+  }
+  useEffect(() => {
+    if (!active) return
+    window.addEventListener('scroll', hide, true)
+    window.addEventListener('resize', hide)
+    return () => {
+      window.removeEventListener('scroll', hide, true)
+      window.removeEventListener('resize', hide)
+    }
+  }, [active])
   const w = timeWindow(today, zoom, offset)
   const base = `/espaces/${spaceId}`
 
@@ -328,8 +366,13 @@ export function ProjectTimeline({
                     <div
                       key={p.id}
                       className={active === p.id ? 'tl__row tl__row--active' : 'tl__row'}
-                      onMouseEnter={() => setActive(p.id)}
-                      onMouseLeave={() => setActive(null)}
+                      onMouseEnter={(e) =>
+                        show(
+                          p.id,
+                          e.currentTarget.querySelector<HTMLElement>('.tl__bar') ?? e.currentTarget,
+                        )
+                      }
+                      onMouseLeave={hide}
                     >
                       <div className="tl__label">
                         <Link className="tl__title" to={`${base}/projets/${p.id}`}>
@@ -357,8 +400,8 @@ export function ProjectTimeline({
                           style={style}
                           aria-describedby={active === p.id ? `tip-${p.id}` : undefined}
                           aria-label={`${p.title}, ${status.label}, ${spanText(span)}`}
-                          onFocus={() => setActive(p.id)}
-                          onBlur={() => setActive(null)}
+                          onFocus={(e) => show(p.id, e.currentTarget)}
+                          onBlur={hide}
                         >
                           {textInside && (
                             <span className="tl__bar-text">
@@ -396,14 +439,12 @@ export function ProjectTimeline({
                               title={`Tâche : ${t.title} · ${formatDay(t.due_date)}${t.late ? ' (en retard)' : ''}`}
                             />
                           ))}
-                        {active === p.id && (
-                          <div
-                            className="tl__tip-anchor"
-                            style={{ left: `${Math.min(left, 62)}%` }}
-                          >
-                            <Tooltip row={row} today={today} />
-                          </div>
-                        )}
+                        {active === p.id &&
+                          anchor &&
+                          createPortal(
+                            <FloatingTip anchor={anchor} row={row} today={today} />,
+                            document.body,
+                          )}
                       </div>
                     </div>
                   )
