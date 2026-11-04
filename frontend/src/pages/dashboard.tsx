@@ -175,8 +175,8 @@ export function DashboardPage() {
   // Timeline et liste dans le même bloc : tout l'essentiel tient sur un écran.
   const [view, setView] = useState<'timeline' | 'list'>('timeline')
   // La page tient dans l'écran : la timeline affiche autant de lignes que la hauteur le permet.
-  const mainRef = useRef<HTMLElement>(null)
-  const fitRows = useFitRows(mainRef, { rowHeight: 38, reserved: 215, fallback: 12 })
+  const stackRef = useRef<HTMLDivElement>(null)
+  const fitRows = useFitRows(stackRef, { rowHeight: 38, reserved: 345, fallback: 12 })
   const [allTodos, setAllTodos] = useState(false)
   const TODO_STRIP = 3
 
@@ -205,7 +205,7 @@ export function DashboardPage() {
               }
             />
           ) : (
-            <span className="stat-card__note">Aucune échéance dépassée</span>
+            <span className="stat-card__note">Aucun retard</span>
           )}
         </StatCard>
         <StatCard
@@ -250,12 +250,8 @@ export function DashboardPage() {
         </StatCard>
       </div>
 
-      <div className="dashboard-stack">
-        <section
-          ref={mainRef}
-          className="card-panel dashboard-row__main"
-          aria-labelledby="main-view-title"
-        >
+      <div className="dashboard-stack" ref={stackRef}>
+        <section className="card-panel dashboard-row__main" aria-labelledby="main-view-title">
           <div className="card-panel__head">
             <h2 id="main-view-title">
               {view === 'timeline' ? 'Timeline des projets' : 'Projets actifs'}

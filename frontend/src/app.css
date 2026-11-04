@@ -2539,3 +2539,10 @@ textarea:focus-visible {
   color: var(--color-action);
   font-weight: 600;
 }
+/* La timeline prend la place de ses projets, sans grand vide quand il y en a peu. */
+@media (min-width: 900px) and (min-height: 600px) {
+  .page-content--fit .dashboard-row__main {
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+}
