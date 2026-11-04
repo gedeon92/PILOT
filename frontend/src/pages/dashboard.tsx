@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, useOutletContext } from 'react-router'
 import type { Project } from '../api/client'
 import { useProjects, useSpaceTasks } from '../api/queries'
@@ -73,7 +73,7 @@ function NameList({
 }) {
   return (
     <ul className="stat-card__list">
-      {projects.slice(0, 3).map((p) => (
+      {projects.slice(0, 2).map((p) => (
         <li key={p.id}>
           <Link to={`/espaces/${spaceId}/projets/${p.id}`}>{p.title}</Link>
           <span> · {detail(p)}</span>
@@ -163,6 +163,8 @@ export function DashboardPage() {
   const toDo = todos(open, today)
   const firstName = me.user.display_name.split(/\s+/)[0]
   const base = `/espaces/${space.id}`
+  // Timeline et liste dans le même bloc : tout l'essentiel tient sur un écran.
+  const [view, setView] = useState<'timeline' | 'list'>('timeline')
 
   return (
     <div className="page-content">
@@ -234,29 +236,81 @@ export function DashboardPage() {
         </StatCard>
       </div>
 
-      <section className="card-panel" aria-label="Timeline des projets">
-        <div className="card-panel__head">
-          <h2>Timeline des projets</h2>
-          <Link className="button button--small" to={`${base}/timeline`}>
-            Timeline complète
-          </Link>
-        </div>
-        <ProjectTimeline
-          projects={open}
-          tasks={tasks.data ?? []}
-          today={today}
-          spaceId={space.id}
-          compact
-        />
-        <p className="card-panel__foot">
-          Le calendrier montre les dates prévues. Il ne mesure pas l’avancement.
-        </p>
-      </section>
-
       <div className="dashboard-row">
+        <section className="card-panel dashboard-row__main" aria-labelledby="main-view-title">
+          <div className="card-panel__head">
+            <h2 id="main-view-title">
+              {view === 'timeline' ? 'Timeline des projets' : 'Projets actifs'}
+            </h2>
+            <div className="card-panel__tools">
+              <div className="segmented" role="group" aria-label="Affichage">
+                <button
+                  type="button"
+                  aria-pressed={view === 'timeline'}
+                  className={
+                    view === 'timeline' ? 'segmented__item segmented__item--on' : 'segmented__item'
+                  }
+                  onClick={() => setView('timeline')}
+                >
+                  Timeline
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={view === 'list'}
+                  className={
+                    view === 'list' ? 'segmented__item segmented__item--on' : 'segmented__item'
+                  }
+                  onClick={() => setView('list')}
+                >
+                  Liste · {open.length}
+                </button>
+              </div>
+              <Link
+                className="button button--small"
+                to={view === 'timeline' ? `${base}/timeline` : `${base}/projets`}
+              >
+                {view === 'timeline' ? 'Timeline complète' : 'Tous les projets'}
+              </Link>
+            </div>
+          </div>
+          {view === 'timeline' ? (
+            <ProjectTimeline
+              projects={open}
+              tasks={tasks.data ?? []}
+              today={today}
+              spaceId={space.id}
+              compact
+            />
+          ) : (
+            <div className="card-panel__bleed">
+              <ProjectTable
+                projects={open.slice(0, 6)}
+                compact
+                spaceId={space.id}
+                today={today}
+                empty={
+                  <div className="table-empty">
+                    <span className="icon-tile icon-tile--action">
+                      <FolderIcon />
+                    </span>
+                    <span>
+                      <strong>{projects.isPending ? 'Chargement…' : 'Aucun projet actif.'}</strong>{' '}
+                      {!projects.isPending &&
+                        space.role !== 'reader' &&
+                        'Créez le premier avec « Nouveau projet ».'}
+                    </span>
+                  </div>
+                }
+              />
+            </div>
+          )}
+        </section>
+
         <section className="card-panel dashboard-row__side" aria-label="À faire aujourd’hui">
           <div className="card-panel__head">
-            <h2>À faire aujourd’hui</h2>
+            <h2>
+              À faire aujourd’hui {toDo.length > 0 && <span className="count">{toDo.length}</span>}
+            </h2>
           </div>
           {toDo.length === 0 ? (
             <div className="mini-empty">
@@ -270,8 +324,8 @@ export function DashboardPage() {
               </p>
             </div>
           ) : (
-            <ul className="todo-list">
-              {toDo.slice(0, 6).map((item, i) => (
+            <ul className="todo-list todo-list--scroll">
+              {toDo.map((item, i) => (
                 <li key={`${item.project.id}-${i}`}>
                   <Link className="todo" to={`${base}/projets/${item.project.id}`}>
                     <span className="todo__text">
@@ -282,40 +336,10 @@ export function DashboardPage() {
                   </Link>
                 </li>
               ))}
-              {toDo.length > 6 && <li className="muted">… et {toDo.length - 6} autre(s)</li>}
             </ul>
           )}
         </section>
       </div>
-
-      <section className="card-panel card-panel--flush" aria-label="Projets actifs">
-        <div className="card-panel__head card-panel__head--padded">
-          <h2>Projets actifs</h2>
-          {open.length > 0 && (
-            <Link className="button button--small" to={`${base}/projets`}>
-              Tous les projets
-            </Link>
-          )}
-        </div>
-        <ProjectTable
-          projects={open.slice(0, 8)}
-          spaceId={space.id}
-          today={today}
-          empty={
-            <div className="table-empty">
-              <span className="icon-tile icon-tile--action">
-                <FolderIcon />
-              </span>
-              <span>
-                <strong>{projects.isPending ? 'Chargement…' : 'Aucun projet actif.'}</strong>{' '}
-                {!projects.isPending &&
-                  space.role !== 'reader' &&
-                  'Créez le premier avec « Nouveau projet ».'}
-              </span>
-            </div>
-          }
-        />
-      </section>
     </div>
   )
 }

@@ -2284,3 +2284,106 @@ textarea:focus-visible {
   white-space: nowrap;
   pointer-events: none;
 }
+
+/* ---------- Vue d’ensemble sur un écran ---------- */
+
+.stat-card {
+  gap: 12px;
+  padding: 14px 18px;
+}
+.stat-card__value {
+  font-size: 32px;
+}
+.dashboard-row {
+  align-items: stretch;
+}
+.dashboard-row__main {
+  flex: 3 1 600px;
+}
+.dashboard-row__side {
+  flex: 1 1 280px;
+  max-height: 560px;
+}
+.card-panel__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.card-panel__bleed {
+  margin: 0 -20px -20px;
+}
+.todo-list--scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin-right: -8px;
+  padding-right: 8px;
+}
+
+/* Timeline compacte : lignes serrées, légende remplacée par l’infobulle. */
+.tl--compact {
+  gap: 10px;
+}
+.tl--compact .tl__row {
+  min-height: 38px;
+}
+.tl--compact .tl__label {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.tl--compact .tl__title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tl--compact .tl__status {
+  display: none;
+}
+.tl--compact .tl__group-head {
+  padding: 8px 0 2px;
+}
+.tl--compact .tl__legend {
+  display: none;
+}
+.tl--compact .tl__scale {
+  height: 30px;
+}
+.tl--compact {
+  --label-w: 175px;
+}
+.tl--compact .tl__frame {
+  min-width: 520px;
+}
+.table--compact {
+  min-width: 0;
+}
+.table--compact th:nth-child(2),
+.table--compact td:nth-child(2),
+.table--compact th:nth-child(4),
+.table--compact td:nth-child(4) {
+  display: none;
+}
+.table--compact td {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.table--compact .project-cell__meta,
+.table--compact .owner__note,
+.table--compact .due__note,
+.table--compact .owner .avatar {
+  display: none;
+}
+.table--compact .project-cell__title,
+.table--compact .owner__text,
+.table--compact .due__date {
+  white-space: nowrap;
+}
+.table--compact td:first-child {
+  max-width: 240px;
+}
+.table--compact .project-cell__title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

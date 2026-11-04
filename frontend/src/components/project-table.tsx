@@ -80,15 +80,18 @@ export function ProjectTable({
   spaceId,
   today,
   empty,
+  compact = false,
 }: {
   projects: Project[]
   spaceId: string
   today: string
   empty: React.ReactNode
+  /** Version courte pour la vue d'ensemble : sans filiale ni prochaine étape, sans défilement. */
+  compact?: boolean
 }) {
   return (
     <div className="table-scroll table-scroll--flush">
-      <table className="table table--projects">
+      <table className={compact ? 'table table--projects table--compact' : 'table table--projects'}>
         <thead>
           <tr>
             <th scope="col">Projet</th>
