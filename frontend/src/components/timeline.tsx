@@ -141,7 +141,7 @@ export function ProjectTimeline({
     .filter((r): r is Row => r.span !== null && overlapsWindow(r.span, w))
     .sort((a, b) => a.span.from.localeCompare(b.span.from))
   const undated = open.filter((p) => !projectSpan(p)).length
-  const shown = compact ? rows.slice(0, 6) : rows
+  const shown = compact ? rows.slice(0, 12) : rows
 
   // Regroupement par portefeuille, dans l'ordre d'apparition.
   const groups: { id: string; name: string; color: string; rows: Row[] }[] = []

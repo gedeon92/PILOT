@@ -2387,3 +2387,37 @@ textarea:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Timeline sur toute la largeur, « À faire aujourd’hui » en dessous. */
+.dashboard-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.dashboard-stack .dashboard-row__main,
+.dashboard-stack .dashboard-row__side {
+  flex: none;
+  max-height: none;
+}
+.todo-list--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  column-gap: 24px;
+}
+.todo-list.todo-list--grid li + li {
+  border-top: none;
+}
+.todo-list--grid li {
+  border-bottom: 1px solid #f0f0f2;
+}
+/* Timeline compacte en pleine largeur : le statut redevient visible à côté du nom. */
+.dashboard-stack .tl--compact {
+  --label-w: 240px;
+}
+.dashboard-stack .tl--compact .tl__status {
+  display: inline;
+  white-space: nowrap;
+}
+.dashboard-stack .tl--compact .tl__row {
+  min-height: 42px;
+}

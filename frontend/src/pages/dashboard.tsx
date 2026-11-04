@@ -236,7 +236,7 @@ export function DashboardPage() {
         </StatCard>
       </div>
 
-      <div className="dashboard-row">
+      <div className="dashboard-stack">
         <section className="card-panel dashboard-row__main" aria-labelledby="main-view-title">
           <div className="card-panel__head">
             <h2 id="main-view-title">
@@ -324,7 +324,7 @@ export function DashboardPage() {
               </p>
             </div>
           ) : (
-            <ul className="todo-list todo-list--scroll">
+            <ul className="todo-list todo-list--grid">
               {toDo.map((item, i) => (
                 <li key={`${item.project.id}-${i}`}>
                   <Link className="todo" to={`${base}/projets/${item.project.id}`}>
