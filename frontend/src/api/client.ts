@@ -18,7 +18,7 @@ export class ApiError extends Error {
   }
 }
 
-type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE'
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 export async function api<T>(path: string, options: { method?: Method; body?: unknown } = {}) {
   const method = options.method ?? 'GET'
@@ -72,3 +72,6 @@ export type Task = Schemas['TaskOut']
 export type HistoryEntry = Schemas['HistoryEntry']
 export type PersonRef = Schemas['PersonRef']
 export type DocumentItem = Schemas['DocumentOut']
+export type AlertItem = Schemas['AlertOut']
+export type AlertList = Schemas['AlertList']
+export type AlertPreferences = Schemas['AlertPreferenceOut']

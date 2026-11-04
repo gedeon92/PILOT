@@ -199,14 +199,16 @@ Règles d'alerte (seuils réglables par espace) :
 | Information manquante | Projet actif sans responsable ou sans prochaine étape | Propriétaire |
 | Proposition à valider | Proposition en attente depuis 2 jours | Auteur de la proposition |
 
-- [ ] Modèles `Alert` et `AlertPreference` (par utilisateur : règles actives, canal, heure du récapitulatif)
-- [ ] Calcul des alertes dans le fuseau de l'espace, sans doublon (une alerte par règle, par objet et par jour)
-- [ ] Centre de notifications dans l'application : cloche avec compteur, liste, « marquer comme lu », lien direct vers la fiche
-- [ ] Bandeau « À faire aujourd'hui » en haut du tableau de bord
-- [ ] Récapitulatif quotidien à l'heure choisie (7h par défaut), via le canal retenu en D6
-- [ ] Déclenchement planifié côté serveur, indépendant du navigateur : en phase de test, un workflow GitHub Actions planifié (gratuit) appelle une route protégée de l'API
-- [ ] Seuls les membres ayant un compte reçoivent des alertes ; un responsable saisi en texte libre est signalé « sans compte, pas de rappel »
-- [ ] Désactivation possible par l'utilisateur, règle par règle
+- [x] Modèles `Alert` et `AlertPreference` (par utilisateur et par espace : règles actives, récapitulatif oui/non, heure)
+- [x] Calcul des alertes dans le fuseau de l'espace, sans doublon (contrainte unique : personne, règle, objet, jour) ; recalcul à l'ouverture de la page et chaque heure
+- [x] Page « Alertes » : alertes du jour et des 14 derniers jours, « marquer comme lu », « tout marquer comme lu », lien direct vers la fiche ; compteur dans le menu
+- [x] « À faire aujourd'hui » sur la vue d'ensemble (phase 5)
+- [x] Récapitulatif quotidien par e-mail via Brevo à l'heure choisie (7h par défaut), un seul par jour, pas d'e-mail vide ; nouvel essai l'heure suivante en cas d'échec ; e-mail de test depuis les préférences
+- [x] Déclenchement planifié : `.github/workflows/rappels.yml` appelle chaque heure `POST /api/cron/daily`, protégé par la clé `CRON_SECRET`
+- [x] Seuls les membres ayant un compte reçoivent des alertes ; un responsable en nom libre n'en reçoit pas (déjà signalé « sans compte »)
+- [x] Désactivation possible par l'utilisateur, règle par règle
+- [ ] Mise en service : compte Brevo, expéditeur vérifié, `BREVO_API_KEY`, `MAIL_SENDER_EMAIL` et `CRON_SECRET` dans Render, secret `CRON_SECRET` dans GitHub
+- [ ] Alerte « Proposition à valider » : avec la boîte de mise à jour (phase 8)
 
 **Terminé quand :** une tâche à J-3 produit exactement une alerte pour le bon destinataire ; une tâche terminée ou annulée n'en produit plus ; un lecteur ne reçoit pas d'alerte sur une action qu'il ne peut pas faire ; le récapitulatif part à l'heure prévue dans le fuseau de l'espace.
 

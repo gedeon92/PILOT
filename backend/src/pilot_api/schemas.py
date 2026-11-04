@@ -405,3 +405,42 @@ class DocumentOut(BaseModel):
     uploaded_by: str | None
     created_at: datetime
     archived: bool
+
+
+# ---------- Alertes ----------
+
+
+class AlertOut(BaseModel):
+    id: uuid.UUID
+    rule: str
+    rule_label: str
+    target_type: str
+    project_id: uuid.UUID
+    alert_date: date
+    title: str
+    detail: str
+    read: bool
+
+
+class AlertList(BaseModel):
+    unread: int
+    items: list[AlertOut]
+
+
+class AlertPreferenceOut(BaseModel):
+    disabled_rules: list[str]
+    email_digest: bool
+    digest_hour: int
+    email_available: bool
+    rules: dict[str, str]
+
+
+class AlertPreferenceIn(BaseModel):
+    disabled_rules: list[str]
+    email_digest: bool
+    digest_hour: Annotated[int, Field(ge=0, le=23)]
+
+
+class TestEmailResult(BaseModel):
+    sent: bool
+    message: str

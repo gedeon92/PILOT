@@ -17,3 +17,13 @@ services:
         value: staging
       - key: DATABASE_URL
         sync: false # à saisir dans le tableau de bord Render (branche Neon « staging »)
+      - key: APP_BASE_URL
+        value: https://pilot-beta-swart.vercel.app
+      # Rappels par e-mail (Brevo) : à saisir dans le tableau de bord Render.
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_SENDER_EMAIL
+        sync: false
+      # Même valeur que le secret CRON_SECRET du dépôt GitHub.
+      - key: CRON_SECRET
+        sync: false

@@ -388,3 +388,52 @@ class StoredFile(Base):
 
     key: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     data: Mapped[bytes] = mapped_column(LargeBinary)
+
+
+class AlertRule(enum.StrEnum):
+    DUE_SOON = "due_soon"
+    OVERDUE = "overdue"
+    BLOCKED = "blocked"
+    DECISION_PENDING = "decision_pending"
+    STALE = "stale"
+    MISSING_INFO = "missing_info"
+
+
+class Alert(Base):
+    """Rappel adressé à une personne. Unique par personne, règle, objet et jour (pas de doublon)."""
+
+    __tablename__ = "alerts"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "rule", "target_id", "alert_date", name="uq_alerts_user_rule_target_day"
+        ),
+        Index("ix_alerts_user_space_date", "user_id", "space_id", "alert_date"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("spaces.id", ondelete="CASCADE"))
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    rule: Mapped[AlertRule] = mapped_column(_enum(AlertRule, "alert_rule"))
+    target_type: Mapped[str] = mapped_column(String(16))  # project | task
+    target_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
+    # Jour de l'alerte dans le fuseau de l'espace.
+    alert_date: Mapped[date] = mapped_column(Date)
+    title: Mapped[str] = mapped_column(String(200))
+    detail: Mapped[str] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AlertPreference(Base):
+    __tablename__ = "alert_preferences"
+    __table_args__ = (UniqueConstraint("user_id", "space_id", name="uq_alert_preferences"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    space_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("spaces.id", ondelete="CASCADE"))
+    disabled_rules: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    email_digest: Mapped[bool] = mapped_column(default=True)
+    digest_hour: Mapped[int] = mapped_column(Integer, default=7)
+    # Dernier récapitulatif envoyé (jour de l'espace) : un seul envoi par jour.
+    last_digest_date: Mapped[date | None] = mapped_column(Date)

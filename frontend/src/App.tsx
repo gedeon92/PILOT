@@ -3,6 +3,7 @@ import type { Me } from './api/client'
 import { useMe } from './api/queries'
 import { Alert, AuthCard, FullPageLoader } from './components/ui'
 import { LoginPage, RegisterPage } from './pages/auth'
+import { AlertsPage } from './pages/alerts'
 import { CreateSpacePage } from './pages/create-space'
 import { DashboardPage } from './pages/dashboard'
 import { InvitationPage } from './pages/invitation'
@@ -76,6 +77,7 @@ export default function App() {
         <Route path="evenements" element={<EventsPage />} />
         <Route path="timeline" element={<TimelinePage />} />
         <Route path="documents" element={<DocumentsPage />} />
+        <Route path="alertes" element={<AlertsPage />} />
         <Route path="projets/nouveau" element={<NewProjectPage />} />
         <Route path="projets/:projectId" element={<ProjectDetailPage />} />
         <Route path="membres" element={<MembersPage />} />

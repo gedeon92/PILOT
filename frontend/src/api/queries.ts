@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   api,
+  type AlertList,
+  type AlertPreferences,
   ApiError,
   type DocumentItem,
   type HistoryEntry,
@@ -373,5 +375,71 @@ export function useSpaceTasks(spaceId: string) {
   return useQuery({
     queryKey: [...projectKeys.all(spaceId), 'open-tasks'],
     queryFn: () => api<Task[]>(`/spaces/${spaceId}/tasks`),
+  })
+}
+
+// ---------- Alertes ----------
+
+const alertKeys = {
+  list: (spaceId: string) => ['space', spaceId, 'alerts'] as const,
+  prefs: (spaceId: string) => ['space', spaceId, 'alert-preferences'] as const,
+}
+
+export function useAlerts(spaceId: string) {
+  return useQuery({
+    queryKey: alertKeys.list(spaceId),
+    queryFn: () => api<AlertList>(`/spaces/${spaceId}/alerts`),
+    // Le compteur du menu se met à jour régulièrement.
+    refetchInterval: 5 * 60_000,
+  })
+}
+
+function useRefreshAlerts(spaceId: string) {
+  const queryClient = useQueryClient()
+  return () => queryClient.invalidateQueries({ queryKey: alertKeys.list(spaceId) })
+}
+
+export function useMarkAlertRead(spaceId: string) {
+  const refresh = useRefreshAlerts(spaceId)
+  return useMutation({
+    mutationFn: (alertId: string) =>
+      api(`/spaces/${spaceId}/alerts/${alertId}/read`, { method: 'POST' }),
+    onSettled: refresh,
+  })
+}
+
+export function useMarkAllAlertsRead(spaceId: string) {
+  const refresh = useRefreshAlerts(spaceId)
+  return useMutation({
+    mutationFn: () => api<void>(`/spaces/${spaceId}/alerts/read-all`, { method: 'POST' }),
+    onSettled: refresh,
+  })
+}
+
+export function useAlertPreferences(spaceId: string) {
+  return useQuery({
+    queryKey: alertKeys.prefs(spaceId),
+    queryFn: () => api<AlertPreferences>(`/spaces/${spaceId}/alert-preferences`),
+  })
+}
+
+export function useSaveAlertPreferences(spaceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (body: { disabled_rules: string[]; email_digest: boolean; digest_hour: number }) =>
+      api<AlertPreferences>(`/spaces/${spaceId}/alert-preferences`, { method: 'PUT', body }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(alertKeys.prefs(spaceId), data)
+      queryClient.invalidateQueries({ queryKey: alertKeys.list(spaceId) })
+    },
+  })
+}
+
+export function useSendTestEmail(spaceId: string) {
+  return useMutation({
+    mutationFn: () =>
+      api<{ sent: boolean; message: string }>(`/spaces/${spaceId}/alert-preferences/test-email`, {
+        method: 'POST',
+      }),
   })
 }

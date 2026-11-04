@@ -7,7 +7,7 @@ from pilot_api import __version__
 from pilot_api.config import get_settings
 from pilot_api.db import check_database
 from pilot_api.deps import require_csrf_header
-from pilot_api.routers import auth, catalog, documents, invitations, projects, spaces
+from pilot_api.routers import alerts, auth, catalog, documents, invitations, projects, spaces
 
 app = FastAPI(
     title="PILOT API",
@@ -26,6 +26,8 @@ app.include_router(catalog.project_types)
 app.include_router(catalog.programs)
 app.include_router(projects.router)
 app.include_router(documents.router)
+app.include_router(alerts.router)
+app.include_router(alerts.cron_router)
 
 
 class Health(BaseModel):

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router'
 import { ROLE_LABELS, type Me, type Space } from '../api/client'
-import { useCatalog, useLogout, useMembers, useSpace } from '../api/queries'
+import { useAlerts, useCatalog, useLogout, useMembers, useSpace } from '../api/queries'
 import { colorHex } from '../colors'
 import {
   BellIcon,
@@ -54,6 +54,7 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
   const logout = useLogout()
   const members = useMembers(space.id)
   const portfolios = useCatalog(space.id, 'portfolios')
+  const alerts = useAlerts(space.id)
   const base = `/espaces/${space.id}`
   const pending = members.data?.filter((m) => m.status === 'invited').length ?? 0
   // Sur téléphone, le menu est replié derrière un bouton ; il se referme à chaque changement de page.
@@ -130,7 +131,18 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
             <span className="nav__label">Documents</span>
           </NavLink>
           <SoonLink icon={<InboxIcon />} label="Mises à jour" />
-          <SoonLink icon={<BellIcon />} label="Alertes" />
+          <NavLink to={`${base}/alertes`} className={linkClass}>
+            <BellIcon />
+            <span className="nav__label">Alertes</span>
+            {(alerts.data?.unread ?? 0) > 0 && (
+              <span
+                className="badge badge--count"
+                aria-label={`${alerts.data?.unread} alerte(s) non lue(s)`}
+              >
+                {alerts.data?.unread}
+              </span>
+            )}
+          </NavLink>
         </div>
 
         <div className="sidebar__divider" />

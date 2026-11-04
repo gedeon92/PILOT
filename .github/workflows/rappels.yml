@@ -1,0 +1,34 @@
+name: Rappels
+
+# Chaque heure : calcule les alertes et envoie les récapitulatifs dont l'heure est atteinte.
+# L'API vérifie elle-même l'heure choisie par chaque personne et n'envoie qu'un e-mail par jour.
+on:
+  schedule:
+    - cron: "5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  rappels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Déclencher les rappels
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_URL: ${{ vars.PILOT_API_URL || 'https://pilot-api-staging.onrender.com' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "Secret CRON_SECRET absent : rien à faire."
+            exit 0
+          fi
+          # L'API gratuite de Render peut dormir : plusieurs tentatives, délai long.
+          for attempt in 1 2 3; do
+            code=$(curl -s -o result.json -w '%{http_code}' --max-time 120 -X POST \
+              "$API_URL/api/cron/daily" -H "X-Cron-Secret: $CRON_SECRET" -H "X-PILOT-CSRF: 1")
+            if [ "$code" = "200" ]; then
+              cat result.json
+              exit 0
+            fi
+            echo "Tentative $attempt : HTTP $code"
+            sleep 30
+          done
+          exit 1
