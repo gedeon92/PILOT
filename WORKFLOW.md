@@ -241,6 +241,7 @@ Règles d'alerte (seuils réglables par espace) :
 ## Phase 10 — Mise en production
 
 - [ ] Changer le mot de passe de la base Neon (il a circulé pendant la mise en place)
+- [ ] Expéditeur des e-mails dédié à PILOT sur un domaine à nous (ex. `notifications@<domaine>`), domaine authentifié dans Brevo (DKIM, DMARC), puis `MAIL_SENDER_EMAIL` dans Render. Une seule adresse pour tout PILOT ; les adresses des utilisateurs ne sont que des destinataires. (Pendant les tests : une adresse Gmail validée comme expéditeur dans Brevo.)
 - [ ] Recette complète sur `pilot-staging`
 - [ ] Domaine, HTTPS, variables de production
 - [ ] Publication puis vérification des données réellement disponibles
