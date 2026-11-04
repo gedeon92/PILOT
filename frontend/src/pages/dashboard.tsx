@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { Link, useOutletContext } from 'react-router'
 import type { Project } from '../api/client'
 import { useProjects, useSpaceTasks } from '../api/queries'
@@ -14,6 +14,7 @@ import { ProjectTable } from '../components/project-table'
 import { ProjectTimeline } from '../components/timeline'
 import { PageHeader, type Tone } from '../components/ui'
 import { addDays, formatDay, isClosedProject, todayIso } from '../labels'
+import { useFitRows } from '../fit'
 import type { SpaceContext } from './space-layout'
 
 function utc(iso: string) {
@@ -160,14 +161,27 @@ export function DashboardPage() {
   const week = Array.from({ length: 7 }, (_, i) => addDays(today, i))
   const dueByDay = week.map((day) => open.filter((p) => p.due_date === day).length)
   const dueThisWeek = dueByDay.reduce((a, b) => a + b, 0)
-  const toDo = todos(open, today)
+  const URGENCY: Record<Tone, number> = {
+    danger: 0,
+    warn: 1,
+    info: 2,
+    violet: 2,
+    ok: 3,
+    neutral: 3,
+  }
+  const toDo = todos(open, today).sort((a, b) => URGENCY[a.tone] - URGENCY[b.tone])
   const firstName = me.user.display_name.split(/\s+/)[0]
   const base = `/espaces/${space.id}`
   // Timeline et liste dans le même bloc : tout l'essentiel tient sur un écran.
   const [view, setView] = useState<'timeline' | 'list'>('timeline')
+  // La page tient dans l'écran : la timeline affiche autant de lignes que la hauteur le permet.
+  const mainRef = useRef<HTMLElement>(null)
+  const fitRows = useFitRows(mainRef, { rowHeight: 38, reserved: 215, fallback: 12 })
+  const [allTodos, setAllTodos] = useState(false)
+  const TODO_STRIP = 3
 
   return (
-    <div className="page-content">
+    <div className="page-content page-content--fit">
       <PageHeader
         title={`Bonjour, ${firstName}`}
         subtitle={`${capitalize(formatUtc(today, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))} · ${space.name}`}
@@ -237,7 +251,11 @@ export function DashboardPage() {
       </div>
 
       <div className="dashboard-stack">
-        <section className="card-panel dashboard-row__main" aria-labelledby="main-view-title">
+        <section
+          ref={mainRef}
+          className="card-panel dashboard-row__main"
+          aria-labelledby="main-view-title"
+        >
           <div className="card-panel__head">
             <h2 id="main-view-title">
               {view === 'timeline' ? 'Timeline des projets' : 'Projets actifs'}
@@ -280,11 +298,12 @@ export function DashboardPage() {
               today={today}
               spaceId={space.id}
               compact
+              maxRows={fitRows}
             />
           ) : (
             <div className="card-panel__bleed">
               <ProjectTable
-                projects={open.slice(0, 6)}
+                projects={open.slice(0, Math.max(3, fitRows - 1))}
                 compact
                 spaceId={space.id}
                 today={today}
@@ -311,6 +330,16 @@ export function DashboardPage() {
             <h2>
               À faire aujourd’hui {toDo.length > 0 && <span className="count">{toDo.length}</span>}
             </h2>
+            {toDo.length > TODO_STRIP && (
+              <button
+                type="button"
+                className="button button--small"
+                aria-expanded={allTodos}
+                onClick={() => setAllTodos((v) => !v)}
+              >
+                {allTodos ? 'Réduire' : `Voir les ${toDo.length} rappels`}
+              </button>
+            )}
           </div>
           {toDo.length === 0 ? (
             <div className="mini-empty">
@@ -324,19 +353,21 @@ export function DashboardPage() {
               </p>
             </div>
           ) : (
-            <ul className="todo-list todo-list--grid">
-              {toDo.map((item, i) => (
-                <li key={`${item.project.id}-${i}`}>
-                  <Link className="todo" to={`${base}/projets/${item.project.id}`}>
-                    <span className="todo__text">
-                      <span className="todo__title">{item.project.title}</span>
-                      <span className="todo__detail">{item.text}</span>
-                    </span>
-                    <span className={`todo__tag todo__tag--${item.tone}`}>{item.label}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="todo-list todo-list--grid">
+                {(allTodos ? toDo : toDo.slice(0, TODO_STRIP)).map((item, i) => (
+                  <li key={`${item.project.id}-${i}`}>
+                    <Link className="todo" to={`${base}/projets/${item.project.id}`}>
+                      <span className="todo__text">
+                        <span className="todo__title">{item.project.title}</span>
+                        <span className="todo__detail">{item.text}</span>
+                      </span>
+                      <span className={`todo__tag todo__tag--${item.tone}`}>{item.label}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
         </section>
       </div>

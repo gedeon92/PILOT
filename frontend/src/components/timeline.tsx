@@ -112,6 +112,7 @@ export function ProjectTimeline({
   today,
   spaceId,
   compact = false,
+  maxRows,
   defaultZoom = 'quarter',
 }: {
   projects: Project[]
@@ -119,6 +120,8 @@ export function ProjectTimeline({
   today: string
   spaceId: string
   compact?: boolean
+  /** Nombre de lignes affichées en version compacte (adapté à la hauteur de l'écran). */
+  maxRows?: number
   defaultZoom?: Zoom
 }) {
   const [zoom, setZoom] = useState<Zoom>(defaultZoom)
@@ -141,7 +144,7 @@ export function ProjectTimeline({
     .filter((r): r is Row => r.span !== null && overlapsWindow(r.span, w))
     .sort((a, b) => a.span.from.localeCompare(b.span.from))
   const undated = open.filter((p) => !projectSpan(p)).length
-  const shown = compact ? rows.slice(0, 12) : rows
+  const shown = compact ? rows.slice(0, maxRows ?? 12) : rows
 
   // Regroupement par portefeuille, dans l'ordre d'apparition.
   const groups: { id: string; name: string; color: string; rows: Row[] }[] = []
@@ -219,6 +222,14 @@ export function ProjectTimeline({
             </>
           )}
           {undated > 0 && ` · ${undated} sans date`}
+          {compact && rows.length > shown.length && (
+            <>
+              {' · '}
+              <Link className="tl__more" to={`${base}/timeline`}>
+                {rows.length - shown.length} de plus dans la timeline complète
+              </Link>
+            </>
+          )}
         </p>
       </div>
 
@@ -429,12 +440,6 @@ export function ProjectTimeline({
           <span className="tl__task tl__task--legend" /> Tâche (rouge : en retard)
         </span>
       </div>
-
-      {compact && rows.length > shown.length && (
-        <Link className="stat-card__link" to={`${base}/timeline`}>
-          Voir les {rows.length} projets dans la timeline complète
-        </Link>
-      )}
     </div>
   )
 }
