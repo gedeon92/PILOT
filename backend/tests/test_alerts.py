@@ -201,6 +201,20 @@ def test_daily_digest_is_sent_once_at_the_chosen_hour(make_client, engine):
         alerts_module.run_daily(db, send=fake_send)
 
     proprio = [m for m in sent if m["to_email"] == "proprio@exemple.com"]
+    assert proprio == []  # domaine de test : aucun envoi réel
+    with Session(engine) as db:
+        from pilot_api.models import User
+
+        db.execute(
+            update(User)
+            .where(User.email == "proprio@exemple.com")
+            .values(email="proprio@pilot.app")
+        )
+        db.execute(update(AlertPreference).values(last_digest_date=None, digest_hour=0))
+        db.commit()
+        alerts_module.run_daily(db, send=fake_send)
+        alerts_module.run_daily(db, send=fake_send)
+    proprio = [m for m in sent if m["to_email"] == "proprio@pilot.app"]
     assert len(proprio) == 1
     assert "En retard" in proprio[0]["text"]
     assert "1 rappel" in proprio[0]["subject"]
@@ -212,3 +226,10 @@ def _user_id(db):
     from pilot_api.models import User
 
     return db.scalar(select(User.id).where(User.email == "proprio@exemple.com"))
+
+
+def test_no_digest_to_reserved_test_domains():
+    assert alerts_module.is_test_address("verif@exemple.com")
+    assert alerts_module.is_test_address("a@example.org")
+    assert alerts_module.is_test_address("a@pilot.test")
+    assert not alerts_module.is_test_address("contact@datatym.com")

@@ -324,6 +324,16 @@ def digest_email(
     return subject, page, text
 
 
+# Domaines réservés aux essais : jamais d'envoi (les comptes de test n'ont pas de vraie boîte).
+TEST_DOMAINS = ("example.com", "example.org", "example.net", "exemple.com")
+TEST_SUFFIXES = (".test", ".example", ".invalid", ".localhost")
+
+
+def is_test_address(email: str) -> bool:
+    domain = email.rsplit("@", 1)[-1].lower()
+    return domain in TEST_DOMAINS or domain.endswith(TEST_SUFFIXES)
+
+
 def run_daily(db: Session, send=send_email) -> dict:
     """Appelé chaque heure par la tâche planifiée : calcule les alertes de chaque espace,
     puis envoie le récapitulatif aux membres dont l'heure choisie est atteinte
@@ -343,6 +353,8 @@ def run_daily(db: Session, send=send_email) -> dict:
         for _, user in members:
             pref = preference_for(db, user.id, space.id)
             if not (can_mail and pref.email_digest) or now.hour < pref.digest_hour:
+                continue
+            if is_test_address(user.email):
                 continue
             if pref.last_digest_date == today:
                 continue
