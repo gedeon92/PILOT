@@ -415,7 +415,7 @@ class AlertOut(BaseModel):
     rule: str
     rule_label: str
     target_type: str
-    project_id: uuid.UUID
+    project_id: uuid.UUID | None
     alert_date: date
     title: str
     detail: str
@@ -466,3 +466,80 @@ class EmailChangeRequest(BaseModel):
 class EmailChangeSent(BaseModel):
     sent_to: str
     expires_hours: int
+
+
+# ---------- Boîte de mise à jour ----------
+
+
+class UpdateSourceOut(BaseModel):
+    id: uuid.UUID
+    filename: str
+    size_bytes: int
+    extraction: str  # read | empty | unsupported | too_large | too_long | failed
+    note: str | None
+    chars: int
+
+
+class ProposalProjectRef(BaseModel):
+    id: uuid.UUID
+    title: str
+    detail: str | None  # portefeuille, filiale, ville : pour départager
+
+
+class ProposalChangeOut(BaseModel):
+    field: str
+    label: str
+    current: str | None
+    proposed: str
+    excerpt: str
+    unchanged: bool  # la valeur proposée est déjà celle du projet
+
+
+class ProposalOut(BaseModel):
+    id: uuid.UUID
+    # to_clarify | to_validate | conflict | applied | discarded
+    state: str
+    project: ProposalProjectRef | None
+    candidates: list[ProposalProjectRef]
+    source_label: str
+    excerpt: str
+    changes: list[ProposalChangeOut]
+    issues: list[str]
+    base_version: int | None
+    applied_fields: list[str]
+    decided_by: str | None
+    decided_at: datetime | None
+    discard_reason: str | None
+
+
+class UpdateRequestOut(BaseModel):
+    id: uuid.UUID
+    created_at: datetime
+    author_name: str | None
+    mine: bool
+    visibility: str  # private | shared
+    message: str | None
+    sources: list[UpdateSourceOut]
+    proposals: list[ProposalOut]
+    notes: list[str]
+
+
+class UpdateRequestPatch(BaseModel):
+    visibility: Literal["private", "shared"]
+
+
+class ProposalTarget(BaseModel):
+    project_id: uuid.UUID
+
+
+class ProposalApply(BaseModel):
+    fields: Annotated[list[str], Field(min_length=1, max_length=20)]
+    base_version: int
+
+
+class ProposalDiscard(BaseModel):
+    reason: Annotated[str | None, StringConstraints(max_length=300)] = None
+
+
+class SourceShare(BaseModel):
+    project_id: uuid.UUID

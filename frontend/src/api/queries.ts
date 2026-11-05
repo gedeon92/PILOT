@@ -11,10 +11,12 @@ import {
   type Me,
   type Member,
   type Project,
+  type Proposal,
   type Role,
   type Space,
   type SpaceSummary,
   type Task,
+  type UpdateRequest,
 } from './client'
 
 export const keys = {
@@ -481,4 +483,132 @@ export function useConfirmEmailChange() {
       queryClient.invalidateQueries({ queryKey: ['space'] })
     },
   })
+}
+
+// ---------- Boîte de mise à jour ----------
+
+const updateKeys = {
+  list: (spaceId: string) => ['space', spaceId, 'updates'] as const,
+}
+
+export function useUpdates(spaceId: string, enabled = true) {
+  return useQuery({
+    queryKey: updateKeys.list(spaceId),
+    queryFn: () => api<UpdateRequest[]>(`/spaces/${spaceId}/updates`),
+    enabled,
+  })
+}
+
+/** Après une décision : la liste, les projets et les alertes changent. */
+function useRefreshAfterDecision(spaceId: string) {
+  const queryClient = useQueryClient()
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: updateKeys.list(spaceId) }),
+      queryClient.invalidateQueries({ queryKey: projectKeys.all(spaceId) }),
+      queryClient.invalidateQueries({ queryKey: alertKeys.list(spaceId) }),
+    ])
+}
+
+export type UpdateDraft = {
+  message: string
+  files: File[]
+  visibility: 'private' | 'shared'
+  clientRequestId: string
+}
+
+export function useSendUpdate(spaceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (draft: UpdateDraft) => {
+      const body = new FormData()
+      body.append('message', draft.message)
+      body.append('visibility', draft.visibility)
+      body.append('client_request_id', draft.clientRequestId)
+      for (const file of draft.files) body.append('files', file)
+      return api<UpdateRequest>(`/spaces/${spaceId}/updates`, { method: 'POST', body })
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: updateKeys.list(spaceId) }),
+  })
+}
+
+export function useSetUpdateVisibility(spaceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, visibility }: { id: string; visibility: 'private' | 'shared' }) =>
+      api<UpdateRequest>(`/spaces/${spaceId}/updates/${id}`, {
+        method: 'PATCH',
+        body: { visibility },
+      }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: updateKeys.list(spaceId) }),
+  })
+}
+
+export function useApplyProposal(spaceId: string) {
+  const refresh = useRefreshAfterDecision(spaceId)
+  return useMutation({
+    mutationFn: ({
+      id,
+      fields,
+      baseVersion,
+    }: {
+      id: string
+      fields: string[]
+      baseVersion: number
+    }) =>
+      api<Proposal>(`/spaces/${spaceId}/proposals/${id}/apply`, {
+        method: 'POST',
+        body: { fields, base_version: baseVersion },
+      }),
+    onSettled: refresh,
+  })
+}
+
+export function useDiscardProposal(spaceId: string) {
+  const refresh = useRefreshAfterDecision(spaceId)
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      api<Proposal>(`/spaces/${spaceId}/proposals/${id}/discard`, {
+        method: 'POST',
+        body: { reason: reason || null },
+      }),
+    onSettled: refresh,
+  })
+}
+
+export function useChooseProposalTarget(spaceId: string) {
+  const refresh = useRefreshAfterDecision(spaceId)
+  return useMutation({
+    mutationFn: ({ id, projectId }: { id: string; projectId: string }) =>
+      api<Proposal>(`/spaces/${spaceId}/proposals/${id}/target`, {
+        method: 'POST',
+        body: { project_id: projectId },
+      }),
+    onSettled: refresh,
+  })
+}
+
+export function useRefreshProposal(spaceId: string) {
+  const refresh = useRefreshAfterDecision(spaceId)
+  return useMutation({
+    mutationFn: (id: string) =>
+      api<Proposal>(`/spaces/${spaceId}/proposals/${id}/refresh`, { method: 'POST' }),
+    onSettled: refresh,
+  })
+}
+
+export function useShareSource(spaceId: string) {
+  const refresh = useRefreshAfterDecision(spaceId)
+  return useMutation({
+    mutationFn: ({ sourceId, projectId }: { sourceId: string; projectId: string }) =>
+      api<DocumentItem>(`/spaces/${spaceId}/update-sources/${sourceId}/share`, {
+        method: 'POST',
+        body: { project_id: projectId },
+      }),
+    onSettled: refresh,
+  })
+}
+
+export function sourceDownloadUrl(spaceId: string, sourceId: string) {
+  return `/api/spaces/${spaceId}/update-sources/${sourceId}/download`
 }

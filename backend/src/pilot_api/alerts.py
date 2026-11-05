@@ -19,6 +19,7 @@ from pilot_api.mailer import MailError, mail_configured, send_email
 from pilot_api.models import (
     CLOSED_PROJECT_STATUSES,
     CLOSED_TASK_STATUSES,
+    OPEN_PROPOSAL_STATES,
     Alert,
     AlertPreference,
     AlertRule,
@@ -26,9 +27,11 @@ from pilot_api.models import (
     MembershipStatus,
     Project,
     ProjectStatus,
+    Proposal,
     Role,
     Space,
     Task,
+    UpdateRequest,
     User,
     utcnow,
 )
@@ -36,6 +39,8 @@ from pilot_api.models import (
 DUE_SOON_DAYS = {7, 3, 1, 0}
 DECISION_DAYS = 7
 STALE_DAYS = 14
+# Une proposition non traitée depuis 2 jours est rappelée à son auteur.
+PROPOSAL_DAYS = 2
 
 RULES: dict[AlertRule, str] = {
     AlertRule.OVERDUE: "En retard",
@@ -44,6 +49,7 @@ RULES: dict[AlertRule, str] = {
     AlertRule.DECISION_PENDING: "Décision en attente",
     AlertRule.STALE: "Suivi non actualisé",
     AlertRule.MISSING_INFO: "Information manquante",
+    AlertRule.PROPOSAL_PENDING: "Proposition à valider",
 }
 RULE_ORDER = list(RULES)
 
@@ -107,7 +113,7 @@ def compute_alerts(db: Session, space: Space, today: date) -> int:
         rule: AlertRule,
         target_type: str,
         target_id,
-        project: Project,
+        project: Project | None,
         title: str,
         detail: str,
     ):
@@ -120,7 +126,7 @@ def compute_alerts(db: Session, space: Space, today: date) -> int:
                     "rule": rule,
                     "target_type": target_type,
                     "target_id": target_id,
-                    "project_id": project.id,
+                    "project_id": project.id if project else None,
                     "alert_date": today,
                     "title": title[:200],
                     "detail": detail[:300],
@@ -228,6 +234,28 @@ def compute_alerts(db: Session, space: Space, today: date) -> int:
                 f"Tâche en retard depuis le {short_date(t.due_date)}",
             )
 
+    # Propositions de la boîte de mise à jour restées sans décision : rappel à leur auteur.
+    pending = db.execute(
+        select(Proposal, UpdateRequest.author_id)
+        .join(UpdateRequest, UpdateRequest.id == Proposal.request_id)
+        .where(Proposal.space_id == space.id, Proposal.state.in_(OPEN_PROPOSAL_STATES))
+    ).all()
+    writers = {m.user_id for m in memberships if m.role != Role.READER}
+    for proposal, author_id in pending:
+        waited = (today - _local_day(proposal.created_at, space)).days
+        if waited < PROPOSAL_DAYS or author_id not in writers:
+            continue
+        project = db.get(Project, proposal.project_id) if proposal.project_id else None
+        add(
+            [author_id],
+            AlertRule.PROPOSAL_PENDING,
+            "proposal",
+            proposal.id,
+            project,
+            project.title if project else "Mise à jour : projet à préciser",
+            f"Proposition en attente depuis {waited} jours ({proposal.source_label})",
+        )
+
     if not rows:
         return 0
     created = db.execute(
@@ -290,7 +318,11 @@ def digest_email(
         subject = f"PILOT · {space.name} : aucun rappel aujourd'hui"
     lines_text, rows_html = [], []
     for alert in alerts:
-        url = f"{base}/espaces/{space.id}/projets/{alert.project_id}"
+        url = (
+            f"{base}/espaces/{space.id}/mises-a-jour"
+            if alert.target_type == "proposal"
+            else f"{base}/espaces/{space.id}/projets/{alert.project_id}"
+        )
         lines_text.append(f"- [{RULES[alert.rule]}] {alert.title} : {alert.detail}\n  {url}")
         rows_html.append(
             "<tr>"

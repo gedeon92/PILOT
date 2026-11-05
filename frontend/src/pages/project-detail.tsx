@@ -710,6 +710,8 @@ function describe(entry: HistoryEntry): { what: string; detail?: string } {
       return { what: 'Projet créé' }
     case 'project.updated':
       return { what: 'Fiche modifiée', detail: fields }
+    case 'project.updated_from_proposal':
+      return { what: 'Mise à jour validée (boîte de mise à jour)', detail: fields }
     case 'project.status_changed':
       return {
         what: `Statut : ${statusLabel(before.status)} → ${statusLabel(after.status)}`,

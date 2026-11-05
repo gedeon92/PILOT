@@ -13,6 +13,9 @@ const PAGES = [
   { title: 'Événements', path: '/evenements' },
   { title: 'Timeline', path: '/timeline' },
   { title: 'Documents', path: '/documents' },
+  { title: 'Mises à jour', path: '/mises-a-jour' },
+  { title: 'Alertes', path: '/alertes' },
+  { title: 'Mon compte', path: '/compte' },
   { title: 'Accès et membres', path: '/membres' },
   { title: 'Paramètres et structure', path: '/parametres' },
 ]

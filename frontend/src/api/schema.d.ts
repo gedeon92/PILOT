@@ -600,6 +600,153 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/spaces/{space_id}/updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Updates */
+        get: operations["list_updates_api_spaces__space_id__updates_get"];
+        put?: never;
+        /** Create Update */
+        post: operations["create_update_api_spaces__space_id__updates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/updates/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Update */
+        get: operations["get_update_api_spaces__space_id__updates__request_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change Visibility */
+        patch: operations["change_visibility_api_spaces__space_id__updates__request_id__patch"];
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/proposals/{proposal_id}/target": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Choose Target
+         * @description Précise le projet visé quand le passage ne permettait pas de conclure.
+         */
+        post: operations["choose_target_api_spaces__space_id__proposals__proposal_id__target_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/proposals/{proposal_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Proposal
+         * @description Recalcule la proposition sur la version actuelle du projet (texte conservé).
+         */
+        post: operations["refresh_proposal_api_spaces__space_id__proposals__proposal_id__refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/proposals/{proposal_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Proposal */
+        post: operations["apply_proposal_api_spaces__space_id__proposals__proposal_id__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/proposals/{proposal_id}/discard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Discard Proposal */
+        post: operations["discard_proposal_api_spaces__space_id__proposals__proposal_id__discard_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/update-sources/{source_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Source */
+        get: operations["download_source_api_spaces__space_id__update_sources__source_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/update-sources/{source_id}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Share Source
+         * @description Copie, sur décision explicite, un fichier source dans le dossier partagé d'un projet.
+         */
+        post: operations["share_source_api_spaces__space_id__update_sources__source_id__share_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/spaces/{space_id}/alerts": {
         parameters: {
             query?: never;
@@ -750,11 +897,8 @@ export interface components {
             rule_label: string;
             /** Target Type */
             target_type: string;
-            /**
-             * Project Id
-             * Format: uuid
-             */
-            project_id: string;
+            /** Project Id */
+            project_id: string | null;
             /**
              * Alert Date
              * Format: date
@@ -790,6 +934,20 @@ export interface components {
             rules: {
                 [key: string]: string;
             };
+        };
+        /** Body_create_update_api_spaces__space_id__updates_post */
+        Body_create_update_api_spaces__space_id__updates_post: {
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+            /** @default private */
+            visibility: components["schemas"]["UpdateVisibility"];
+            /** Client Request Id */
+            client_request_id?: string | null;
+            /** Files */
+            files?: string[] | null;
         };
         /** Body_upload_document_api_spaces__space_id__projects__project_id__documents_post */
         Body_upload_document_api_spaces__space_id__projects__project_id__documents_post: {
@@ -1413,6 +1571,84 @@ export interface components {
             /** Portfolio Id */
             portfolio_id?: string | null;
         };
+        /** ProposalApply */
+        ProposalApply: {
+            /** Fields */
+            fields: string[];
+            /** Base Version */
+            base_version: number;
+        };
+        /** ProposalChangeOut */
+        ProposalChangeOut: {
+            /** Field */
+            field: string;
+            /** Label */
+            label: string;
+            /** Current */
+            current: string | null;
+            /** Proposed */
+            proposed: string;
+            /** Excerpt */
+            excerpt: string;
+            /** Unchanged */
+            unchanged: boolean;
+        };
+        /** ProposalDiscard */
+        ProposalDiscard: {
+            /** Reason */
+            reason?: string | null;
+        };
+        /** ProposalOut */
+        ProposalOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** State */
+            state: string;
+            project: components["schemas"]["ProposalProjectRef"] | null;
+            /** Candidates */
+            candidates: components["schemas"]["ProposalProjectRef"][];
+            /** Source Label */
+            source_label: string;
+            /** Excerpt */
+            excerpt: string;
+            /** Changes */
+            changes: components["schemas"]["ProposalChangeOut"][];
+            /** Issues */
+            issues: string[];
+            /** Base Version */
+            base_version: number | null;
+            /** Applied Fields */
+            applied_fields: string[];
+            /** Decided By */
+            decided_by: string | null;
+            /** Decided At */
+            decided_at: string | null;
+            /** Discard Reason */
+            discard_reason: string | null;
+        };
+        /** ProposalProjectRef */
+        ProposalProjectRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Detail */
+            detail: string | null;
+        };
+        /** ProposalTarget */
+        ProposalTarget: {
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+        };
         /** RefOut */
         RefOut: {
             /**
@@ -1445,6 +1681,14 @@ export interface components {
          * @enum {string}
          */
         Role: "owner" | "contributor" | "reader";
+        /** SourceShare */
+        SourceShare: {
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+        };
         /** SpaceCreate */
         SpaceCreate: {
             /** Name */
@@ -1563,6 +1807,64 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** UpdateRequestOut */
+        UpdateRequestOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Author Name */
+            author_name: string | null;
+            /** Mine */
+            mine: boolean;
+            /** Visibility */
+            visibility: string;
+            /** Message */
+            message: string | null;
+            /** Sources */
+            sources: components["schemas"]["UpdateSourceOut"][];
+            /** Proposals */
+            proposals: components["schemas"]["ProposalOut"][];
+            /** Notes */
+            notes: string[];
+        };
+        /** UpdateRequestPatch */
+        UpdateRequestPatch: {
+            /**
+             * Visibility
+             * @enum {string}
+             */
+            visibility: "private" | "shared";
+        };
+        /** UpdateSourceOut */
+        UpdateSourceOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Filename */
+            filename: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Extraction */
+            extraction: string;
+            /** Note */
+            note: string | null;
+            /** Chars */
+            chars: number;
+        };
+        /**
+         * UpdateVisibility
+         * @enum {string}
+         */
+        UpdateVisibility: "private" | "shared";
         /** UserOut */
         UserOut: {
             /**
@@ -3069,6 +3371,348 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_updates_api_spaces__space_id__updates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateRequestOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_update_api_spaces__space_id__updates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_create_update_api_spaces__space_id__updates_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_update_api_spaces__space_id__updates__request_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_visibility_api_spaces__space_id__updates__request_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRequestPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    choose_target_api_spaces__space_id__proposals__proposal_id__target_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposalTarget"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_proposal_api_spaces__space_id__proposals__proposal_id__refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_proposal_api_spaces__space_id__proposals__proposal_id__apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposalApply"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discard_proposal_api_spaces__space_id__proposals__proposal_id__discard_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposalDiscard"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_source_api_spaces__space_id__update_sources__source_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    share_source_api_spaces__space_id__update_sources__source_id__share_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceShare"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

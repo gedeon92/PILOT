@@ -397,6 +397,7 @@ class AlertRule(enum.StrEnum):
     DECISION_PENDING = "decision_pending"
     STALE = "stale"
     MISSING_INFO = "missing_info"
+    PROPOSAL_PENDING = "proposal_pending"
 
 
 class Alert(Base):
@@ -414,9 +415,12 @@ class Alert(Base):
     space_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("spaces.id", ondelete="CASCADE"))
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     rule: Mapped[AlertRule] = mapped_column(_enum(AlertRule, "alert_rule"))
-    target_type: Mapped[str] = mapped_column(String(16))  # project | task
+    target_type: Mapped[str] = mapped_column(String(16))  # project | task | proposal
     target_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
-    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
+    # Vide pour une proposition dont le projet reste à préciser.
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE")
+    )
     # Jour de l'alerte dans le fuseau de l'espace.
     alert_date: Mapped[date] = mapped_column(Date)
     title: Mapped[str] = mapped_column(String(200))
@@ -453,3 +457,126 @@ class EmailChange(Base):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+# ---------- Boîte de mise à jour (CDC §9, §10, §11) ----------
+
+
+class UpdateVisibility(enum.StrEnum):
+    PRIVATE = "private"  # visible de son auteur seulement
+    SHARED = "shared"  # visible des contributeurs et propriétaires de l'espace
+
+
+class ExtractionStatus(enum.StrEnum):
+    READ = "read"
+    EMPTY = "empty"  # aucun texte lisible (PDF scanné, image dans un PDF…)
+    UNSUPPORTED = "unsupported"  # format non lu (image, archive…)
+    TOO_LARGE = "too_large"  # au-delà de la taille lue
+    TOO_LONG = "too_long"  # trop de pages ou de caractères
+    FAILED = "failed"  # fichier illisible ou abîmé
+
+
+class ProposalState(enum.StrEnum):
+    TO_CLARIFY = "to_clarify"  # À préciser : projet ou valeur incertains
+    TO_VALIDATE = "to_validate"  # À valider
+    APPLIED = "applied"  # Appliquée
+    DISCARDED = "discarded"  # Écartée
+
+
+OPEN_PROPOSAL_STATES = {ProposalState.TO_CLARIFY, ProposalState.TO_VALIDATE}
+
+
+class UpdateRequest(Base):
+    """Une demande de mise à jour : un message et/ou des fichiers déposés dans la boîte.
+    La déposer ne modifie aucun projet : elle produit des propositions à valider."""
+
+    __tablename__ = "update_requests"
+    __table_args__ = (
+        UniqueConstraint("space_id", "client_request_id", name="uq_update_requests_client"),
+        Index("ix_update_requests_space_created", "space_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("spaces.id", ondelete="CASCADE"))
+    author_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    message: Mapped[str | None] = mapped_column(Text)
+    visibility: Mapped[UpdateVisibility] = mapped_column(
+        _enum(UpdateVisibility, "update_visibility")
+    )
+    # Ce qui n'a pas pu être rattaché à un projet ou lu (messages de fin de parcours).
+    notes: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    client_request_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    author: Mapped[User | None] = relationship()
+    sources: Mapped[list["UpdateSource"]] = relationship(
+        back_populates="request", order_by="UpdateSource.position"
+    )
+    proposals: Mapped[list["Proposal"]] = relationship(
+        back_populates="request", order_by="Proposal.position"
+    )
+
+
+class UpdateSource(Base):
+    """Fichier déposé dans une demande : source d'analyse, distincte du dossier partagé
+    du projet. Il est conservé même si son texte ne peut pas être lu."""
+
+    __tablename__ = "update_sources"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    request_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("update_requests.id", ondelete="CASCADE"), index=True
+    )
+    space_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("spaces.id", ondelete="CASCADE"))
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    filename: Mapped[str] = mapped_column(String(255))
+    content_type: Mapped[str] = mapped_column(String(120))
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(String(64))
+    storage_key: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), unique=True)
+    extraction: Mapped[ExtractionStatus] = mapped_column(
+        _enum(ExtractionStatus, "extraction_status")
+    )
+    extraction_note: Mapped[str | None] = mapped_column(String(300))
+    extracted_chars: Mapped[int] = mapped_column(Integer, default=0)
+
+    request: Mapped[UpdateRequest] = relationship(back_populates="sources")
+
+
+class Proposal(Base):
+    """Proposition de modification d'un projet, issue d'un passage de la demande.
+    `changes` : [{field, value, display, excerpt}] ; `before` : valeurs lues à la préparation ;
+    `base_version` : version du projet à la préparation (une autre version bloque l'application)."""
+
+    __tablename__ = "proposals"
+    __table_args__ = (Index("ix_proposals_space_state", "space_id", "state"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    request_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("update_requests.id", ondelete="CASCADE"), index=True
+    )
+    space_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("spaces.id", ondelete="CASCADE"))
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    state: Mapped[ProposalState] = mapped_column(_enum(ProposalState, "proposal_state"))
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    # Projets possibles quand le passage ne permet pas de conclure.
+    candidate_ids: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    source_label: Mapped[str] = mapped_column(String(255))  # « Message » ou nom du fichier
+    excerpt: Mapped[str] = mapped_column(Text)
+    changes: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    issues: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    before: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    base_version: Mapped[int | None] = mapped_column(Integer)
+    applied_fields: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    decided_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    discard_reason: Mapped[str | None] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    request: Mapped[UpdateRequest] = relationship(back_populates="proposals")
+    project: Mapped[Project | None] = relationship()
+    decided_by: Mapped[User | None] = relationship()

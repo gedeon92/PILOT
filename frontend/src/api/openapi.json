@@ -2394,6 +2394,576 @@
         }
       }
     },
+    "/api/spaces/{space_id}/updates": {
+      "get": {
+        "tags": [
+          "mises à jour"
+        ],
+        "summary": "List Updates",
+        "operationId": "list_updates_api_spaces__space_id__updates_get",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UpdateRequestOut"
+                  },
+                  "title": "Response List Updates Api Spaces  Space Id  Updates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "mises à jour"
+        ],
+        "summary": "Create Update",
+        "operationId": "create_update_api_spaces__space_id__updates_post",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_update_api_spaces__space_id__updates_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateRequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/updates/{request_id}": {
+      "get": {
+        "tags": [
+          "mises à jour"
+        ],
+        "summary": "Get Update",
+        "operationId": "get_update_api_spaces__space_id__updates__request_id__get",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateRequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "mises à jour"
+        ],
+        "summary": "Change Visibility",
+        "operationId": "change_visibility_api_spaces__space_id__updates__request_id__patch",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRequestPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateRequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/proposals/{proposal_id}/target": {
+      "post": {
+        "tags": [
+          "mises à jour"
+        ],
+        "summary": "Choose Target",
+        "description": "Précise le projet visé quand le passage ne permettait pas de conclure.",
+        "operationId": "choose_target_api_spaces__space_id__proposals__proposal_id__target_post",
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Proposal Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposalTarget"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/proposals/{proposal_id}/refresh": {
+      "post": {
+        "tags": [
+          "mises à jour"
+        ],
+        "summary": "Refresh Proposal",
+        "description": "Recalcule la proposition sur la version actuelle du projet (texte conservé).",
+        "operationId": "refresh_proposal_api_spaces__space_id__proposals__proposal_id__refresh_post",
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Proposal Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/proposals/{proposal_id}/apply": {
+      "post": {
+        "tags": [
+          "mises à jour"
+        ],
+        "summary": "Apply Proposal",
+        "operationId": "apply_proposal_api_spaces__space_id__proposals__proposal_id__apply_post",
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Proposal Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposalApply"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/proposals/{proposal_id}/discard": {
+      "post": {
+        "tags": [
+          "mises à jour"
+        ],
+        "summary": "Discard Proposal",
+        "operationId": "discard_proposal_api_spaces__space_id__proposals__proposal_id__discard_post",
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Proposal Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposalDiscard"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/update-sources/{source_id}/download": {
+      "get": {
+        "tags": [
+          "mises à jour"
+        ],
+        "summary": "Download Source",
+        "operationId": "download_source_api_spaces__space_id__update_sources__source_id__download_get",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Source Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/update-sources/{source_id}/share": {
+      "post": {
+        "tags": [
+          "mises à jour"
+        ],
+        "summary": "Share Source",
+        "description": "Copie, sur décision explicite, un fichier source dans le dossier partagé d'un projet.",
+        "operationId": "share_source_api_spaces__space_id__update_sources__source_id__share_post",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Source Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceShare"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/spaces/{space_id}/alerts": {
       "get": {
         "tags": [
@@ -2781,8 +3351,15 @@
             "title": "Target Type"
           },
           "project_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Project Id"
           },
           "alert_date": {
@@ -2883,6 +3460,49 @@
           "rules"
         ],
         "title": "AlertPreferenceOut"
+      },
+      "Body_create_update_api_spaces__space_id__updates_post": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 30000,
+            "title": "Message",
+            "default": ""
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/UpdateVisibility",
+            "default": "private"
+          },
+          "client_request_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Request Id"
+          },
+          "files": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "contentMediaType": "application/octet-stream"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "title": "Body_create_update_api_spaces__space_id__updates_post"
       },
       "Body_upload_document_api_spaces__space_id__projects__project_id__documents_post": {
         "properties": {
@@ -5162,6 +5782,258 @@
         ],
         "title": "ProjectUpdate"
       },
+      "ProposalApply": {
+        "properties": {
+          "fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Fields"
+          },
+          "base_version": {
+            "type": "integer",
+            "title": "Base Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fields",
+          "base_version"
+        ],
+        "title": "ProposalApply"
+      },
+      "ProposalChangeOut": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "current": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current"
+          },
+          "proposed": {
+            "type": "string",
+            "title": "Proposed"
+          },
+          "excerpt": {
+            "type": "string",
+            "title": "Excerpt"
+          },
+          "unchanged": {
+            "type": "boolean",
+            "title": "Unchanged"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "label",
+          "current",
+          "proposed",
+          "excerpt",
+          "unchanged"
+        ],
+        "title": "ProposalChangeOut"
+      },
+      "ProposalDiscard": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "title": "ProposalDiscard"
+      },
+      "ProposalOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "project": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalProjectRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalProjectRef"
+            },
+            "type": "array",
+            "title": "Candidates"
+          },
+          "source_label": {
+            "type": "string",
+            "title": "Source Label"
+          },
+          "excerpt": {
+            "type": "string",
+            "title": "Excerpt"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalChangeOut"
+            },
+            "type": "array",
+            "title": "Changes"
+          },
+          "issues": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Issues"
+          },
+          "base_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Version"
+          },
+          "applied_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Applied Fields"
+          },
+          "decided_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided By"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "discard_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discard Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "state",
+          "project",
+          "candidates",
+          "source_label",
+          "excerpt",
+          "changes",
+          "issues",
+          "base_version",
+          "applied_fields",
+          "decided_by",
+          "decided_at",
+          "discard_reason"
+        ],
+        "title": "ProposalOut"
+      },
+      "ProposalProjectRef": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "detail"
+        ],
+        "title": "ProposalProjectRef"
+      },
+      "ProposalTarget": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id"
+        ],
+        "title": "ProposalTarget"
+      },
       "RefOut": {
         "properties": {
           "id": {
@@ -5225,6 +6097,20 @@
           "reader"
         ],
         "title": "Role"
+      },
+      "SourceShare": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id"
+        ],
+        "title": "SourceShare"
       },
       "SpaceCreate": {
         "properties": {
@@ -5629,6 +6515,155 @@
           "message"
         ],
         "title": "TestEmailResult"
+      },
+      "UpdateRequestOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "author_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "mine": {
+            "type": "boolean",
+            "title": "Mine"
+          },
+          "visibility": {
+            "type": "string",
+            "title": "Visibility"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/UpdateSourceOut"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "proposals": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalOut"
+            },
+            "type": "array",
+            "title": "Proposals"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "author_name",
+          "mine",
+          "visibility",
+          "message",
+          "sources",
+          "proposals",
+          "notes"
+        ],
+        "title": "UpdateRequestOut"
+      },
+      "UpdateRequestPatch": {
+        "properties": {
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "private",
+              "shared"
+            ],
+            "title": "Visibility"
+          }
+        },
+        "type": "object",
+        "required": [
+          "visibility"
+        ],
+        "title": "UpdateRequestPatch"
+      },
+      "UpdateSourceOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "extraction": {
+            "type": "string",
+            "title": "Extraction"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "chars": {
+            "type": "integer",
+            "title": "Chars"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "size_bytes",
+          "extraction",
+          "note",
+          "chars"
+        ],
+        "title": "UpdateSourceOut"
+      },
+      "UpdateVisibility": {
+        "type": "string",
+        "enum": [
+          "private",
+          "shared"
+        ],
+        "title": "UpdateVisibility"
       },
       "UserOut": {
         "properties": {

@@ -17,6 +17,7 @@ import { SettingsPage } from './pages/settings'
 import { SpaceLayout } from './pages/space-layout'
 import { StatusPage } from './pages/status'
 import { TimelinePage } from './pages/timeline'
+import { UpdatesPage } from './pages/updates'
 
 /** Affiche `children(me)` si quelqu'un est connecté, sinon renvoie vers la connexion. */
 function RequireAuth({ children }: { children: (me: Me) => React.ReactNode }) {
@@ -82,6 +83,7 @@ export default function App() {
         <Route path="evenements" element={<EventsPage />} />
         <Route path="timeline" element={<TimelinePage />} />
         <Route path="documents" element={<DocumentsPage />} />
+        <Route path="mises-a-jour" element={<UpdatesPage />} />
         <Route path="alertes" element={<AlertsPage />} />
         <Route path="compte" element={<AccountPage />} />
         <Route path="projets/nouveau" element={<NewProjectPage />} />

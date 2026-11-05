@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from pilot_api import alerts as alerts_module
 from pilot_api.config import get_settings
-from pilot_api.models import AlertPreference, Project
+from pilot_api.models import AlertPreference, Project, Proposal
 
 DAKAR = ZoneInfo("Africa/Dakar")  # fuseau de l'espace créé par conftest.create_space
 
@@ -233,3 +233,24 @@ def test_no_digest_to_reserved_test_domains():
     assert alerts_module.is_test_address("a@example.org")
     assert alerts_module.is_test_address("a@pilot.test")
     assert not alerts_module.is_test_address("contact@datatym.com")
+
+
+def test_proposal_waiting_two_days_reminds_its_author(make_client, engine):
+    owner, contributor, _, _, base, portfolio = _setup(make_client)
+    _project(owner, base, portfolio)
+    request = contributor.post(f"{base}/updates", data={"message": "Salon — Avancement : 30 %"})
+    proposal = request.json()["proposals"][0]
+    assert _rules(contributor, base) == []  # pas de rappel le jour même
+
+    with Session(engine) as db:
+        db.execute(
+            update(Proposal)
+            .where(Proposal.id == proposal["id"])
+            .values(created_at=datetime.now(DAKAR) - timedelta(days=2))
+        )
+        db.commit()
+
+    assert _rules(contributor, base) == [("proposal_pending", "Salon")]
+    assert _rules(owner, base) == []  # la propriétaire n'est pas l'autrice
+    items = contributor.get(f"{base}/alerts").json()["items"]
+    assert items[0]["target_type"] == "proposal"

@@ -150,7 +150,7 @@ Demande du 3 nov. 2026 : suivre l'organisation des événements, les voir dans u
 - [x] Retrait sans suppression définitive, journalisé dans l'historique du projet
 - [x] Page « Documents » : toutes les pièces de l'espace, recherche par nom
 - [x] Stockage des fichiers : décision D2 appliquée (PostgreSQL/Neon derrière l'interface `FileStorage`)
-- [ ] Séparation dossier partagé / sources privées de mise à jour : à construire avec la boîte de mise à jour (phase 8)
+- [x] Séparation dossier partagé / sources privées : les fichiers déposés dans la boîte de mise à jour restent des sources (privées par défaut) et n'entrent dans le dossier d'un projet que sur décision explicite (« Ajouter au dossier d'un projet »)
 - [ ] Remplacement d'un document avec conservation de la version précédente
 
 **Terminé quand :** DOC01 passe, et un fichier reste disponible depuis un autre appareil.
@@ -209,23 +209,23 @@ Règles d'alerte (seuils réglables par espace) :
 - [x] Seuls les membres ayant un compte reçoivent des alertes ; un responsable en nom libre n'en reçoit pas (déjà signalé « sans compte »)
 - [x] Désactivation possible par l'utilisateur, règle par règle
 - [x] Mise en service (5 nov. 2026, e-mail de test reçu) : compte Brevo, expéditeur de test vérifié (adresse Gmail dédiée à PILOT), `BREVO_API_KEY`, `MAIL_SENDER_EMAIL` et `CRON_SECRET` dans Render, secret `CRON_SECRET` dans GitHub
-- [ ] Alerte « Proposition à valider » : avec la boîte de mise à jour (phase 8)
+- [x] Alerte « Proposition à valider » : proposition sans décision depuis 2 jours, rappelée à son auteur
 
 **Terminé quand :** une tâche à J-3 produit exactement une alerte pour le bon destinataire ; une tâche terminée ou annulée n'en produit plus ; un lecteur ne reçoit pas d'alerte sur une action qu'il ne peut pas faire ; le récapitulatif part à l'heure prévue dans le fuseau de l'espace.
 
 ## Phase 8 — Boîte de mise à jour par texte ou document (CDC §9, §10)
 
-- [ ] Modèle `Proposal` (états : Reçue, À préciser, À valider, En conflit, Appliquée, Écartée)
-- [ ] Saisie libre + dépôt de fichiers, sans choisir le projet avant l'analyse
-- [ ] Extraction du texte (PDF texte, DOCX, XLSX, PPTX, TXT, CSV, Markdown) avec limites : 5 Mo lus, 40 pages, environ 30 000 caractères, délai maximal
-- [ ] Moteur déterministe : normalisation des accents, titres, abréviations, mots-clés, nom du fichier
-- [ ] Reconnaissance des champs : statut, avancement, échéance, responsable, situation, prochaine étape, décision
-- [ ] Garde-fous CDC §10 : pas de % d'objectif lu comme avancement, pas de « sera terminé » lu comme Terminé, contradictions mises en attente, aucune conversion de date relative
-- [ ] Écran de comparaison avant/après avec le passage source
-- [ ] Validation puis application atomique avec vérification de version, sans double application
-- [ ] Messages de fin de parcours (CDC §22)
+- [x] Modèles `UpdateRequest` (demande : message, visibilité privée ou partagée, notes), `UpdateSource` (fichier conservé, état de lecture) et `Proposal` (états : À préciser, À valider, En conflit — calculé quand le projet a changé —, Appliquée, Écartée)
+- [x] Saisie libre + dépôt de fichiers (3 au plus), sans choisir le projet avant l'analyse ; « Réessayer » sans doublon
+- [x] Extraction du texte (PDF texte, DOCX, XLSX, PPTX, TXT, CSV, Markdown) avec limites : 5 Mo lus, 40 pages, 30 000 caractères, archives Office trop gonflées refusées ; tableaux avec une colonne « Projet » lus ligne par ligne ; pas d'OCR (PDF scanné et images signalés, conservés)
+- [x] Moteur déterministe (`updates/engine.py`) : normalisation des accents, titres, sigles, ordre des mots, titre le plus précis, nom du fichier ; départage par filiale, ville, pays, édition ou programme ; sinon candidats à choisir
+- [x] Reconnaissance des champs : statut, avancement, échéance, responsable (membre ou nom libre), situation, prochaine étape, décision, blocage, vigilance ; texte libre proposé comme situation
+- [x] Garde-fous CDC §10 : pas de % d'objectif lu comme avancement, pas de « sera terminé » ni « n'est pas terminé » lu comme Terminé (Terminé et Annulé restent sur la fiche, avec bilan ou motif), contradictions mises de côté, aucune date relative ni sans année convertie, un projet cité dans une prochaine étape ne change pas la cible
+- [x] Écran « Mises à jour » : comparaison actuel / proposé champ par champ (cases à cocher), passage source, choix du projet, recalcul en cas de conflit, écarter avec motif
+- [x] Validation puis application atomique (verrou de ligne, vérification de version, journal « mise à jour validée »), sans double application
+- [x] Messages de fin de parcours (CDC §22) : reçu, compris, incertain, changé ; projet non identifié, plusieurs projets possibles, fichier non analysé, déjà à jour
 
-**Terminé quand :** UPD01 à UPD05 et DOC02 passent.
+**Terminé quand :** UPD01 à UPD05 et DOC02 passent. ✅ (5 nov. 2026 : `tests/test_updates.py`, `tests/test_update_engine.py`)
 
 ## Phase 9 — Export, sauvegarde et fiabilisation (CDC §18, §19)
 
