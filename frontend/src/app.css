@@ -2880,8 +2880,7 @@ kbd {
 
 /* Correctif du 5 nov. 2026 : rien ne se chevauche sur la vue d'ensemble.
    - la timeline garde toujours la hauteur de son contenu (elle ne se fait plus écraser) ;
-   - « Comment c'est calculé ? » s'ouvre en fenêtre flottante au-dessus du bloc,
-     au lieu d'agrandir la page ;
+   - « Comment c'est calculé ? » s'ouvre en bas, sous « À faire aujourd'hui » ;
    - si l'écran est vraiment trop bas, la page défile plutôt que de superposer. */
 @media (min-width: 900px) and (min-height: 600px) {
   .page-content--fit {
@@ -2889,23 +2888,5 @@ kbd {
   }
   .page-content--fit .dashboard-row__main {
     flex: 0 0 auto;
-  }
-  .page-content--fit .dashboard-row__side {
-    position: relative;
-  }
-  .page-content--fit .rules__body {
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: calc(100% + 8px);
-    z-index: 20;
-    padding: 16px 20px;
-    border: 1px solid var(--color-border);
-    border-radius: 14px;
-    background: var(--color-panel);
-    box-shadow: 0 12px 32px rgb(24 24 27 / 0.14);
-  }
-  .page-content--fit .rules__body ul {
-    margin-top: 0;
   }
 }

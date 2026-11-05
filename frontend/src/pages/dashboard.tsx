@@ -377,7 +377,19 @@ export function DashboardPage() {
               </ul>
             </>
           )}
-          <details className="rules">
+          <details
+            className="rules"
+            onToggle={(e) => {
+              // L'explication s'ouvre en bas : on fait défiler pour la montrer en entier.
+              const details = e.currentTarget
+              if (details.open) {
+                ;(details.closest('section') ?? details).scrollIntoView?.({
+                  behavior: 'smooth',
+                  block: 'end',
+                })
+              }
+            }}
+          >
             <summary>Comment c’est calculé ?</summary>
             <div className="rules__body">
               <ul>
