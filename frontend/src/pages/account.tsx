@@ -10,6 +10,7 @@ import {
 } from '../api/queries'
 import { Alert, AuthCard, PageHeader } from '../components/ui'
 import type { SpaceContext } from './space-layout'
+import { PasswordInput } from '../components/password-input'
 
 function NameForm({ current }: { current: string }) {
   const update = useUpdateProfile()
@@ -86,9 +87,8 @@ function EmailForm({ current }: { current: string }) {
       </div>
       <div className="field">
         <label htmlFor="account-email-password">Mot de passe actuel</label>
-        <input
+        <PasswordInput
           id="account-email-password"
-          type="password"
           required
           autoComplete="current-password"
           value={password}
@@ -150,9 +150,8 @@ function PasswordForm() {
       </h2>
       <div className="field">
         <label htmlFor="pw-current">Mot de passe actuel</label>
-        <input
+        <PasswordInput
           id="pw-current"
-          type="password"
           required
           autoComplete="current-password"
           value={current}
@@ -161,9 +160,8 @@ function PasswordForm() {
       </div>
       <div className="field">
         <label htmlFor="pw-new">Nouveau mot de passe</label>
-        <input
+        <PasswordInput
           id="pw-new"
-          type="password"
           required
           minLength={10}
           maxLength={128}
@@ -174,9 +172,8 @@ function PasswordForm() {
       </div>
       <div className="field">
         <label htmlFor="pw-confirm">Confirmer le nouveau mot de passe</label>
-        <input
+        <PasswordInput
           id="pw-confirm"
-          type="password"
           required
           autoComplete="new-password"
           aria-invalid={mismatch}

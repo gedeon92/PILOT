@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 import { errorMessage } from '../api/client'
 import { useLogin, useRegister } from '../api/queries'
 import { Alert, AuthCard } from '../components/ui'
+import { PasswordInput } from '../components/password-input'
 
 /** N'accepte qu'un chemin interne, pour qu'un lien piégé ne renvoie pas vers un autre site. */
 function safeNext(value: string | null): string {
@@ -42,9 +43,8 @@ export function LoginPage() {
         </div>
         <div className="field">
           <label htmlFor="password">Mot de passe</label>
-          <input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="current-password"
             required
             value={password}
@@ -107,9 +107,8 @@ export function RegisterPage() {
         </div>
         <div className="field">
           <label htmlFor="password">Mot de passe</label>
-          <input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="new-password"
             required
             minLength={10}

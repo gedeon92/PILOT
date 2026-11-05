@@ -3168,3 +3168,36 @@ kbd {
   max-height: 260px;
   overflow-y: auto;
 }
+
+/* Champ de mot de passe avec l'œil pour afficher la saisie. */
+.password-input {
+  position: relative;
+}
+.password-input input {
+  width: 100%;
+  padding-right: 44px;
+}
+.password-input__toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.password-input__toggle:hover,
+.password-input__toggle[aria-pressed='true'] {
+  color: var(--color-ink);
+  background: var(--tone-neutral-bg);
+}
+.password-input__toggle:focus-visible {
+  outline: 2px solid var(--color-action);
+  outline-offset: 1px;
+}
