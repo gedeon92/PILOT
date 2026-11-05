@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useOutletContext } from 'react-router'
 import { errorMessage } from '../api/client'
-import { downloadUrl, useSpaceDocuments } from '../api/queries'
-import { FileBadge } from '../components/documents'
+import { downloadUrl, useProjects, useSpaceDocuments } from '../api/queries'
+import { FileBadge, UPLOAD_HELP, UploadStatus, useUploader } from '../components/documents'
 import { DocumentIcon } from '../components/icons'
 import { Alert, PageHeader } from '../components/ui'
 import { formatSize } from '../files'
@@ -13,19 +13,75 @@ import type { SpaceContext } from './space-layout'
 const PAGE = 50
 const MAX = 450
 
+/** Ajout direct depuis la page Documents : on choisit le projet, puis les fichiers. */
+function AddDocuments({ spaceId }: { spaceId: string }) {
+  const projects = useProjects(spaceId)
+  const [chosen, setChosen] = useState('')
+  const list = projects.data ?? []
+  const projectId = chosen || list[0]?.id || ''
+  const { input, uploads, busy, send } = useUploader(spaceId, projectId)
+
+  return (
+    <section className="card-panel add-docs" aria-labelledby="add-docs-title">
+      <h2 id="add-docs-title">Ajouter des documents</h2>
+      {projects.isSuccess && list.length === 0 ? (
+        <p className="muted">
+          Créez d’abord un projet : chaque document est rangé dans un projet.{' '}
+          <Link to={`/espaces/${spaceId}/projets`}>Aller aux projets</Link>
+        </p>
+      ) : (
+        <>
+          <div className="add-docs__row">
+            <label className="field add-docs__project">
+              <span className="field__label">Projet</span>
+              <select value={projectId} onChange={(e) => setChosen(e.target.value)}>
+                {list.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <input
+              ref={input}
+              type="file"
+              multiple
+              className="visually-hidden"
+              id="upload-space-documents"
+              onChange={(e) => send(e.target.files)}
+            />
+            <label
+              htmlFor="upload-space-documents"
+              className={
+                busy || !projectId ? 'button button--primary is-disabled' : 'button button--primary'
+              }
+            >
+              {busy ? 'Envoi…' : 'Choisir les fichiers'}
+            </label>
+          </div>
+          <p className="card-panel__help">{UPLOAD_HELP}</p>
+          <UploadStatus uploads={uploads} />
+        </>
+      )}
+    </section>
+  )
+}
+
 export function DocumentsPage() {
   const { space } = useOutletContext<SpaceContext>()
   const [q, setQ] = useState('')
   const [limit, setLimit] = useState(PAGE)
   const documents = useSpaceDocuments(space.id, q, limit)
   const items = documents.data?.items
+  const canWrite = space.role !== 'reader'
 
   return (
     <div className="page-content">
       <PageHeader
         title="Documents"
-        subtitle="Toutes les pièces des projets de l’espace. Pour en ajouter, ouvrez la fiche du projet."
+        subtitle="Toutes les pièces des projets de l’espace : PDF, Word, Excel, images…"
       />
+      {canWrite && <AddDocuments spaceId={space.id} />}
       <div className="filters" role="search">
         <label className="filters__search">
           <span className="visually-hidden">Rechercher un document</span>

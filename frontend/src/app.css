@@ -3231,3 +3231,28 @@ kbd {
   justify-content: center;
   gap: 16px;
 }
+
+/* Page Documents : ajout direct */
+.add-docs h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+.add-docs__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+.add-docs__project {
+  flex: 1 1 260px;
+}
+.add-docs .field__label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.add-docs select {
+  width: 100%;
+}
+.add-docs .card-panel__help {
+  margin: 10px 0 0;
+}

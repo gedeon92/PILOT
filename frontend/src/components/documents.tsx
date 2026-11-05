@@ -77,16 +77,8 @@ function DocumentRow({
   )
 }
 
-export function DocumentsSection({
-  spaceId,
-  projectId,
-  canWrite,
-}: {
-  spaceId: string
-  projectId: string
-  canWrite: boolean
-}) {
-  const documents = useProjectDocuments(spaceId, projectId)
+/** Envoie les fichiers choisis un par un dans un projet et garde le résultat de chacun. */
+export function useUploader(spaceId: string, projectId: string) {
   const upload = useUploadDocument(spaceId, projectId)
   const input = useRef<HTMLInputElement>(null)
   const [uploads, setUploads] = useState<UploadState[]>([])
@@ -126,6 +118,42 @@ export function DocumentsSection({
     if (input.current) input.current.value = ''
   }
 
+  return { input, uploads, busy, send }
+}
+
+export function UploadStatus({ uploads }: { uploads: UploadState[] }) {
+  if (uploads.length === 0) return null
+  return (
+    <ul className="upload-status" aria-live="polite">
+      {uploads.map((u, i) => (
+        <li key={i} className={`upload-status__item upload-status__item--${u.status}`}>
+          <span>{u.name}</span>
+          <span>
+            {u.status === 'pending'
+              ? 'Envoi…'
+              : u.status === 'done'
+                ? 'Enregistré'
+                : `Non enregistré : ${u.message}`}
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export const UPLOAD_HELP = `${MAX_FILES_PER_UPLOAD} fichiers à la fois, 4 Mo chacun au maximum (phase de test). Tous les formats sont acceptés (PDF, Word, Excel, images…) ; ils sont toujours proposés en téléchargement.`
+
+export function DocumentsSection({
+  spaceId,
+  projectId,
+  canWrite,
+}: {
+  spaceId: string
+  projectId: string
+  canWrite: boolean
+}) {
+  const documents = useProjectDocuments(spaceId, projectId)
+  const { input, uploads, busy, send } = useUploader(spaceId, projectId)
   return (
     <section className="card-panel" aria-labelledby="documents-title">
       <div className="card-panel__head">
@@ -151,28 +179,8 @@ export function DocumentsSection({
           </>
         )}
       </div>
-      {canWrite && (
-        <p className="card-panel__help">
-          {MAX_FILES_PER_UPLOAD} fichiers à la fois, 4 Mo chacun au maximum (phase de test). Tous
-          les formats sont acceptés ; ils sont toujours proposés en téléchargement.
-        </p>
-      )}
-      {uploads.length > 0 && (
-        <ul className="upload-status" aria-live="polite">
-          {uploads.map((u, i) => (
-            <li key={i} className={`upload-status__item upload-status__item--${u.status}`}>
-              <span>{u.name}</span>
-              <span>
-                {u.status === 'pending'
-                  ? 'Envoi…'
-                  : u.status === 'done'
-                    ? 'Enregistré'
-                    : `Non enregistré : ${u.message}`}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      {canWrite && <p className="card-panel__help">{UPLOAD_HELP}</p>}
+      <UploadStatus uploads={uploads} />
       {documents.isPending && <p className="muted">Chargement…</p>}
       {documents.isError && <Alert>{errorMessage(documents.error)}</Alert>}
       {documents.data?.length === 0 && <p className="muted">Aucun document pour l’instant.</p>}
