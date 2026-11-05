@@ -556,7 +556,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Space Documents */
+        /**
+         * List Space Documents
+         * @description Pièces de l'espace, les plus récentes d'abord, par pages (le contenu n'est jamais
+         *     chargé ici : il se télécharge à la demande).
+         */
         get: operations["list_space_documents_api_spaces__space_id__documents_get"];
         put?: never;
         post?: never;
@@ -741,6 +745,46 @@ export interface paths {
          * @description Copie, sur décision explicite, un fichier source dans le dossier partagé d'un projet.
          */
         post: operations["share_source_api_spaces__space_id__update_sources__source_id__share_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Space
+         * @description Photographie complète de l'espace, téléchargée en ZIP (propriétaire seulement).
+         */
+        get: operations["export_space_api_spaces__space_id__export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/space-imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Export
+         * @description Recrée un espace à partir d'un export, dans un nouvel espace dont on devient propriétaire.
+         */
+        post: operations["import_export_api_space_imports_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -949,6 +993,11 @@ export interface components {
             /** Files */
             files?: string[] | null;
         };
+        /** Body_import_export_api_space_imports_post */
+        Body_import_export_api_space_imports_post: {
+            /** File */
+            file: string;
+        };
         /** Body_upload_document_api_spaces__space_id__projects__project_id__documents_post */
         Body_upload_document_api_spaces__space_id__projects__project_id__documents_post: {
             /** File */
@@ -1118,6 +1167,24 @@ export interface components {
             after: {
                 [key: string]: unknown;
             } | null;
+        };
+        /** ImportResult */
+        ImportResult: {
+            /**
+             * Space Id
+             * Format: uuid
+             */
+            space_id: string;
+            /** Space Name */
+            space_name: string;
+            /** Already Imported */
+            already_imported: boolean;
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Warnings */
+            warnings: string[];
         };
         /** InvitationCreate */
         InvitationCreate: {
@@ -3296,6 +3363,8 @@ export interface operations {
         parameters: {
             query?: {
                 q?: string | null;
+                limit?: number;
+                offset?: number;
             };
             header?: never;
             path: {
@@ -3718,6 +3787,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_space_api_spaces__space_id__export_get: {
+        parameters: {
+            query?: {
+                files?: boolean;
+            };
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_export_api_space_imports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_export_api_space_imports_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResult"];
                 };
             };
             /** @description Validation Error */

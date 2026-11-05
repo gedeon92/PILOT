@@ -2,7 +2,7 @@ import html
 from datetime import timedelta
 
 from fastapi import APIRouter, HTTPException, Request, Response
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -13,6 +13,7 @@ from pilot_api.mailer import MailError, mail_configured, send_email
 from pilot_api.models import (
     AuthSession,
     EmailChange,
+    LoginFailure,
     Membership,
     MembershipStatus,
     Space,
@@ -41,6 +42,10 @@ from pilot_api.security import (
 )
 
 router = APIRouter(prefix="/api/auth", tags=["authentification"])
+
+# Après 8 échecs en 15 minutes pour une même adresse, la connexion est suspendue 15 minutes.
+MAX_LOGIN_FAILURES = 8
+LOGIN_WINDOW_MINUTES = 15
 
 
 def _open_session(db: Session, response: Response, user: User) -> None:
@@ -96,13 +101,30 @@ def register(body: RegisterIn, response: Response, db: DbSession) -> MeOut:
 
 @router.post("/login")
 def login(body: LoginIn, response: Response, db: DbSession) -> MeOut:
-    user = db.scalar(select(User).where(User.email == normalize_email(body.email)))
+    email = normalize_email(body.email)
+    email_key = hash_token(email)
+    since = utcnow() - timedelta(minutes=LOGIN_WINDOW_MINUTES)
+    failures = db.scalar(
+        select(func.count())
+        .select_from(LoginFailure)
+        .where(LoginFailure.email_hash == email_key, LoginFailure.created_at >= since)
+    )
+    if failures >= MAX_LOGIN_FAILURES:
+        raise HTTPException(
+            429,
+            f"Trop de tentatives pour cette adresse. Réessayez dans {LOGIN_WINDOW_MINUTES} "
+            "minutes, ou demandez de l'aide à la propriétaire de votre espace.",
+        )
+
+    user = db.scalar(select(User).where(User.email == email))
     if user is None:
         spend_verification_time(body.password)
-        raise HTTPException(401, "Adresse e-mail ou mot de passe incorrect.")
-    if not verify_password(user.password_hash, body.password):
+    if user is None or not verify_password(user.password_hash, body.password):
+        db.add(LoginFailure(email_hash=email_key))
+        db.commit()
         raise HTTPException(401, "Adresse e-mail ou mot de passe incorrect.")
 
+    db.execute(delete(LoginFailure).where(LoginFailure.email_hash == email_key))
     _open_session(db, response, user)
     db.commit()
     return build_me(db, user)

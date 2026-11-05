@@ -67,3 +67,46 @@ def test_write_without_csrf_header_is_refused(make_client):
     register(client, "a@exemple.com")
     response = client.post("/api/spaces", json={"name": "Espace"}, headers={"X-PILOT-CSRF": ""})
     assert response.status_code == 403
+
+
+def test_repeated_wrong_passwords_are_slowed_down(make_client):
+    client = make_client()
+    register(client, "cible@exemple.com")
+    attacker = make_client()
+
+    codes = [
+        attacker.post(
+            "/api/auth/login", json={"email": "cible@exemple.com", "password": f"essai-{i}"}
+        ).status_code
+        for i in range(9)
+    ]
+    blocked = attacker.post(
+        "/api/auth/login", json={"email": "cible@exemple.com", "password": PASSWORD}
+    )
+
+    assert codes[:8] == [401] * 8
+    assert codes[8] == 429
+    assert blocked.status_code == 429  # même le bon mot de passe attend la fin du délai
+    other = attacker.post("/api/auth/login", json={"email": "autre@exemple.com", "password": "x"})
+    assert other.status_code == 401  # les autres adresses ne sont pas touchées
+
+
+def test_successful_login_clears_previous_failures(make_client):
+    client = make_client()
+    register(client, "moi@exemple.com")
+    for i in range(5):
+        client.post("/api/auth/login", json={"email": "moi@exemple.com", "password": f"faux-{i}"})
+    assert (
+        client.post(
+            "/api/auth/login", json={"email": "moi@exemple.com", "password": PASSWORD}
+        ).status_code
+        == 200
+    )
+    for i in range(5):
+        client.post("/api/auth/login", json={"email": "moi@exemple.com", "password": f"faux-{i}"})
+    assert (
+        client.post(
+            "/api/auth/login", json={"email": "moi@exemple.com", "password": PASSWORD}
+        ).status_code
+        == 200
+    )

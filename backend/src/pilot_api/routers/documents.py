@@ -9,9 +9,10 @@ import mimetypes
 import re
 import unicodedata
 import uuid
+from typing import Annotated
 from urllib.parse import quote
 
-from fastapi import APIRouter, HTTPException, Response, UploadFile
+from fastapi import APIRouter, HTTPException, Query, Response, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -104,8 +105,14 @@ def list_project_documents(
 
 @router.get("/documents")
 def list_space_documents(
-    membership: CurrentMembership, db: DbSession, q: str | None = None
+    membership: CurrentMembership,
+    db: DbSession,
+    q: str | None = None,
+    limit: Annotated[int, Query(ge=1, le=500)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[DocumentOut]:
+    """Pièces de l'espace, les plus récentes d'abord, par pages (le contenu n'est jamais
+    chargé ici : il se télécharge à la demande)."""
     query = (
         select(Document, Project.title)
         .join(Project, Project.id == Document.project_id)
@@ -114,7 +121,9 @@ def list_space_documents(
     )
     if q:
         query = query.where(Document.filename.ilike(f"%{q.strip()}%"))
-    rows = db.execute(query.order_by(Document.created_at.desc()).limit(500)).all()
+    rows = db.execute(
+        query.order_by(Document.created_at.desc(), Document.id).offset(offset).limit(limit)
+    ).all()
     return [_document_out(document, title) for document, title in rows]
 
 

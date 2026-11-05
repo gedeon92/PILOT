@@ -6,6 +6,7 @@ import {
   ApiError,
   type DocumentItem,
   type HistoryEntry,
+  type ImportResult,
   type InvitationInfo,
   type InvitationLink,
   type Me,
@@ -336,11 +337,17 @@ export function useProjectDocuments(spaceId: string, projectId: string) {
   })
 }
 
-export function useSpaceDocuments(spaceId: string, q: string) {
+/** Une page de plus que demandé est chargée pour savoir s'il en reste. */
+export function useSpaceDocuments(spaceId: string, q: string, limit = 50) {
   return useQuery({
-    queryKey: [...projectKeys.all(spaceId), 'documents', q],
-    queryFn: () =>
-      api<DocumentItem[]>(`/spaces/${spaceId}/documents${q ? `?q=${encodeURIComponent(q)}` : ''}`),
+    queryKey: [...projectKeys.all(spaceId), 'documents', q, limit],
+    queryFn: async () => {
+      const params = new URLSearchParams({ limit: String(limit + 1) })
+      if (q) params.set('q', q)
+      const rows = await api<DocumentItem[]>(`/spaces/${spaceId}/documents?${params}`)
+      return { items: rows.slice(0, limit), more: rows.length > limit }
+    },
+    placeholderData: (previous) => previous,
   })
 }
 
@@ -611,4 +618,23 @@ export function useShareSource(spaceId: string) {
 
 export function sourceDownloadUrl(spaceId: string, sourceId: string) {
   return `/api/spaces/${spaceId}/update-sources/${sourceId}/download`
+}
+
+// ---------- Export et import ----------
+
+export function exportUrl(spaceId: string, withFiles: boolean) {
+  return `/api/spaces/${spaceId}/export${withFiles ? '' : '?files=false'}`
+}
+
+export function useImportSpace() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (file: File) => {
+      const body = new FormData()
+      body.append('file', file)
+      return api<ImportResult>('/space-imports', { method: 'POST', body })
+    },
+    // Le nouvel espace apparaît dans le sélecteur d'espaces.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.me }),
+  })
 }

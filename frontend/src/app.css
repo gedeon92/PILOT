@@ -3201,3 +3201,33 @@ kbd {
   outline: 2px solid var(--color-action);
   outline-offset: 1px;
 }
+
+/* ---------- Sauvegarde et export (phase 9) ---------- */
+.backup__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.backup__import {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+.backup__import .field__hint {
+  margin: 4px 0 0;
+}
+.backup__warnings {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.list-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}

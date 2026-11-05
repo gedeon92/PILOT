@@ -9,6 +9,7 @@ import {
   type CatalogItem,
   type CatalogResource,
 } from '../api/queries'
+import { BackupSection } from '../components/backup-section'
 import { PlusIcon } from '../components/icons'
 import { Alert, PageHeader, StatusPill } from '../components/ui'
 import { allTimezones } from '../timezones'
@@ -446,6 +447,7 @@ export function SettingsPage() {
           canManage={canManage}
         />
       ))}
+      <BackupSection spaceId={space.id} canExport={canManage} />
     </div>
   )
 }

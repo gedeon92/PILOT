@@ -543,3 +543,14 @@ class ProposalDiscard(BaseModel):
 
 class SourceShare(BaseModel):
     project_id: uuid.UUID
+
+
+# ---------- Export et import ----------
+
+
+class ImportResult(BaseModel):
+    space_id: uuid.UUID
+    space_name: str
+    already_imported: bool
+    counts: dict[str, int]
+    warnings: list[str]

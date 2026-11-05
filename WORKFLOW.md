@@ -229,12 +229,12 @@ Règles d'alerte (seuils réglables par espace) :
 
 ## Phase 9 — Export, sauvegarde et fiabilisation (CDC §18, §19)
 
-- [ ] Export complet d'un espace (données + catalogue des fichiers)
-- [ ] Import de l'export dans un espace de test sans doublons
-- [ ] Procédure de sauvegarde et de restauration documentée et testée (Neon : points de restauration)
-- [ ] Pagination, chargement des pièces à la demande
-- [ ] Tests des cas limites : réseau coupé, session expirée, titres longs, accents, doublons de noms
-- [ ] Revue de sécurité (droits, CSRF, échappement HTML, fichiers reçus)
+- [x] Export complet d'un espace (propriétaire) : ZIP avec `pilot-export.json` (structure, projets, tâches, événements, catalogue des pièces) et contenu des fichiers vérifiable par empreinte SHA-256 ; option « données seules » ; jamais de secret ni de demande privée
+- [x] Import dans un **nouvel** espace (jamais d'écrasement) : structure rapprochée par nom, pièces vérifiées par empreinte, valeurs piégées neutralisées (liens, couleurs, fuseau), réimport du même fichier sans doublon (EXP01)
+- [x] Procédure de sauvegarde et de restauration documentée : [docs/SAUVEGARDE.md](docs/SAUVEGARDE.md) (historique Neon de 6 h sur l'offre gratuite, branches hebdomadaires, export mensuel, responsabilités, restauration sans perte) — [ ] test de restauration sur `staging` à réaliser avec l'utilisateur
+- [x] Pagination des documents (50 par page, « Afficher plus ») ; contenu des pièces toujours téléchargé à la demande, jamais dans les listes
+- [x] Tests des cas limites : session expirée (retour à la connexion puis à la page), titres longs, accents et symboles, HTML saisi, doublons de noms, fichiers piégés, listes longues ; réseau coupé déjà signalé (« Le serveur ne répond pas »)
+- [x] Revue de sécurité : test automatique « chaque route d'espace vérifie l'appartenance » et CSRF global ; e-mails échappés ; fichiers toujours en pièce jointe (`nosniff`) ; lecteurs XML sans entités externes (defusedxml, lxml) ; archives Office et ZIP plafonnées ; connexion freinée après 8 échecs en 15 min ; en-têtes de sécurité sur Vercel (CSP, X-Frame-Options, HSTS…)
 
 **Terminé quand :** EXP01 passe et une restauration a été testée sur la branche `staging`.
 

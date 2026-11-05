@@ -13,6 +13,7 @@ from pilot_api.routers import (
     catalog,
     documents,
     invitations,
+    portability,
     projects,
     spaces,
     updates,
@@ -36,6 +37,7 @@ app.include_router(catalog.programs)
 app.include_router(projects.router)
 app.include_router(documents.router)
 app.include_router(updates.router)
+app.include_router(portability.router)
 app.include_router(alerts.router)
 app.include_router(alerts.cron_router)
 

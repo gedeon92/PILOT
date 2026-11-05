@@ -76,6 +76,8 @@ class Space(Base):
     timezone: Mapped[str] = mapped_column(String(64), default="UTC")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     version: Mapped[int] = mapped_column(Integer, default=1)
+    # Export dont l'espace est issu : réimporter le même fichier ne le duplique pas.
+    imported_from: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), index=True)
 
 
 class Membership(Base):
@@ -109,6 +111,17 @@ class Membership(Base):
 
     space: Mapped[Space] = relationship()
     user: Mapped[User | None] = relationship(foreign_keys=[user_id])
+
+
+class LoginFailure(Base):
+    """Échec de connexion, compté par adresse (empreinte) pour freiner les essais en rafale."""
+
+    __tablename__ = "login_failures"
+    __table_args__ = (Index("ix_login_failures_email_created", "email_hash", "created_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email_hash: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class AuditLog(Base):

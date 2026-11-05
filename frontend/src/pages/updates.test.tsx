@@ -113,3 +113,25 @@ describe('boîte de mise à jour', () => {
     expect(screen.queryByRole('button', { name: 'Analyser' })).not.toBeInTheDocument()
   })
 })
+
+describe('session expirée', () => {
+  it('renvoie vers la connexion en gardant la page en cours', async () => {
+    mockApi({
+      'GET /api/auth/me': () => ({ status: 200, json: meWith('owner') }),
+      [`GET ${base}`]: () => ({ status: 200, json: spaceWith('owner') }),
+      [`GET ${base}/members`]: () => ({ status: 200, json: [OWNER_MEMBER] }),
+      [`GET ${base}/portfolios`]: () => ({ status: 200, json: [] }),
+      [`GET ${base}/alerts`]: () => ({ status: 200, json: { unread: 0, items: [] } }),
+      [`GET ${base}/projects`]: () => ({ status: 200, json: [] }),
+      [`GET ${base}/updates`]: () => ({ status: 200, json: [] }),
+      [`POST ${base}/updates`]: () => ({ status: 401, json: { detail: 'Connexion requise.' } }),
+    })
+    renderApp(`/espaces/${SPACE_ID}/mises-a-jour`)
+    const user = userEvent.setup()
+
+    await user.type(await screen.findByLabelText('Message'), 'Atlas — Avancement : 10 %')
+    await user.click(screen.getByRole('button', { name: 'Analyser' }))
+
+    expect(await screen.findByRole('heading', { name: 'Connexion' })).toBeInTheDocument()
+  })
+})

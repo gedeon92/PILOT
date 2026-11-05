@@ -9,10 +9,16 @@ import { formatSize } from '../files'
 import { formatMoment } from '../labels'
 import type { SpaceContext } from './space-layout'
 
+// Les documents arrivent par pages de 50 ; au-delà de 450, affinez la recherche.
+const PAGE = 50
+const MAX = 450
+
 export function DocumentsPage() {
   const { space } = useOutletContext<SpaceContext>()
   const [q, setQ] = useState('')
-  const documents = useSpaceDocuments(space.id, q)
+  const [limit, setLimit] = useState(PAGE)
+  const documents = useSpaceDocuments(space.id, q, limit)
+  const items = documents.data?.items
 
   return (
     <div className="page-content">
@@ -27,7 +33,10 @@ export function DocumentsPage() {
             type="search"
             placeholder="Rechercher par nom de fichier…"
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={(e) => {
+              setQ(e.target.value)
+              setLimit(PAGE)
+            }}
           />
         </label>
       </div>
@@ -46,7 +55,7 @@ export function DocumentsPage() {
               </tr>
             </thead>
             <tbody>
-              {documents.data?.length === 0 && (
+              {items?.length === 0 && (
                 <tr>
                   <td colSpan={4}>
                     <div className="table-empty">
@@ -60,7 +69,7 @@ export function DocumentsPage() {
                   </td>
                 </tr>
               )}
-              {documents.data?.map((d) => (
+              {items?.map((d) => (
                 <tr key={d.id}>
                   <td>
                     <span className="doc-cell">
@@ -96,6 +105,19 @@ export function DocumentsPage() {
           </table>
         </div>
       </section>
+      {documents.data?.more && (
+        <div className="list-more">
+          <span className="muted">{items?.length} documents affichés</span>
+          <button
+            type="button"
+            className="button"
+            disabled={documents.isFetching}
+            onClick={() => setLimit((n) => Math.min(n + PAGE, MAX))}
+          >
+            {documents.isFetching ? 'Chargement…' : 'Afficher plus'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

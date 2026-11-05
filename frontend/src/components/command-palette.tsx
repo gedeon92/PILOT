@@ -67,7 +67,7 @@ function Palette({ spaceId, onClose }: { spaceId: string; onClose: () => void })
     const projectResults = found.slice(0, q ? 8 : 5)
     const docResults: Result[] =
       q.length >= 2
-        ? (documents.data ?? []).slice(0, 5).map((d) => ({
+        ? (documents.data?.items ?? []).slice(0, 5).map((d) => ({
             id: `d-${d.id}`,
             group: 'Documents',
             title: d.filename,
