@@ -208,7 +208,7 @@ Règles d'alerte (seuils réglables par espace) :
 - [x] Déclenchement planifié : `.github/workflows/rappels.yml` appelle chaque heure `POST /api/cron/daily`, protégé par la clé `CRON_SECRET`
 - [x] Seuls les membres ayant un compte reçoivent des alertes ; un responsable en nom libre n'en reçoit pas (déjà signalé « sans compte »)
 - [x] Désactivation possible par l'utilisateur, règle par règle
-- [ ] Mise en service : compte Brevo, expéditeur vérifié, `BREVO_API_KEY`, `MAIL_SENDER_EMAIL` et `CRON_SECRET` dans Render, secret `CRON_SECRET` dans GitHub
+- [x] Mise en service (5 nov. 2026, e-mail de test reçu) : compte Brevo, expéditeur de test vérifié (adresse Gmail dédiée à PILOT), `BREVO_API_KEY`, `MAIL_SENDER_EMAIL` et `CRON_SECRET` dans Render, secret `CRON_SECRET` dans GitHub
 - [ ] Alerte « Proposition à valider » : avec la boîte de mise à jour (phase 8)
 
 **Terminé quand :** une tâche à J-3 produit exactement une alerte pour le bon destinataire ; une tâche terminée ou annulée n'en produit plus ; un lecteur ne reçoit pas d'alerte sur une action qu'il ne peut pas faire ; le récapitulatif part à l'heure prévue dans le fuseau de l'espace.

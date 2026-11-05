@@ -300,9 +300,8 @@ def digest_email(
             f"<br><span style='color:#6B7280'>{html.escape(alert.detail)}</span></td>"
             "</tr>"
         )
-    intro = (
-        f"Bonjour {user.display_name}, voici ce qui demande votre attention le {short_date(today)}."
-    )
+    day = short_date(today).rstrip(".")
+    intro = f"Bonjour {user.display_name}, voici ce qui demande votre attention le {day}."
     text = (
         intro
         + "\n\n"
