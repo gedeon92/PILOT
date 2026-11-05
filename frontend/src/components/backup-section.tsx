@@ -51,6 +51,11 @@ export function BackupSection({ spaceId, canExport }: { spaceId: string; canExpo
             Crée toujours un <strong>nouvel espace</strong> dont vous êtes propriétaire : aucun
             espace existant n’est modifié. Idéal pour vérifier une sauvegarde.
           </p>
+          <p className="field__hint">
+            Seul le fichier <strong>ZIP téléchargé depuis PILOT</strong> est accepté ici. Pour un
+            PDF ou un Word : <strong>Documents</strong> (pour le ranger dans un projet) ou{' '}
+            <strong>Mises à jour</strong> (pour que PILOT le lise).
+          </p>
         </div>
         <input
           ref={input}
