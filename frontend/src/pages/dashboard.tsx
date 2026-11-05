@@ -379,35 +379,37 @@ export function DashboardPage() {
           )}
           <details className="rules">
             <summary>Comment c’est calculé ?</summary>
-            <ul>
-              <li>
-                <strong>Jour J / En retard</strong> : échéance aujourd’hui ou dépassée (projet
-                ouvert).
-              </li>
-              <li>
-                <strong>Bloqué</strong> : {ATTENTION.bloques.rule}
-              </li>
-              <li>
-                <strong>Tâches</strong> : au moins une tâche ouverte dont l’échéance est passée.
-              </li>
-              <li>
-                <strong>Décision</strong> : une décision attendue est renseignée sur le projet.
-              </li>
-              <li>
-                <strong>Vigilance</strong> : vigilance « Élevé » sur le projet.
-              </li>
-              <li>
-                <strong>Suivi J+15 / Bilan</strong> : événement passé, dans les 15 jours qui
-                suivent, puis au-delà sans bilan.
-              </li>
-              <li>
-                <strong>À compléter</strong> : {ATTENTION['a-completer'].rule}
-              </li>
-            </ul>
-            <p>
-              Ordre : rouge (urgent), puis orange (à surveiller), puis gris. Les dates s’entendent
-              dans le fuseau de l’espace. Un signal invite à vérifier, il ne juge pas le projet.
-            </p>
+            <div className="rules__body">
+              <ul>
+                <li>
+                  <strong>Jour J / En retard</strong> : échéance aujourd’hui ou dépassée (projet
+                  ouvert).
+                </li>
+                <li>
+                  <strong>Bloqué</strong> : {ATTENTION.bloques.rule}
+                </li>
+                <li>
+                  <strong>Tâches</strong> : au moins une tâche ouverte dont l’échéance est passée.
+                </li>
+                <li>
+                  <strong>Décision</strong> : une décision attendue est renseignée sur le projet.
+                </li>
+                <li>
+                  <strong>Vigilance</strong> : vigilance « Élevé » sur le projet.
+                </li>
+                <li>
+                  <strong>Suivi J+15 / Bilan</strong> : événement passé, dans les 15 jours qui
+                  suivent, puis au-delà sans bilan.
+                </li>
+                <li>
+                  <strong>À compléter</strong> : {ATTENTION['a-completer'].rule}
+                </li>
+              </ul>
+              <p>
+                Ordre : rouge (urgent), puis orange (à surveiller), puis gris. Les dates s’entendent
+                dans le fuseau de l’espace. Un signal invite à vérifier, il ne juge pas le projet.
+              </p>
+            </div>
           </details>
         </section>
       </div>
