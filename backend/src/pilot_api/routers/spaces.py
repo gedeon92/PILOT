@@ -1,3 +1,4 @@
+import html
 import uuid
 from datetime import timedelta
 
@@ -5,9 +6,11 @@ from fastapi import APIRouter, HTTPException, Response
 from sqlalchemy import case, select
 from sqlalchemy.orm import Session, selectinload
 
+from pilot_api.alerts import is_test_address
 from pilot_api.audit import record
 from pilot_api.config import get_settings
 from pilot_api.deps import CurrentMembership, CurrentUser, DbSession, OwnerMembership
+from pilot_api.mailer import MailError, mail_configured, send_email
 from pilot_api.models import (
     DEFAULT_PROJECT_TYPES,
     Membership,
@@ -15,6 +18,7 @@ from pilot_api.models import (
     ProjectType,
     Role,
     Space,
+    User,
     utcnow,
 )
 from pilot_api.schemas import (
@@ -146,6 +150,52 @@ def list_members(membership: CurrentMembership, db: DbSession) -> list[MemberOut
     return [_member_out(member, membership) for member in members]
 
 
+ROLE_NAMES = {Role.READER: "lecteur", Role.CONTRIBUTOR: "contributeur", Role.OWNER: "propriétaire"}
+
+
+def _send_invitation(db: Session, member: Membership, token: str) -> tuple[bool, str | None]:
+    """Envoie l'invitation par e-mail. Un échec n'annule pas l'invitation : le lien reste
+    affiché à la propriétaire, qui peut le transmettre elle-même."""
+    if not mail_configured():
+        return False, "L'envoi d'e-mails n'est pas activé : transmettez le lien vous-même."
+    if is_test_address(member.email):
+        return False, "Adresse d'essai : aucun e-mail envoyé."
+    space = db.get(Space, member.space_id)
+    inviter = db.get(User, member.invited_by_id) if member.invited_by_id else None
+    who = inviter.display_name if inviter else "Une personne"
+    days = get_settings().invitation_days
+    link = f"{get_settings().app_base_url.rstrip('/')}/invitation/{token}"
+    role = ROLE_NAMES.get(member.role, "membre")
+    text = (
+        "Bonjour,\n\n"
+        f"{who} vous invite à rejoindre l'espace « {space.name} » sur PILOT, "
+        f"avec le rôle {role}.\n\n"
+        f"Pour accepter (lien valable {days} jours) :\n{link}\n\n"
+        "Si vous ne connaissez pas cette personne, ignorez cet e-mail."
+    )
+    page = (
+        "<div style='font-family:Arial,sans-serif;color:#18181B;max-width:560px'>"
+        "<p>Bonjour,</p>"
+        f"<p><strong>{html.escape(who)}</strong> vous invite à rejoindre l'espace "
+        f"<strong>{html.escape(space.name)}</strong> sur PILOT, avec le rôle {role}.</p>"
+        f"<p><a href='{html.escape(link)}' style='background:#D0450A;color:#fff;padding:10px 18px;"
+        "border-radius:10px;text-decoration:none;font-weight:700'>Rejoindre l'espace</a></p>"
+        f"<p style='color:#6B7280;font-size:12px'>Lien valable {days} jours. Si vous ne "
+        "connaissez pas cette personne, ignorez cet e-mail.</p></div>"
+    )
+    try:
+        send_email(
+            to_email=member.email,
+            to_name=member.email,
+            subject=f"PILOT · {who} vous invite dans « {space.name} »",
+            html=page,
+            text=text,
+        )
+    except MailError as error:
+        return False, f"E-mail non envoyé ({error}) : transmettez le lien vous-même."
+    return True, None
+
+
 @router.post("/{space_id}/invitations", status_code=201)
 def invite_member(
     body: InvitationCreate, membership: OwnerMembership, db: DbSession
@@ -181,7 +231,10 @@ def invite_member(
         after={"email": email, "role": body.role.value},
     )
     db.commit()
-    return InvitationLink(member=_member_out(member, membership), token=token)
+    emailed, note = _send_invitation(db, member, token)
+    return InvitationLink(
+        member=_member_out(member, membership), token=token, emailed=emailed, email_note=note
+    )
 
 
 @router.post("/{space_id}/members/{member_id}/invitation-link")
@@ -204,7 +257,10 @@ def renew_invitation_link(
         target_id=member.id,
     )
     db.commit()
-    return InvitationLink(member=_member_out(member, membership), token=token)
+    emailed, note = _send_invitation(db, member, token)
+    return InvitationLink(
+        member=_member_out(member, membership), token=token, emailed=emailed, email_note=note
+    )
 
 
 @router.patch("/{space_id}/members/{member_id}")

@@ -65,7 +65,7 @@ describe('accès et membres', () => {
       [`GET /api/spaces/${SPACE_ID}/members`]: () => ({ status: 200, json: [OWNER_MEMBER] }),
       [`POST /api/spaces/${SPACE_ID}/invitations`]: () => ({
         status: 201,
-        json: { member: invited, token: 'jeton-secret-de-test-1234567890' },
+        json: { member: invited, token: 'jeton-secret-de-test-1234567890', emailed: true },
       }),
     })
     renderApp(`/espaces/${SPACE_ID}/membres`)
@@ -76,6 +76,9 @@ describe('accès et membres', () => {
 
     const link = await screen.findByLabelText('Lien d’invitation')
     expect(link).toHaveValue('http://localhost:3000/invitation/jeton-secret-de-test-1234567890')
+    expect(
+      screen.getByText(/Invitation envoyée par e-mail à fatou@exemple.com/),
+    ).toBeInTheDocument()
     expect(calls.find((c) => c.key.endsWith('/invitations'))?.body).toEqual({
       email: 'fatou@exemple.com',
       role: 'contributor',
@@ -171,5 +174,49 @@ describe('paramètres et structure', () => {
     expect(await within(section).findByText('Événements')).toBeInTheDocument()
     expect(within(section).queryByRole('button')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Nom de l’espace')).toBeDisabled()
+  })
+})
+
+describe('mot de passe oublié', () => {
+  it('demande un lien puis enregistre le nouveau mot de passe', async () => {
+    const calls = mockApi({
+      'GET /api/auth/me': () => ({ status: 401, json: { detail: 'Connexion requise.' } }),
+      'POST /api/auth/password-reset': () => ({
+        status: 202,
+        json: { message: 'Si un compte existe avec cette adresse, un e-mail vient de partir.' },
+      }),
+    })
+    renderApp('/connexion')
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('link', { name: 'Mot de passe oublié ?' }))
+    await user.type(await screen.findByLabelText('Adresse e-mail'), 'aicha@exemple.com')
+    await user.click(screen.getByRole('button', { name: 'Recevoir le lien' }))
+
+    expect(await screen.findByText(/un e-mail vient de partir/)).toBeInTheDocument()
+    expect(calls.find((c) => c.key === 'POST /api/auth/password-reset')?.body).toEqual({
+      email: 'aicha@exemple.com',
+    })
+  })
+
+  it('envoie le jeton du lien avec le nouveau mot de passe', async () => {
+    const calls = mockApi({
+      'GET /api/auth/me': () => ({ status: 401, json: { detail: 'Connexion requise.' } }),
+      'POST /api/auth/password-reset/confirm': () => ({
+        status: 410,
+        json: { detail: 'Ce lien a expiré.' },
+      }),
+    })
+    renderApp('/mot-de-passe/nouveau?jeton=abcdefghijklmnopqrstuvwxyz')
+    const user = userEvent.setup()
+
+    await user.type(await screen.findByLabelText('Nouveau mot de passe'), 'un-nouveau-secret')
+    await user.click(screen.getByRole('button', { name: 'Enregistrer et me connecter' }))
+
+    expect(await screen.findByText('Ce lien a expiré.')).toBeInTheDocument()
+    expect(calls.find((c) => c.key === 'POST /api/auth/password-reset/confirm')?.body).toEqual({
+      token: 'abcdefghijklmnopqrstuvwxyz',
+      new_password: 'un-nouveau-secret',
+    })
   })
 })

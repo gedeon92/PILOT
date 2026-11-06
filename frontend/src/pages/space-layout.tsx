@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router'
 import { ROLE_LABELS, type Me, type Space } from '../api/client'
 import { useAlerts, useCatalog, useLogout, useMembers, useSpace } from '../api/queries'
@@ -37,17 +37,6 @@ function initials(name: string) {
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? 'nav__link nav__link--active' : 'nav__link'
-
-/** Entrée de menu prévue dans le workflow mais pas encore construite. */
-function SoonLink({ icon, label }: { icon: ReactNode; label: string }) {
-  return (
-    <span className="nav__link nav__link--soon" aria-disabled="true">
-      {icon}
-      <span className="nav__label">{label}</span>
-      <span className="badge">Bientôt</span>
-    </span>
-  )
-}
 
 function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void }) {
   const navigate = useNavigate()
@@ -121,7 +110,10 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
             <CalendarIcon />
             <span className="nav__label">Événements</span>
           </NavLink>
-          <SoonLink icon={<TasksIcon />} label="Tâches" />
+          <NavLink to={`${base}/taches`} className={linkClass}>
+            <TasksIcon />
+            <span className="nav__label">Tâches</span>
+          </NavLink>
           <NavLink to={`${base}/timeline`} className={linkClass}>
             <TimelineIcon />
             <span className="nav__label">Timeline</span>

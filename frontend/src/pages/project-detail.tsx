@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useOutletContext, useParams } from 'react-router'
-import { ApiError, errorMessage, type HistoryEntry, type Project, type Task } from '../api/client'
+import { ApiError, errorMessage, type HistoryEntry, type Project } from '../api/client'
 import {
   useCatalog,
   useChangeProjectStatus,
@@ -10,10 +10,10 @@ import {
   useProject,
   useTasks,
   useUpdateProject,
-  useUpdateTask,
 } from '../api/queries'
 import { colorHex } from '../colors'
 import { DocumentsSection } from '../components/documents'
+import { TaskRow } from '../components/task-row'
 import { PlusIcon } from '../components/icons'
 import { PersonField } from '../components/person-field'
 import { Alert, FullPageLoader, StatusPill } from '../components/ui'
@@ -536,75 +536,6 @@ function TaskAddForm({
         </button>
       </div>
     </form>
-  )
-}
-
-function TaskRow({ task, spaceId, canWrite }: { task: Task; spaceId: string; canWrite: boolean }) {
-  const update = useUpdateTask(spaceId)
-  const closed = task.status === 'done' || task.status === 'cancelled'
-  const status = TASK_STATUS[task.status]
-
-  return (
-    <li className={closed ? 'task-row task-row--closed' : 'task-row'}>
-      <input
-        type="checkbox"
-        className="task-row__check"
-        aria-label={
-          task.status === 'done'
-            ? `Rouvrir « ${task.title} »`
-            : `Marquer « ${task.title} » comme terminée`
-        }
-        checked={task.status === 'done'}
-        disabled={!canWrite || task.status === 'cancelled' || update.isPending}
-        onChange={(e) =>
-          update.mutate({ task, changes: { status: e.target.checked ? 'done' : 'todo' } })
-        }
-      />
-      <span className="task-row__text">
-        <span className="task-row__title">{task.title}</span>
-        {task.deliverable && <span className="task-row__meta">Livrable : {task.deliverable}</span>}
-      </span>
-      <span className="task-row__person">
-        {task.assignee.name ?? <span className="muted">Non attribuée</span>}
-        {task.assignee.name && !task.assignee.has_account && (
-          <span className="owner__note">Sans compte</span>
-        )}
-      </span>
-      <span className="task-row__due">
-        {task.due_date ? (
-          <>
-            <span className={task.late ? 'due__date due__date--late' : 'due__date'}>
-              {formatDay(task.due_date)}
-            </span>
-            <span className="due__note">
-              {task.late ? 'En retard' : task.due_certainty ? CERTAINTY[task.due_certainty] : ''}
-            </span>
-          </>
-        ) : (
-          <span className="muted">Sans date</span>
-        )}
-      </span>
-      {canWrite && !closed ? (
-        <select
-          aria-label={`Statut de « ${task.title} »`}
-          className="task-row__status"
-          value={task.status}
-          disabled={update.isPending}
-          onChange={(e) =>
-            update.mutate({ task, changes: { status: e.target.value as TaskStatus } })
-          }
-        >
-          {(Object.keys(TASK_STATUS) as TaskStatus[]).map((s) => (
-            <option key={s} value={s}>
-              {TASK_STATUS[s].label}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <StatusPill tone={status.tone}>{status.label}</StatusPill>
-      )}
-      {update.isError && <Alert>{errorMessage(update.error)}</Alert>}
-    </li>
   )
 }
 

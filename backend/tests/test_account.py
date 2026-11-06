@@ -129,3 +129,72 @@ def test_email_change_needs_mail_sending(make_client, monkeypatch):
     )
 
     assert response.status_code == 503
+
+
+def test_forgot_password_sends_a_single_use_link(make_client, mailbox):
+    laptop = make_client()
+    register(laptop, "gedeon@exemple.com", "Gédéon")
+    stranger = make_client()
+
+    asked = stranger.post("/api/auth/password-reset", json={"email": "GEDEON@exemple.com"})
+    unknown = stranger.post("/api/auth/password-reset", json={"email": "personne@exemple.com"})
+
+    assert asked.status_code == unknown.status_code == 202
+    assert asked.json() == unknown.json()  # on ne révèle pas qui a un compte
+    assert len(mailbox) == 1 and mailbox[0]["to_email"] == "gedeon@exemple.com"
+    token = _token(mailbox[0])
+    assert "/mot-de-passe/nouveau?jeton=" in mailbox[0]["text"]
+
+    done = stranger.post(
+        "/api/auth/password-reset/confirm",
+        json={"token": token, "new_password": "un-nouveau-secret"},
+    )
+    again = stranger.post(
+        "/api/auth/password-reset/confirm",
+        json={"token": token, "new_password": "encore-un-autre"},
+    )
+
+    assert done.status_code == 200 and done.json()["user"]["email"] == "gedeon@exemple.com"
+    assert stranger.get("/api/auth/me").status_code == 200  # connecté directement
+    assert again.status_code == 404  # lien à usage unique
+    assert laptop.get("/api/auth/me").status_code == 401  # anciennes sessions fermées
+    old = make_client().post(
+        "/api/auth/login", json={"email": "gedeon@exemple.com", "password": PASSWORD}
+    )
+    new = make_client().post(
+        "/api/auth/login", json={"email": "gedeon@exemple.com", "password": "un-nouveau-secret"}
+    )
+    assert (old.status_code, new.status_code) == (401, 200)
+
+
+def test_forgot_password_is_not_a_mail_cannon(make_client, mailbox):
+    client = make_client()
+    register(client, "gedeon@exemple.com")
+
+    for _ in range(3):
+        client.post("/api/auth/password-reset", json={"email": "gedeon@exemple.com"})
+
+    assert len(mailbox) == 1
+
+
+def test_expired_reset_link_is_refused(make_client, mailbox, engine):
+    from datetime import timedelta
+
+    from sqlalchemy import update
+    from sqlalchemy.orm import Session
+
+    from pilot_api.models import PasswordReset, utcnow
+
+    client = make_client()
+    register(client, "gedeon@exemple.com")
+    client.post("/api/auth/password-reset", json={"email": "gedeon@exemple.com"})
+    with Session(engine) as db:
+        db.execute(update(PasswordReset).values(expires_at=utcnow() - timedelta(minutes=1)))
+        db.commit()
+
+    expired = client.post(
+        "/api/auth/password-reset/confirm",
+        json={"token": _token(mailbox[0]), "new_password": "un-nouveau-secret"},
+    )
+
+    assert expired.status_code == 410

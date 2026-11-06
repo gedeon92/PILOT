@@ -16,6 +16,7 @@ from pilot_api.models import (
     LoginFailure,
     Membership,
     MembershipStatus,
+    PasswordReset,
     Space,
     User,
     utcnow,
@@ -27,6 +28,8 @@ from pilot_api.schemas import (
     LoginIn,
     MeOut,
     PasswordChange,
+    PasswordResetConfirm,
+    PasswordResetRequest,
     ProfileUpdate,
     RegisterIn,
     SpaceSummary,
@@ -287,5 +290,115 @@ def confirm_email_change(body: InvitationToken, user: CurrentUser, db: DbSession
         before={"email": old_email},
         after={"email": change.new_email},
     )
+    db.commit()
+    return build_me(db, user)
+
+
+# ---------- Mot de passe oublié ----------
+
+RESET_MINUTES = 60
+# Un seul e-mail toutes les 2 minutes par compte, pour éviter d'inonder une boîte.
+RESET_COOLDOWN_SECONDS = 120
+RESET_SENT = (
+    "Si un compte existe avec cette adresse, un e-mail vient de lui être envoyé avec un lien "
+    f"pour choisir un nouveau mot de passe (valable {RESET_MINUTES} minutes). Pensez à regarder "
+    "dans les courriers indésirables."
+)
+
+
+@router.post("/password-reset", status_code=202)
+def request_password_reset(body: PasswordResetRequest, db: DbSession) -> dict[str, str]:
+    """La réponse est la même que le compte existe ou non : on ne révèle pas qui est inscrit."""
+    email = normalize_email(body.email)
+    user = db.scalar(select(User).where(User.email == email))
+    if user is None:
+        return {"message": RESET_SENT}
+    if not mail_configured():
+        raise HTTPException(
+            503,
+            "L'envoi d'e-mails n'est pas disponible pour le moment. Demandez à la propriétaire "
+            "de votre espace de vous aider.",
+        )
+    recent = db.scalar(
+        select(PasswordReset.id).where(
+            PasswordReset.user_id == user.id,
+            PasswordReset.created_at >= utcnow() - timedelta(seconds=RESET_COOLDOWN_SECONDS),
+        )
+    )
+    if recent is not None:
+        return {"message": RESET_SENT}
+
+    token, token_hash = new_token()
+    db.execute(delete(PasswordReset).where(PasswordReset.user_id == user.id))
+    db.add(
+        PasswordReset(
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=utcnow() + timedelta(minutes=RESET_MINUTES),
+        )
+    )
+    link = f"{get_settings().app_base_url.rstrip('/')}/mot-de-passe/nouveau?jeton={token}"
+    text = (
+        f"Bonjour {user.display_name},\n\n"
+        "Pour choisir un nouveau mot de passe PILOT, ouvrez ce lien "
+        f"(valable {RESET_MINUTES} minutes, une seule fois) :\n{link}\n\n"
+        "Si vous n'avez rien demandé, ignorez cet e-mail : votre mot de passe reste inchangé."
+    )
+    page = (
+        "<div style='font-family:Arial,sans-serif;color:#18181B;max-width:560px'>"
+        f"<p>Bonjour {html.escape(user.display_name)},</p>"
+        "<p>Pour choisir un nouveau mot de passe PILOT, cliquez sur le bouton "
+        f"(lien valable {RESET_MINUTES} minutes, une seule fois) :</p>"
+        f"<p><a href='{html.escape(link)}' style='background:#D0450A;color:#fff;padding:10px 18px;"
+        "border-radius:10px;text-decoration:none;font-weight:700'>Choisir un nouveau mot de "
+        "passe</a></p>"
+        "<p style='color:#6B7280;font-size:12px'>Si vous n'avez rien demandé, ignorez cet "
+        "e-mail : votre mot de passe reste inchangé.</p></div>"
+    )
+    try:
+        send_email(
+            to_email=user.email,
+            to_name=user.display_name,
+            subject="PILOT · Choisir un nouveau mot de passe",
+            html=page,
+            text=text,
+        )
+    except MailError as error:
+        db.rollback()
+        raise HTTPException(502, str(error)) from None
+    record(
+        db,
+        action="user.password_reset_requested",
+        actor_id=user.id,
+        target_type="user",
+        target_id=user.id,
+    )
+    db.commit()
+    return {"message": RESET_SENT}
+
+
+@router.post("/password-reset/confirm")
+def confirm_password_reset(body: PasswordResetConfirm, response: Response, db: DbSession) -> MeOut:
+    reset = db.scalar(
+        select(PasswordReset)
+        .where(PasswordReset.token_hash == hash_token(body.token))
+        .with_for_update()
+    )
+    if reset is None:
+        raise HTTPException(404, "Lien introuvable ou déjà utilisé. Refaites la demande.")
+    if reset.expires_at <= utcnow():
+        db.delete(reset)
+        db.commit()
+        raise HTTPException(410, "Ce lien a expiré. Refaites la demande « Mot de passe oublié ».")
+    user = db.get(User, reset.user_id)
+    user.password_hash = hash_password(body.new_password)
+    # Toutes les sessions ouvertes sont fermées : si quelqu'un d'autre était connecté, il sort.
+    db.execute(delete(AuthSession).where(AuthSession.user_id == user.id))
+    db.execute(delete(PasswordReset).where(PasswordReset.user_id == user.id))
+    db.execute(delete(LoginFailure).where(LoginFailure.email_hash == hash_token(user.email)))
+    record(
+        db, action="user.password_reset", actor_id=user.id, target_type="user", target_id=user.id
+    )
+    _open_session(db, response, user)
     db.commit()
     return build_me(db, user)

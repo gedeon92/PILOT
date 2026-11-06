@@ -479,6 +479,21 @@ class EmailChange(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class PasswordReset(Base):
+    """Lien « mot de passe oublié » : à usage unique, valable peu de temps. Seule l'empreinte
+    du jeton est gardée ; le jeton lui-même n'existe que dans l'e-mail."""
+
+    __tablename__ = "password_resets"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 # ---------- Boîte de mise à jour (CDC §9, §10, §11) ----------
 
 

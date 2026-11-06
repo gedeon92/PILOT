@@ -51,11 +51,23 @@ function LinkPanel({ link, onClose }: { link: InvitationLink; onClose: () => voi
   return (
     <section className="link-panel" aria-live="polite">
       <h2>
-        <LinkIcon /> Lien d’invitation pour {link.member.email}
+        <LinkIcon /> Invitation pour {link.member.email}
       </h2>
-      <p>
-        Envoyez ce lien à la personne. Il ne fonctionne qu’une fois, pendant 14 jours, et seulement
-        avec un compte créé avec cette adresse. Il ne sera plus affiché ensuite.
+      {link.emailed ? (
+        <p>
+          ✉️ <strong>Invitation envoyée par e-mail à {link.member.email}.</strong> La personne n’a
+          qu’à cliquer sur le bouton reçu. Si elle ne trouve pas l’e-mail (pensez aux courriers
+          indésirables), vous pouvez aussi lui envoyer ce lien vous-même.
+        </p>
+      ) : (
+        <p>
+          {link.email_note && <strong>{link.email_note} </strong>}
+          Envoyez ce lien à la personne.
+        </p>
+      )}
+      <p className="field__hint">
+        Le lien ne fonctionne qu’une fois, pendant 14 jours, et seulement avec un compte créé avec
+        cette adresse. Il ne sera plus affiché ici ensuite.
       </p>
       <div className="link-panel__row">
         <input

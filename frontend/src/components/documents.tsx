@@ -235,7 +235,7 @@ export function UploadStatus({ uploads }: { uploads: UploadState[] }) {
   )
 }
 
-export const UPLOAD_HELP = `${MAX_FILES_PER_UPLOAD} fichiers à la fois, 4 Mo chacun au maximum (phase de test). Tous les formats sont acceptés (PDF, Word, Excel, images…) ; ils sont toujours proposés en téléchargement.`
+export const UPLOAD_HELP = `${MAX_FILES_PER_UPLOAD} fichiers à la fois, 4 Mo chacun au maximum. Tous les formats sont acceptés (PDF, Word, Excel, images…) ; ils sont toujours proposés en téléchargement.`
 
 export function DocumentsSection({
   spaceId,

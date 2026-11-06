@@ -99,6 +99,10 @@ class InvitationLink(BaseModel):
 
     member: MemberOut
     token: str
+    # L'invitation est aussi envoyée par e-mail quand c'est possible ; sinon, le lien est à
+    # transmettre à la main et `email_note` dit pourquoi.
+    emailed: bool = False
+    email_note: str | None = None
 
 
 class MemberUpdate(BaseModel):
@@ -458,6 +462,15 @@ class ProfileUpdate(BaseModel):
 
 class PasswordChange(BaseModel):
     current_password: Annotated[str, StringConstraints(min_length=1, max_length=128)]
+    new_password: Password
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    token: Annotated[str, Field(min_length=20, max_length=128)]
     new_password: Password
 
 

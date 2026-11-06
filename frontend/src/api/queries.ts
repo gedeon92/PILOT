@@ -57,6 +57,22 @@ export function useLogin() {
   })
 }
 
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (email: string) =>
+      api<{ message: string }>('/auth/password-reset', { method: 'POST', body: { email } }),
+  })
+}
+
+export function useResetPassword() {
+  const setMe = useSetMe()
+  return useMutation({
+    mutationFn: (body: { token: string; new_password: string }) =>
+      api<Me>('/auth/password-reset/confirm', { method: 'POST', body }),
+    onSuccess: setMe,
+  })
+}
+
 export function useRegister() {
   const setMe = useSetMe()
   return useMutation({
@@ -403,10 +419,11 @@ export function downloadUrl(spaceId: string, documentId: string) {
 }
 
 /** Tâches ouvertes de tout l'espace (jalons de la timeline). */
-export function useSpaceTasks(spaceId: string) {
+export function useSpaceTasks(spaceId: string, includeClosed = false) {
   return useQuery({
-    queryKey: [...projectKeys.all(spaceId), 'open-tasks'],
-    queryFn: () => api<Task[]>(`/spaces/${spaceId}/tasks`),
+    queryKey: [...projectKeys.all(spaceId), includeClosed ? 'all-tasks' : 'open-tasks'],
+    queryFn: () =>
+      api<Task[]>(`/spaces/${spaceId}/tasks${includeClosed ? '?include_closed=true' : ''}`),
   })
 }
 

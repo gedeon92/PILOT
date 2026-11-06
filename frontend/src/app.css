@@ -434,12 +434,6 @@ select:focus-visible {
   font-weight: 600;
   box-shadow: 0 1px 2px rgb(24 24 27 / 0.08);
 }
-.nav__link--soon,
-.nav__link--soon:hover {
-  color: #8a8f98;
-  background: transparent;
-  cursor: default;
-}
 
 .badge {
   padding: 2px 8px;
@@ -3322,4 +3316,32 @@ kbd {
 }
 .doc-versions li .doc-versions__tag {
   margin-left: 0;
+}
+
+.auth-card__forgot {
+  align-self: flex-end;
+  color: var(--color-action);
+  font-weight: 600;
+  text-decoration: none;
+}
+.auth-card__forgot:hover {
+  text-decoration: underline;
+}
+
+/* Page Tâches */
+.tasks-filters .segmented__item .count {
+  margin-left: 6px;
+}
+.count--danger {
+  color: #dc2626;
+  font-weight: 700;
+}
+.task-row__project {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-action);
+  text-decoration: none;
+}
+.task-row__project:hover {
+  text-decoration: underline;
 }

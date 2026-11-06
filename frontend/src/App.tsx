@@ -2,7 +2,7 @@ import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import type { Me } from './api/client'
 import { useMe } from './api/queries'
 import { Alert, AuthCard, FullPageLoader } from './components/ui'
-import { LoginPage, RegisterPage } from './pages/auth'
+import { ForgotPasswordPage, LoginPage, RegisterPage, ResetPasswordPage } from './pages/auth'
 import { AccountPage, ConfirmEmailPage } from './pages/account'
 import { AlertsPage } from './pages/alerts'
 import { CreateSpacePage } from './pages/create-space'
@@ -16,6 +16,7 @@ import { NewProjectPage, ProjectsPage } from './pages/projects'
 import { SettingsPage } from './pages/settings'
 import { SpaceLayout } from './pages/space-layout'
 import { StatusPage } from './pages/status'
+import { TasksPage } from './pages/tasks'
 import { TimelinePage } from './pages/timeline'
 import { UpdatesPage } from './pages/updates'
 
@@ -61,7 +62,9 @@ export default function App() {
       <Route element={<GuestOnly />}>
         <Route path="/connexion" element={<LoginPage />} />
         <Route path="/inscription" element={<RegisterPage />} />
+        <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
       </Route>
+      <Route path="/mot-de-passe/nouveau" element={<ResetPasswordPage />} />
       <Route path="/invitation/:token" element={<InvitationPage />} />
       <Route path="/etat" element={<StatusPage />} />
       <Route
@@ -81,6 +84,7 @@ export default function App() {
         <Route index element={<DashboardPage />} />
         <Route path="projets" element={<ProjectsPage />} />
         <Route path="evenements" element={<EventsPage />} />
+        <Route path="taches" element={<TasksPage />} />
         <Route path="timeline" element={<TimelinePage />} />
         <Route path="documents" element={<DocumentsPage />} />
         <Route path="mises-a-jour" element={<UpdatesPage />} />

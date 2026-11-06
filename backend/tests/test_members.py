@@ -143,3 +143,45 @@ def test_members_list_shows_owner_first(make_client):
         ("a@exemple.com", "invited"),
     ]
     assert members[0]["is_me"] is True
+
+
+def test_invitation_is_emailed_with_the_link(make_client, monkeypatch):
+    from pilot_api.routers import spaces as spaces_router
+
+    sent: list[dict] = []
+    monkeypatch.setattr(spaces_router, "mail_configured", lambda: True)
+    monkeypatch.setattr(spaces_router, "send_email", lambda **message: sent.append(message))
+    owner = make_client()
+    register(owner, "proprio@exemple.com", "Aïcha Ndiaye")
+    space = create_space(owner, "Groupe Horizon")
+    base = f"/api/spaces/{space['id']}"
+
+    real = owner.post(f"{base}/invitations", json={"email": "moussa@horizon.sn", "role": "reader"})
+    trial = owner.post(f"{base}/invitations", json={"email": "essai@exemple.com", "role": "reader"})
+
+    assert real.json()["emailed"] is True and real.json()["email_note"] is None
+    assert len(sent) == 1 and sent[0]["to_email"] == "moussa@horizon.sn"
+    assert f"/invitation/{real.json()['token']}" in sent[0]["text"]
+    assert "Aïcha Ndiaye" in sent[0]["subject"] and "Groupe Horizon" in sent[0]["subject"]
+    assert trial.json()["emailed"] is False  # adresse d'essai : jamais d'envoi
+
+    renewed = owner.post(f"{base}/members/{real.json()['member']['id']}/invitation-link").json()
+    assert renewed["emailed"] is True and f"/invitation/{renewed['token']}" in sent[1]["text"]
+
+
+def test_invitation_still_works_when_email_is_off(make_client, monkeypatch):
+    from pilot_api.routers import spaces as spaces_router
+
+    monkeypatch.setattr(spaces_router, "mail_configured", lambda: False)
+    owner = make_client()
+    register(owner, "proprio@exemple.com")
+    space = create_space(owner)
+
+    invited = owner.post(
+        f"/api/spaces/{space['id']}/invitations",
+        json={"email": "moussa@horizon.sn", "role": "reader"},
+    )
+
+    assert invited.status_code == 201
+    assert invited.json()["emailed"] is False
+    assert "transmettez le lien" in invited.json()["email_note"]
