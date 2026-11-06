@@ -218,3 +218,24 @@ def test_tampered_values_are_neutralised(make_client):
     assert owner.get(base).json()["timezone"] == "UTC"
     assert owner.get(f"{base}/portfolios").json()[0]["color"] == "gray"
     assert owner.get(f"{base}/projects").json()[0]["external_url"] is None
+
+
+def test_document_versions_survive_export_and_import(make_client):
+    owner, _, _, base, pdf = _full_space(make_client)
+    first = owner.get(f"{base}/documents").json()[0]
+    owner.post(
+        f"{base}/documents/{first['id']}/replace",
+        files={"file": ("Devis traiteur v2.pdf", b"%PDF-1.4 v2", "application/pdf")},
+    )
+
+    report = owner.post(
+        "/api/space-imports",
+        files={"file": ("export.zip", owner.get(f"{base}/export").content, "application/zip")},
+    ).json()
+
+    new = f"/api/spaces/{report['space_id']}"
+    current = owner.get(f"{new}/documents").json()
+    assert [(d["filename"], d["revision"]) for d in current] == [("Devis traiteur v2.pdf", 2)]
+    versions = owner.get(f"{new}/documents/{current[0]['id']}/versions").json()
+    assert [v["filename"] for v in versions] == ["Devis traiteur v2.pdf", "Devis traiteur.pdf"]
+    assert owner.get(f"{new}/documents/{versions[1]['id']}/download").content == pdf

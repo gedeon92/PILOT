@@ -405,6 +405,9 @@ class DocumentOut(BaseModel):
     uploaded_by: str | None
     created_at: datetime
     archived: bool
+    # Numéro de version (1 pour le premier envoi) ; une version remplacée garde sa date.
+    revision: int = 1
+    replaced_at: datetime | None = None
 
 
 # ---------- Alertes ----------

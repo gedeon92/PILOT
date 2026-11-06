@@ -3,7 +3,9 @@ import { errorMessage, type DocumentItem } from '../api/client'
 import {
   downloadUrl,
   useArchiveDocument,
+  useDocumentVersions,
   useProjectDocuments,
+  useReplaceDocument,
   useUploadDocument,
 } from '../api/queries'
 import { extensionOf, formatSize, MAX_FILES_PER_UPLOAD, MAX_UPLOAD_BYTES } from '../files'
@@ -20,6 +22,38 @@ export function FileBadge({ filename }: { filename: string }) {
   )
 }
 
+/** Versions précédentes d'un document, chargées à la demande. */
+function Versions({ document, spaceId }: { document: DocumentItem; spaceId: string }) {
+  const versions = useDocumentVersions(spaceId, document.id, true)
+  const previous = (versions.data ?? []).slice(1)
+  return (
+    <div className="doc-versions">
+      {versions.isPending && <p className="muted">Chargement…</p>}
+      {versions.isError && <Alert>{errorMessage(versions.error)}</Alert>}
+      {previous.length > 0 && (
+        <ul aria-label={`Versions précédentes de ${document.filename}`}>
+          {previous.map((v) => (
+            <li key={v.id}>
+              <span className="doc-versions__tag">v{v.revision}</span>
+              <span className="doc-row__text">
+                <span className="doc-row__name">{v.filename}</span>
+                <span className="doc-row__meta">
+                  {formatSize(v.size_bytes)} · ajoutée le {formatMoment(v.created_at)}
+                  {v.uploaded_by && ` par ${v.uploaded_by}`}
+                  {v.replaced_at && ` · remplacée le ${formatMoment(v.replaced_at)}`}
+                </span>
+              </span>
+              <a className="button button--small" href={downloadUrl(spaceId, v.id)} download>
+                Télécharger
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 function DocumentRow({
   document,
   spaceId,
@@ -30,20 +64,78 @@ function DocumentRow({
   canWrite: boolean
 }) {
   const archive = useArchiveDocument(spaceId)
+  const replace = useReplaceDocument(spaceId)
   const [confirming, setConfirming] = useState(false)
+  const [showVersions, setShowVersions] = useState(false)
+  const [replaceError, setReplaceError] = useState('')
+  const inputId = `replace-${document.id}`
+
+  function sendReplacement(file: File | undefined) {
+    if (!file) return
+    setReplaceError('')
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setReplaceError(`Trop volumineux (${formatSize(file.size)}, 4 Mo au maximum).`)
+      return
+    }
+    replace.mutate(
+      { documentId: document.id, file },
+      { onError: (error) => setReplaceError(errorMessage(error)) },
+    )
+  }
+
   return (
     <li className="doc-row">
       <FileBadge filename={document.filename} />
       <span className="doc-row__text">
-        <span className="doc-row__name">{document.filename}</span>
+        <span className="doc-row__name">
+          {document.filename}
+          {document.revision > 1 && <span className="doc-versions__tag">v{document.revision}</span>}
+        </span>
         <span className="doc-row__meta">
           {formatSize(document.size_bytes)} · ajouté le {formatMoment(document.created_at)}
           {document.uploaded_by && ` par ${document.uploaded_by}`}
+          {document.revision > 1 && (
+            <>
+              {' · '}
+              <button
+                type="button"
+                className="link-button"
+                aria-expanded={showVersions}
+                onClick={() => setShowVersions((v) => !v)}
+              >
+                {showVersions
+                  ? 'Masquer les versions précédentes'
+                  : `${document.revision - 1} version(s) précédente(s)`}
+              </button>
+            </>
+          )}
         </span>
       </span>
       <a className="button button--small" href={downloadUrl(spaceId, document.id)} download>
         Télécharger
       </a>
+      {canWrite && (
+        <>
+          <input
+            type="file"
+            id={inputId}
+            className="visually-hidden"
+            onChange={(e) => {
+              sendReplacement(e.target.files?.[0])
+              e.target.value = ''
+            }}
+          />
+          <label
+            htmlFor={inputId}
+            className={
+              replace.isPending ? 'button button--small is-disabled' : 'button button--small'
+            }
+            title="Déposer une nouvelle version : l’ancienne est gardée"
+          >
+            {replace.isPending ? 'Envoi…' : 'Remplacer'}
+          </label>
+        </>
+      )}
       {canWrite &&
         (confirming ? (
           <>
@@ -73,6 +165,8 @@ function DocumentRow({
           </button>
         ))}
       {archive.isError && <Alert>{errorMessage(archive.error)}</Alert>}
+      {replaceError && <Alert>Nouvelle version non enregistrée : {replaceError}</Alert>}
+      {showVersions && <Versions document={document} spaceId={spaceId} />}
     </li>
   )
 }

@@ -151,7 +151,7 @@ Demande du 3 nov. 2026 : suivre l'organisation des événements, les voir dans u
 - [x] Page « Documents » : toutes les pièces de l'espace, recherche par nom
 - [x] Stockage des fichiers : décision D2 appliquée (PostgreSQL/Neon derrière l'interface `FileStorage`)
 - [x] Séparation dossier partagé / sources privées : les fichiers déposés dans la boîte de mise à jour restent des sources (privées par défaut) et n'entrent dans le dossier d'un projet que sur décision explicite (« Ajouter au dossier d'un projet »)
-- [ ] Remplacement d'un document avec conservation de la version précédente
+- [x] Remplacement d'un document avec conservation de la version précédente (bouton « Remplacer », versions précédentes téléchargeables, liens gardés à l'export et à l'import)
 
 **Terminé quand :** DOC01 passe, et un fichier reste disponible depuis un autre appareil.
 

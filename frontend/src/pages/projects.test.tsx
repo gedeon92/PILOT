@@ -182,4 +182,50 @@ describe('documents du projet', () => {
     expect(sent[0].headers['X-PILOT-CSRF']).toBe('1')
     expect(sent[0].headers['Content-Type']).toBeUndefined()
   })
+
+  it('remplace un document et montre la version précédente', async () => {
+    const doc = (id: string, revision: number, filename: string, replaced_at: string | null) => ({
+      id,
+      project_id: 'pr1',
+      project_title: 'Salon Dakar Tech',
+      filename,
+      content_type: 'application/pdf',
+      size_bytes: 12,
+      uploaded_by: 'Aïcha Ndiaye',
+      created_at: '2026-11-03T10:00:00Z',
+      archived: false,
+      revision,
+      replaced_at,
+    })
+    let current = [doc('d1', 1, 'Budget.pdf', null)]
+    const calls = mockApi(
+      routes({
+        [`GET ${base}/projects/pr1/documents`]: () => ({ status: 200, json: current }),
+        [`POST ${base}/documents/d1/replace`]: () => {
+          current = [doc('d2', 2, 'Budget v2.pdf', null)]
+          return { status: 201, json: current[0] }
+        },
+        [`GET ${base}/documents/d2/versions`]: () => ({
+          status: 200,
+          json: [current[0], doc('d1', 1, 'Budget.pdf', '2026-11-06T10:00:00Z')],
+        }),
+      }),
+    )
+    renderApp(`/espaces/${SPACE_ID}/projets/pr1`)
+    const user = userEvent.setup()
+
+    const file = new File(['v2'], 'Budget v2.pdf', { type: 'application/pdf' })
+    await user.upload(await screen.findByLabelText('Remplacer'), file)
+
+    expect(calls.find((c) => c.key === `POST ${base}/documents/d1/replace`)).toBeDefined()
+    await user.click(await screen.findByRole('button', { name: '1 version(s) précédente(s)' }))
+    const previous = await screen.findByRole('list', {
+      name: 'Versions précédentes de Budget v2.pdf',
+    })
+    expect(within(previous).getByText('Budget.pdf')).toBeInTheDocument()
+    expect(within(previous).getByRole('link', { name: 'Télécharger' })).toHaveAttribute(
+      'href',
+      `/api/spaces/${SPACE_ID}/documents/d1/download`,
+    )
+  })
 })

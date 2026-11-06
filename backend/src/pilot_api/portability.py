@@ -395,6 +395,8 @@ def import_space(
     # Pièces : restaurées seulement si le contenu est présent et conforme à son empreinte.
     storage = get_storage(db)
     restored, missing, corrupted = 0, [], []
+    # Ancien identifiant -> nouvelle fiche, pour relier ensuite chaque version à la précédente.
+    new_documents: dict[str, tuple[Document, str | None]] = {}
     for item in data.get("documents", []):
         project_id = project_ids.get(str(item.get("project_id")))
         if project_id is None:
@@ -407,7 +409,9 @@ def import_space(
         if hashlib.sha256(content).hexdigest() != item.get("sha256"):
             corrupted.append(filename)
             continue
-        values = _load(Document, item, {"project_id", "storage_key", "size_bytes", "sha256"})
+        values = _load(
+            Document, item, {"project_id", "storage_key", "size_bytes", "sha256", "previous_id"}
+        )
         document = Document(
             space_id=space.id,
             project_id=project_id,
@@ -419,7 +423,13 @@ def import_space(
         )
         storage.put(document.storage_key, content)
         db.add(document)
+        previous = item.get("previous_id")
+        new_documents[str(item.get("id"))] = (document, str(previous) if previous else None)
         restored += 1
+    db.flush()
+    for document, previous in new_documents.values():
+        if previous and previous in new_documents:
+            document.previous_id = new_documents[previous][0].id
     report.counts["documents"] = restored
     if missing:
         report.warnings.append(

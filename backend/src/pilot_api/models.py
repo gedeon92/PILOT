@@ -390,6 +390,13 @@ class Document(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     # Pas de suppression définitive : un document retiré reste dans la base et au journal.
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Versions : un remplacement crée une nouvelle fiche qui pointe vers la précédente ;
+    # l'ancienne est gardée (téléchargeable) avec sa date de remplacement.
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    previous_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("documents.id", ondelete="SET NULL"), index=True
+    )
+    replaced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     uploaded_by: Mapped[User | None] = relationship()
 

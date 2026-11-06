@@ -366,6 +366,29 @@ export function useUploadDocument(spaceId: string, projectId: string) {
   })
 }
 
+export function useReplaceDocument(spaceId: string) {
+  const refresh = useRefreshProjects(spaceId)
+  return useMutation({
+    mutationFn: ({ documentId, file }: { documentId: string; file: File }) => {
+      const body = new FormData()
+      body.append('file', file)
+      return api<DocumentItem>(`/spaces/${spaceId}/documents/${documentId}/replace`, {
+        method: 'POST',
+        body,
+      })
+    },
+    onSettled: refresh,
+  })
+}
+
+export function useDocumentVersions(spaceId: string, documentId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...projectKeys.all(spaceId), 'document-versions', documentId],
+    queryFn: () => api<DocumentItem[]>(`/spaces/${spaceId}/documents/${documentId}/versions`),
+    enabled,
+  })
+}
+
 export function useArchiveDocument(spaceId: string) {
   const refresh = useRefreshProjects(spaceId)
   return useMutation({

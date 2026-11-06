@@ -570,6 +570,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/spaces/{space_id}/documents/{document_id}/replace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Replace Document
+         * @description Dépose une nouvelle version : l'ancienne est gardée et reste téléchargeable.
+         */
+        post: operations["replace_document_api_spaces__space_id__documents__document_id__replace_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/documents/{document_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Document Versions
+         * @description La version demandée puis toutes les précédentes, de la plus récente à la plus ancienne.
+         */
+        get: operations["document_versions_api_spaces__space_id__documents__document_id__versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/spaces/{space_id}/documents/{document_id}/download": {
         parameters: {
             query?: never;
@@ -998,6 +1038,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_replace_document_api_spaces__space_id__documents__document_id__replace_post */
+        Body_replace_document_api_spaces__space_id__documents__document_id__replace_post: {
+            /** File */
+            file: string;
+        };
         /** Body_upload_document_api_spaces__space_id__projects__project_id__documents_post */
         Body_upload_document_api_spaces__space_id__projects__project_id__documents_post: {
             /** File */
@@ -1037,6 +1082,13 @@ export interface components {
             created_at: string;
             /** Archived */
             archived: boolean;
+            /**
+             * Revision
+             * @default 1
+             */
+            revision: number;
+            /** Replaced At */
+            replaced_at?: string | null;
         };
         /** EmailChangeRequest */
         EmailChangeRequest: {
@@ -3368,6 +3420,74 @@ export interface operations {
             };
             header?: never;
             path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_document_api_spaces__space_id__documents__document_id__replace_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_replace_document_api_spaces__space_id__documents__document_id__replace_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_versions_api_spaces__space_id__documents__document_id__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
                 space_id: string;
             };
             cookie?: never;

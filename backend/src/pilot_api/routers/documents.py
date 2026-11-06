@@ -52,6 +52,8 @@ def _document_out(document: Document, project_title: str) -> DocumentOut:
         uploaded_by=document.uploaded_by.display_name if document.uploaded_by else None,
         created_at=document.created_at,
         archived=document.archived_at is not None,
+        revision=document.revision,
+        replaced_at=document.replaced_at,
     )
 
 
@@ -97,7 +99,11 @@ def list_project_documents(
     documents = db.scalars(
         select(Document)
         .options(selectinload(Document.uploaded_by))
-        .where(Document.project_id == project.id, Document.archived_at.is_(None))
+        .where(
+            Document.project_id == project.id,
+            Document.archived_at.is_(None),
+            Document.replaced_at.is_(None),
+        )
         .order_by(Document.created_at.desc())
     ).all()
     return [_document_out(d, project.title) for d in documents]
@@ -117,7 +123,11 @@ def list_space_documents(
         select(Document, Project.title)
         .join(Project, Project.id == Document.project_id)
         .options(selectinload(Document.uploaded_by))
-        .where(Document.space_id == membership.space_id, Document.archived_at.is_(None))
+        .where(
+            Document.space_id == membership.space_id,
+            Document.archived_at.is_(None),
+            Document.replaced_at.is_(None),
+        )
     )
     if q:
         query = query.where(Document.filename.ilike(f"%{q.strip()}%"))
@@ -127,11 +137,14 @@ def list_space_documents(
     return [_document_out(document, title) for document, title in rows]
 
 
-@router.post("/projects/{project_id}/documents", status_code=201)
-async def upload_document(
-    project_id: uuid.UUID, file: UploadFile, membership: WriterMembership, db: DbSession
-) -> DocumentOut:
-    project = _get_project(db, membership.space_id, project_id)
+async def _store(
+    file: UploadFile,
+    project: Project,
+    user_id: uuid.UUID,
+    db: Session,
+    previous: Document | None = None,
+) -> Document:
+    """Lit, vérifie et enregistre un fichier comme nouvelle fiche du projet."""
     limit = int(get_settings().max_upload_mb * 1024 * 1024)
     data = await _read_limited(file, limit)
     if not data:
@@ -151,12 +164,23 @@ async def upload_document(
         size_bytes=len(data),
         sha256=hashlib.sha256(data).hexdigest(),
         storage_key=uuid.uuid4(),
-        uploaded_by_id=membership.user_id,
+        uploaded_by_id=user_id,
+        revision=previous.revision + 1 if previous else 1,
+        previous_id=previous.id if previous else None,
     )
     get_storage(db).put(document.storage_key, data)
     db.add(document)
     db.flush()
     project.updated_at = utcnow()
+    return document
+
+
+@router.post("/projects/{project_id}/documents", status_code=201)
+async def upload_document(
+    project_id: uuid.UUID, file: UploadFile, membership: WriterMembership, db: DbSession
+) -> DocumentOut:
+    project = _get_project(db, membership.space_id, project_id)
+    document = await _store(file, project, membership.user_id, db)
     record(
         db,
         action="document.uploaded",
@@ -164,10 +188,73 @@ async def upload_document(
         space_id=project.space_id,
         target_type="document",
         target_id=document.id,
-        after={"filename": filename, "size_bytes": len(data), "project_id": str(project.id)},
+        after={
+            "filename": document.filename,
+            "size_bytes": document.size_bytes,
+            "project_id": str(project.id),
+        },
     )
     db.commit()
     return _document_out(_get_document(db, project.space_id, document.id), project.title)
+
+
+@router.post("/documents/{document_id}/replace", status_code=201)
+async def replace_document(
+    document_id: uuid.UUID, file: UploadFile, membership: WriterMembership, db: DbSession
+) -> DocumentOut:
+    """Dépose une nouvelle version : l'ancienne est gardée et reste téléchargeable."""
+    # Verrou : deux remplacements simultanés ne peuvent pas créer deux « versions courantes ».
+    current = db.scalar(
+        select(Document)
+        .where(Document.id == document_id, Document.space_id == membership.space_id)
+        .with_for_update()
+    )
+    if current is None:
+        raise HTTPException(404, "Document introuvable.")
+    if current.archived_at is not None:
+        raise HTTPException(409, "Ce document a été retiré : il ne peut plus être remplacé.")
+    if current.replaced_at is not None:
+        raise HTTPException(
+            409, "Ce document a déjà été remplacé par une version plus récente. Rechargez la page."
+        )
+    project = db.get(Project, current.project_id)
+    document = await _store(file, project, membership.user_id, db, previous=current)
+    current.replaced_at = utcnow()
+    record(
+        db,
+        action="document.replaced",
+        actor_id=membership.user_id,
+        space_id=project.space_id,
+        target_type="document",
+        target_id=document.id,
+        before={"filename": current.filename, "revision": current.revision},
+        after={
+            "filename": document.filename,
+            "revision": document.revision,
+            "size_bytes": document.size_bytes,
+            "project_id": str(project.id),
+        },
+    )
+    db.commit()
+    return _document_out(_get_document(db, project.space_id, document.id), project.title)
+
+
+MAX_VERSIONS = 100
+
+
+@router.get("/documents/{document_id}/versions")
+def document_versions(
+    document_id: uuid.UUID, membership: CurrentMembership, db: DbSession
+) -> list[DocumentOut]:
+    """La version demandée puis toutes les précédentes, de la plus récente à la plus ancienne."""
+    document = _get_document(db, membership.space_id, document_id)
+    project = db.get(Project, document.project_id)
+    title = project.title if project else ""
+    versions = [document]
+    while versions[-1].previous_id and len(versions) < MAX_VERSIONS:
+        previous = _get_document(db, membership.space_id, versions[-1].previous_id)
+        versions.append(previous)
+    return [_document_out(v, title) for v in versions]
 
 
 @router.get("/documents/{document_id}/download")
@@ -199,6 +286,8 @@ def archive_document(
 ) -> DocumentOut:
     document = _get_document(db, membership.space_id, document_id)
     project = db.get(Project, document.project_id)
+    if document.replaced_at is not None:
+        raise HTTPException(409, "Seule la version actuelle d'un document peut être retirée.")
     if document.archived_at is None:
         document.archived_at = utcnow()
         record(
