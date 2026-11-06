@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Logo } from './icons'
 import { ThemeToggle } from './theme-toggle'
+import { Showcase } from './showcase'
 
 export type Tone = 'ok' | 'warn' | 'danger' | 'neutral' | 'info' | 'violet'
 
@@ -67,25 +68,38 @@ export function AuthCard({
   title,
   subtitle,
   children,
+  showcase = false,
 }: {
   title: string
   subtitle?: ReactNode
   children: ReactNode
+  /** Affiche à côté la présentation animée de PILOT (connexion, inscription). */
+  showcase?: boolean
 }) {
-  return (
-    <main className="centered">
-      <ThemeToggle className="button button--small theme-corner" />
-      <div className="panel auth-card">
-        <div className="brand">
-          <Logo size={34} />
-          <span className="brand__name">PILOT</span>
-        </div>
-        <div className="auth-card__intro">
-          <h1>{title}</h1>
-          {subtitle && <p>{subtitle}</p>}
-        </div>
-        {children}
+  const card = (
+    <div className="panel auth-card">
+      <div className="brand">
+        <Logo size={34} />
+        <span className="brand__name">PILOT</span>
       </div>
+      <div className="auth-card__intro">
+        <h1>{title}</h1>
+        {subtitle && <p>{subtitle}</p>}
+      </div>
+      {children}
+    </div>
+  )
+  return (
+    <main className={showcase ? 'centered centered--showcase' : 'centered'}>
+      <ThemeToggle className="button button--small theme-corner" />
+      {showcase ? (
+        <div className="auth-split">
+          {card}
+          <Showcase />
+        </div>
+      ) : (
+        card
+      )}
     </main>
   )
 }

@@ -28,7 +28,7 @@ export function LoginPage() {
   }
 
   return (
-    <AuthCard title="Connexion" subtitle="Retrouvez vos projets et vos priorités.">
+    <AuthCard title="Connexion" subtitle="Retrouvez vos projets et vos priorités." showcase>
       <form className="form" onSubmit={submit}>
         <div className="field">
           <label htmlFor="email">Adresse e-mail</label>
@@ -85,6 +85,7 @@ export function RegisterPage() {
 
   return (
     <AuthCard
+      showcase
       title="Créer un compte"
       subtitle="Pilotez vos projets, vos échéances et vos documents au même endroit."
     >

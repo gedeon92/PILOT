@@ -4547,6 +4547,569 @@ a {
   color: var(--avatar-fg);
 }
 
+/* ---------- Vitrine animée (connexion, inscription) ---------- */
+.centered--showcase {
+  padding: 72px 24px 32px;
+}
+.auth-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 420px);
+  gap: 56px;
+  align-items: center;
+  width: 100%;
+  max-width: 1180px;
+}
+.auth-split .auth-card {
+  order: 2;
+  width: 100%;
+  max-width: none;
+}
+.showcase {
+  order: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.showcase__eyebrow {
+  margin: 0;
+  color: var(--color-action);
+}
+.showcase__title {
+  margin: 0;
+  font-size: clamp(26px, 3.2vw, 40px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: var(--color-strong);
+}
+.showcase__accent {
+  background: var(--gradient-neon);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: neon-shift 7s linear infinite;
+}
+.showcase__lead {
+  margin: 0;
+  max-width: 560px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--color-ink-soft);
+}
+.showcase__scene {
+  width: 100%;
+  max-width: 620px;
+  height: auto;
+  margin: 4px 0;
+  overflow: visible;
+}
+.showcase__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.showcase__step {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-border);
+  background: var(--glass);
+  font-size: 13px;
+  line-height: 1.4;
+  animation: step-focus 9s ease-in-out infinite;
+}
+.showcase__step--2 {
+  animation-delay: 3s;
+}
+.showcase__step--3 {
+  animation-delay: 6s;
+}
+.showcase__step strong {
+  display: block;
+  color: var(--color-ink);
+}
+.showcase__text {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-muted);
+}
+.showcase__num {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--gradient-button);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+@keyframes step-focus {
+  0%,
+  30% {
+    border-color: rgb(255 122 26 / 0.55);
+    box-shadow: 0 0 22px rgb(255 61 129 / 0.18);
+    transform: translateY(-3px);
+  }
+  36%,
+  100% {
+    border-color: var(--color-border);
+    box-shadow: none;
+    transform: none;
+  }
+}
+@media (max-width: 900px) {
+  .auth-split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    max-width: 560px;
+  }
+  .auth-split .auth-card {
+    order: 0;
+  }
+  .showcase__steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Dessin : couleurs reliées au mode clair ou sombre. */
+.sc-panel {
+  fill: var(--color-panel);
+  stroke: var(--color-border-strong);
+}
+.sc-card {
+  fill: rgb(var(--fx) / 0.06);
+  stroke: var(--color-border);
+}
+.sc-text {
+  fill: var(--color-ink-soft);
+  opacity: 0.55;
+}
+.sc-text--soft {
+  opacity: 0.3;
+}
+.sc-title {
+  fill: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+}
+.sc-label {
+  fill: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.sc-track {
+  fill: rgb(var(--fx) / 0.1);
+}
+.sc-grow {
+  fill: var(--neon-2);
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: sc-grow 8s var(--ease-out) infinite;
+}
+.sc-grow--slow {
+  fill: var(--neon-1);
+  animation-duration: 10s;
+}
+.sc-grow--late {
+  fill: var(--neon-4);
+  animation-duration: 12s;
+}
+@keyframes sc-grow {
+  0% {
+    transform: scaleX(0.1);
+  }
+  60%,
+  92% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(0.1);
+  }
+}
+.sc-tick-mark {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* La carte orange passe de « En cours » à « Terminé ». */
+.sc-moving {
+  animation: sc-move 8s var(--ease-out) infinite;
+}
+@keyframes sc-move {
+  0%,
+  16% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  22% {
+    transform: translate(0, -7px);
+  }
+  48% {
+    transform: translate(110px, -7px);
+  }
+  54%,
+  88% {
+    transform: translate(110px, 0);
+    opacity: 1;
+  }
+  94% {
+    transform: translate(110px, 0);
+    opacity: 0;
+  }
+  96% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+}
+.sc-moving__done,
+.sc-toast {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.sc-moving__done {
+  animation: sc-pop 8s ease-out infinite;
+}
+.sc-toast {
+  animation: sc-toast 8s ease-out infinite;
+}
+@keyframes sc-pop {
+  0%,
+  53% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  58% {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+  62%,
+  88% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  94%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes sc-toast {
+  0%,
+  54% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  60%,
+  82% {
+    opacity: 1;
+    transform: none;
+  }
+  88%,
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+.sc-toast__box {
+  fill: var(--color-panel);
+  stroke: rgb(34 197 94 / 0.5);
+}
+.sc-toast__text {
+  fill: var(--color-ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+.sc-day {
+  fill: rgb(var(--fx) / 0.08);
+}
+.sc-day--event {
+  fill: var(--neon-2);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sc-beat 2s ease-in-out infinite;
+}
+@keyframes sc-beat {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    transform: scale(1.3);
+    filter: drop-shadow(0 0 6px rgb(255 61 129 / 0.8));
+  }
+}
+.sc-bubble {
+  transform-box: fill-box;
+  transform-origin: 30% 0;
+  animation: sc-bubble 6s ease-in-out infinite;
+}
+.sc-bubble__box {
+  fill: var(--neon-2);
+}
+.sc-bubble__text {
+  fill: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+@keyframes sc-bubble {
+  0%,
+  10% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  18%,
+  80% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  90%,
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+.sc-floor {
+  stroke: var(--color-border-strong);
+  stroke-width: 2;
+  stroke-dasharray: 2 8;
+  stroke-linecap: round;
+}
+
+/* Personnages */
+.sc-shadow {
+  fill: rgb(var(--fx) / 0.1);
+}
+.sc-leg {
+  stroke: #1e2433;
+  stroke-width: 8;
+  stroke-linecap: round;
+}
+[data-theme='light'] .sc-leg {
+  stroke: #2b3245;
+}
+.sc-arm {
+  stroke: currentColor;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+.sc-eye {
+  fill: #1b1206;
+}
+.sc-smile {
+  fill: none;
+  stroke: #1b1206;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+.sc-head,
+.sc-leg,
+.sc-arm--up,
+.sc-arm--wave,
+.sc-arm--write,
+.sc-person__body {
+  transform-box: fill-box;
+}
+.sc-head {
+  transform-origin: center bottom;
+  animation: sc-nod 3s ease-in-out infinite;
+}
+@keyframes sc-nod {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+.sc-p3 .sc-head {
+  animation-delay: -1.5s;
+}
+.sc-clip {
+  fill: #f8fafc;
+  stroke: #cbd5e1;
+}
+.sc-clipboard .sc-text {
+  fill: #94a3b8;
+  opacity: 1;
+}
+.sc-box {
+  fill: none;
+  stroke: #94a3b8;
+}
+.sc-check {
+  fill: none;
+  stroke: #16a34a;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  animation-duration: 8s;
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+}
+.sc-check--1 {
+  animation-name: sc-check-1;
+}
+.sc-check--2 {
+  animation-name: sc-check-2;
+}
+.sc-check--3 {
+  animation-name: sc-check-3;
+}
+@keyframes sc-check-1 {
+  0%,
+  12% {
+    opacity: 0;
+  }
+  16%,
+  90% {
+    opacity: 1;
+  }
+  96%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes sc-check-2 {
+  0%,
+  36% {
+    opacity: 0;
+  }
+  40%,
+  90% {
+    opacity: 1;
+  }
+  96%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes sc-check-3 {
+  0%,
+  60% {
+    opacity: 0;
+  }
+  64%,
+  90% {
+    opacity: 1;
+  }
+  96%,
+  100% {
+    opacity: 0;
+  }
+}
+.sc-arm--write {
+  transform-origin: left top;
+  animation: sc-write 0.6s ease-in-out infinite alternate;
+}
+@keyframes sc-write {
+  to {
+    transform: rotate(-14deg) translateY(4px);
+  }
+}
+/* La personne orange accompagne la carte puis revient. */
+.sc-walker {
+  animation: sc-walk 8s var(--ease-out) infinite;
+}
+@keyframes sc-walk {
+  0%,
+  16% {
+    transform: translateX(0);
+  }
+  48%,
+  70% {
+    transform: translateX(110px);
+  }
+  94%,
+  100% {
+    transform: translateX(0);
+  }
+}
+.sc-p2 .sc-person__body {
+  transform-origin: center;
+  animation: sc-turn 8s steps(1) infinite;
+}
+@keyframes sc-turn {
+  0%,
+  70% {
+    transform: scaleX(1);
+  }
+  71%,
+  94% {
+    transform: scaleX(-1);
+  }
+  95%,
+  100% {
+    transform: scaleX(1);
+  }
+}
+.sc-p2 .sc-leg {
+  transform-origin: center top;
+  animation: sc-step 0.5s ease-in-out infinite alternate;
+}
+.sc-p2 .sc-leg--r {
+  animation-direction: alternate-reverse;
+}
+@keyframes sc-step {
+  from {
+    transform: rotate(16deg);
+  }
+  to {
+    transform: rotate(-16deg);
+  }
+}
+.sc-arm--up {
+  transform-origin: left bottom;
+  animation: sc-reach 1.2s ease-in-out infinite alternate;
+}
+@keyframes sc-reach {
+  to {
+    transform: rotate(-12deg);
+  }
+}
+.sc-arm--wave {
+  transform-origin: right bottom;
+  animation: sc-wave 1s ease-in-out infinite alternate;
+}
+@keyframes sc-wave {
+  from {
+    transform: rotate(-10deg);
+  }
+  to {
+    transform: rotate(18deg);
+  }
+}
+.sc-p1 .sc-person__body,
+.sc-p3 .sc-person__body {
+  transform-origin: center bottom;
+  animation: sc-breathe 3.2s ease-in-out infinite;
+}
+@keyframes sc-breathe {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
 /* ---------- Mode clair : mêmes formes, fond blanc et texte noir ---------- */
 :root[data-theme='light'] {
   --shadow-soft: 0 1px 2px rgb(15 18 32 / 0.06), 0 8px 24px rgb(15 18 32 / 0.06);

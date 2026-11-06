@@ -4,7 +4,7 @@
   var theme = 'dark'
   try {
     if (localStorage.getItem('pilot-theme') === 'light') theme = 'light'
-  } catch (e) {
+  } catch {
     /* stockage indisponible : on garde le mode sombre */
   }
   document.documentElement.dataset.theme = theme
