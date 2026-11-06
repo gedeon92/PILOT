@@ -12,7 +12,8 @@ import {
 } from '../components/icons'
 import { ProjectTable } from '../components/project-table'
 import { ProjectTimeline } from '../components/timeline'
-import { PageHeader, type Tone } from '../components/ui'
+import { type Tone } from '../components/ui'
+import { useCountUp } from '../count-up'
 import { addDays, formatDay, isClosedProject, todayIso } from '../labels'
 import { ATTENTION, matchesAttention } from '../attention'
 import { useFitRows } from '../fit'
@@ -45,6 +46,7 @@ function StatCard({
   to?: string
   children: ReactNode
 }) {
+  const shown = useCountUp(value)
   const content = (
     <>
       <div className="stat-card__head">
@@ -52,20 +54,20 @@ function StatCard({
         <h2 className="stat-card__title">{title}</h2>
       </div>
       <div className="stat-card__body">
-        <span className="stat-card__value">{value}</span>
+        <span className="stat-card__value">{shown}</span>
         {children}
       </div>
     </>
   )
   if (!to)
     return (
-      <section className="stat-card" aria-label={title}>
+      <section className={`stat-card stat-card--${tone}`} aria-label={title}>
         {content}
       </section>
     )
   return (
     <Link
-      className="stat-card stat-card--link"
+      className={`stat-card stat-card--link stat-card--${tone}`}
       to={to}
       aria-label={`${title} : ${value}, voir la liste`}
     >
@@ -181,6 +183,15 @@ export function DashboardPage() {
   }
   const toDo = todos(open, today).sort((a, b) => URGENCY[a.tone] - URGENCY[b.tone])
   const firstName = me.user.display_name.split(/\s+/)[0]
+  const urgent = new Set([...late, ...blocked].map((p) => p.id)).size
+  const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`
+  const summary = projects.isPending
+    ? 'Je prépare votre journée…'
+    : open.length === 0
+      ? 'Aucun projet en cours pour l’instant : lancez le premier !'
+      : urgent > 0
+        ? `${plural(urgent, 'sujet')} ${urgent > 1 ? 'demandent' : 'demande'} votre attention aujourd’hui${dueThisWeek ? `, et ${plural(dueThisWeek, 'échéance')} ${dueThisWeek > 1 ? 'arrivent' : 'arrive'} cette semaine` : ''}.`
+        : `Tout est sous contrôle aujourd’hui ✨ ${dueThisWeek ? `${plural(dueThisWeek, 'échéance')} cette semaine.` : 'Aucune échéance cette semaine.'}`
   const base = `/espaces/${space.id}`
   // Timeline et liste dans le même bloc : tout l'essentiel tient sur un écran.
   const [view, setView] = useState<'timeline' | 'list'>('timeline')
@@ -192,17 +203,32 @@ export function DashboardPage() {
 
   return (
     <div className="page-content page-content--fit">
-      <PageHeader
-        title={`Bonjour, ${firstName}`}
-        subtitle={`${capitalize(formatUtc(today, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))} · ${space.name}`}
-        actions={
-          space.role !== 'reader' && (
-            <Link className="button button--primary" to={`${base}/projets/nouveau`}>
+      <header className="hero">
+        <div className="hero__text">
+          <p className="hero__date">
+            {capitalize(
+              formatUtc(today, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+            )}{' '}
+            · {space.name}
+          </p>
+          <h1 className="hero__title">
+            Bonjour, {firstName} <span className="hero__wave">👋</span>
+          </h1>
+          <p className="hero__summary">{summary}</p>
+        </div>
+        <div className="hero__actions">
+          {space.role !== 'reader' && (
+            <Link className="button hero__button" to={`${base}/projets/nouveau`}>
               Nouveau projet <PlusIcon />
             </Link>
-          )
-        }
-      />
+          )}
+          <Link className="button hero__button hero__button--ghost" to={`${base}/point-hebdo`}>
+            Point hebdo
+          </Link>
+        </div>
+        <span className="hero__orb hero__orb--1" aria-hidden="true" />
+        <span className="hero__orb hero__orb--2" aria-hidden="true" />
+      </header>
 
       <div className="stat-grid">
         <StatCard

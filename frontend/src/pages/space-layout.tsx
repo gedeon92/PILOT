@@ -24,17 +24,9 @@ import {
 import { CommandPalette } from '../components/command-palette'
 import { Alert, FullPageLoader } from '../components/ui'
 import { PortfolioMark } from '../components/portfolio-mark'
+import { Avatar } from '../components/avatar'
 
 export type SpaceContext = { space: Space; me: Me }
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-}
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? 'nav__link nav__link--active' : 'nav__link'
@@ -192,9 +184,7 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
 
         <div className="user-card">
           <div className="user-card__who">
-            <span className="avatar" aria-hidden="true">
-              {initials(me.user.display_name)}
-            </span>
+            <Avatar name={me.user.display_name} />
             <span className="user-card__text">
               <span className="user-card__name">{me.user.display_name}</span>
               <span className="user-card__role">

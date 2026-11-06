@@ -13,9 +13,11 @@ import {
 import { DocumentsSection } from '../components/documents'
 import { TaskAddForm, TaskRow } from '../components/task-row'
 import { PlusIcon } from '../components/icons'
+import { Avatar } from '../components/avatar'
 import { ContributorsField } from '../components/contributors-field'
 import { Country } from '../components/country'
 import { PortfolioMark } from '../components/portfolio-mark'
+import { ProgressBar } from '../components/progress-bar'
 import { ProjectLinksSection } from '../components/project-links'
 import {
   DecisionOptionsField,
@@ -830,6 +832,7 @@ export function ProjectDetailPage() {
           {p.entity?.name ?? <span className="muted">Non précisée</span>}
         </Landmark>
         <Landmark label="Responsable du suivi">
+          {p.owner.name && <Avatar name={p.owner.name} size="tiny" />}
           {p.owner.name ?? <span className="warn-text">Non attribué</span>}
           {p.owner.name && !p.owner.has_account && <span className="owner__note">Sans compte</span>}
         </Landmark>
@@ -850,7 +853,11 @@ export function ProjectDetailPage() {
           )}
         </Landmark>
         <Landmark label="Avancement">
-          {p.progress === null ? <span className="muted">Non renseigné</span> : `${p.progress} %`}
+          {p.progress === null ? (
+            <span className="muted">Non renseigné</span>
+          ) : (
+            <ProgressBar value={p.progress} />
+          )}
         </Landmark>
       </section>
 
@@ -913,9 +920,12 @@ export function ProjectDetailPage() {
                     p.contributors.length > 0 && (
                       <span className="contributors-list">
                         {p.contributors.map((c, i) => (
-                          <span key={`${c.member_id ?? c.name}-${i}`}>
-                            {c.name}
-                            {!c.has_account && <span className="owner__note">Sans compte</span>}
+                          <span key={`${c.member_id ?? c.name}-${i}`} className="contributor">
+                            <Avatar name={c.name ?? '?'} size="tiny" />
+                            <span>
+                              {c.name}
+                              {!c.has_account && <span className="owner__note">Sans compte</span>}
+                            </span>
                           </span>
                         ))}
                       </span>

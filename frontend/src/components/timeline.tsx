@@ -15,6 +15,7 @@ import {
   type Zoom,
 } from '../timeline'
 import type { Tone } from './ui'
+import { Avatar } from './avatar'
 
 const TONE_COLOR: Record<Tone, string> = {
   info: '#2563EB',
@@ -38,14 +39,6 @@ function short(day: string) {
 function spanText(span: Span) {
   if (span.kind === 'due' || span.from === span.to) return short(span.from)
   return `${short(span.from)} → ${short(span.to)}`
-}
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
-    .join('')
 }
 
 type Row = { project: Project; span: Span; tasks: Task[] }
@@ -411,9 +404,7 @@ export function ProjectTimeline({
                         </Link>
                         <span className="tl__meta">
                           {p.owner.name ? (
-                            <span className="tl__avatar" title={p.owner.name}>
-                              {initials(p.owner.name)}
-                            </span>
+                            <Avatar name={p.owner.name} size="tiny" title={p.owner.name} />
                           ) : (
                             <span className="tl__avatar tl__avatar--none" title="Non attribué">
                               ?

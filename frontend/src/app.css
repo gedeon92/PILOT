@@ -3589,3 +3589,462 @@ a.weekly-line__title:hover {
     box-shadow: none;
   }
 }
+
+/* =====================================================================
+   PILOT « vivant » (6 nov. 2026, demande du manager) : couleur, relief et
+   mouvements doux, dans la charte D7 (orange). Les animations s'arrêtent si
+   l'utilisateur a demandé de réduire les mouvements.
+   ===================================================================== */
+
+:root {
+  --shadow-soft: 0 1px 2px rgb(24 24 27 / 0.04), 0 4px 16px rgb(24 24 27 / 0.04);
+  --shadow-lift: 0 2px 4px rgb(24 24 27 / 0.05), 0 12px 28px rgb(208 69 10 / 0.12);
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Fond chaleureux : les cartes blanches ressortent. */
+.app {
+  background:
+    radial-gradient(1200px 420px at 75% -120px, rgb(242 106 27 / 0.1), transparent 70%), #fbf9f7;
+}
+.sidebar {
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(8px);
+  border-right: 1px solid var(--color-border);
+}
+.card-panel,
+.stat-card {
+  background: var(--color-panel);
+  box-shadow: var(--shadow-soft);
+}
+
+/* Arrivée des pages : les blocs montent doucement, l'un après l'autre. */
+@keyframes pilot-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-content > * {
+  animation: pilot-rise 0.5s var(--ease-out) both;
+}
+.page-content > *:nth-child(2) {
+  animation-delay: 0.05s;
+}
+.page-content > *:nth-child(3) {
+  animation-delay: 0.1s;
+}
+.page-content > *:nth-child(4) {
+  animation-delay: 0.15s;
+}
+.page-content > *:nth-child(5) {
+  animation-delay: 0.2s;
+}
+.page-content > *:nth-child(n + 6) {
+  animation-delay: 0.25s;
+}
+
+/* Titres de page plus présents. */
+.page-header h1 {
+  letter-spacing: -0.02em;
+}
+
+/* ---------- Bandeau d'accueil (vue d'ensemble) ---------- */
+.hero {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 26px;
+  border-radius: var(--radius-panel);
+  background: linear-gradient(120deg, #f26a1b 0%, #e2531a 45%, #c2410c 100%);
+  color: #fff;
+  box-shadow: 0 10px 30px rgb(208 69 10 / 0.25);
+}
+.hero__text {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+.hero__date {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.85);
+}
+.hero__title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.hero__summary {
+  margin: 6px 0 0;
+  font-size: 15px;
+  color: rgb(255 255 255 / 0.95);
+}
+.hero__wave {
+  display: inline-block;
+  transform-origin: 70% 70%;
+  animation: pilot-wave 1.6s ease-in-out 0.4s 2;
+}
+@keyframes pilot-wave {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0);
+  }
+  10%,
+  30% {
+    transform: rotate(14deg);
+  }
+  20%,
+  40% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+}
+.hero__actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.button.hero__button {
+  border: none;
+  background: #fff;
+  color: var(--color-action);
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.12);
+}
+.button.hero__button:hover {
+  background: #fff7f2;
+}
+.button.hero__button--ghost {
+  background: rgb(255 255 255 / 0.16);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.45);
+}
+.button.hero__button--ghost:hover {
+  background: rgb(255 255 255 / 0.26);
+}
+.hero__orb {
+  position: absolute;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.12);
+  pointer-events: none;
+  animation: pilot-float 9s ease-in-out infinite;
+}
+.hero__orb--1 {
+  width: 220px;
+  height: 220px;
+  right: 18%;
+  top: -120px;
+}
+.hero__orb--2 {
+  width: 140px;
+  height: 140px;
+  right: -40px;
+  bottom: -70px;
+  background: rgb(255 255 255 / 0.1);
+  animation-delay: -4s;
+}
+@keyframes pilot-float {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-14px, 10px);
+  }
+}
+@media (min-width: 900px) and (min-height: 600px) {
+  .page-content--fit > .hero {
+    flex: none;
+    padding: 18px 24px;
+  }
+  .page-content--fit .hero__title {
+    font-size: 25px;
+  }
+}
+
+/* ---------- Cartes de chiffres : teintées, animées, qui se soulèvent ---------- */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.2s var(--ease-out),
+    box-shadow 0.2s var(--ease-out);
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--stat-color, var(--color-action));
+}
+.stat-card--danger {
+  --stat-color: var(--tone-danger-dot);
+  background: linear-gradient(160deg, #fff5f5 0%, #fff 60%);
+}
+.stat-card--action {
+  --stat-color: var(--color-brand);
+  background: linear-gradient(160deg, #fff4ec 0%, #fff 60%);
+}
+.stat-card--info {
+  --stat-color: var(--tone-info-dot);
+  background: linear-gradient(160deg, #f0f5ff 0%, #fff 60%);
+}
+.stat-card .stat-card__value {
+  color: var(--stat-color, var(--color-ink));
+  font-variant-numeric: tabular-nums;
+}
+.stat-card--link:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+  border-color: transparent;
+}
+.icon-tile {
+  transition: transform 0.25s var(--ease-out);
+}
+.stat-card--link:hover .icon-tile {
+  transform: scale(1.1) rotate(-6deg);
+}
+.dot--on {
+  animation: pilot-pop 0.4s var(--ease-out) both;
+}
+@keyframes pilot-pop {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* ---------- Avatars colorés ---------- */
+.avatar {
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgb(24 24 27 / 0.06);
+}
+.avatar--medium {
+  width: 36px;
+  height: 36px;
+  font-size: 13px;
+}
+.avatar--small {
+  width: 30px;
+  height: 30px;
+  font-size: 11px;
+}
+.avatar--tiny {
+  width: 22px;
+  height: 22px;
+  font-size: 9px;
+  border-width: 1.5px;
+}
+.task-row__person {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- Barres d'avancement ---------- */
+.progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+.project-cell__text .progress {
+  margin-top: 5px;
+}
+.progress__track {
+  position: relative;
+  flex: 1 1 auto;
+  height: 6px;
+  min-width: 70px;
+  max-width: 160px;
+  border-radius: 999px;
+  background: #f0f0f2;
+  overflow: hidden;
+}
+.progress__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--progress-color);
+  animation: pilot-grow 0.9s var(--ease-out) both;
+  transform-origin: left;
+}
+@keyframes pilot-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.progress__value {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--progress-color);
+  font-variant-numeric: tabular-nums;
+}
+.progress--low {
+  --progress-color: #f59e0b;
+}
+.progress--mid {
+  --progress-color: #f26a1b;
+}
+.progress--high {
+  --progress-color: #2563eb;
+}
+.progress--done {
+  --progress-color: #16a34a;
+}
+
+/* ---------- Tableaux et listes : survol chaleureux ---------- */
+.table tbody tr {
+  transition: background-color 0.15s;
+}
+.table tbody tr:hover {
+  background: #fff8f3;
+}
+.project-cell__title {
+  transition: color 0.15s;
+}
+.table tbody tr:hover .project-cell__title {
+  color: var(--color-action);
+}
+.task-row,
+.doc-row,
+.weekly-line,
+.links-list li {
+  transition: background-color 0.15s;
+}
+.task-row:hover,
+.doc-row:hover {
+  background: #fff8f3;
+}
+
+/* ---------- Menu : l'élément actif est mis en avant en orange ---------- */
+.nav__link {
+  position: relative;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    transform 0.15s var(--ease-out);
+}
+.nav__link:not(.nav__link--static):hover {
+  background: #f4efeb;
+  transform: translateX(2px);
+}
+.nav__link--active,
+.nav__link--active:hover {
+  background: linear-gradient(90deg, #fff1e8, #fff);
+  color: var(--color-action);
+  box-shadow: inset 3px 0 0 var(--color-brand);
+}
+.nav__link--active svg {
+  color: var(--color-brand);
+}
+.badge--count {
+  animation: pilot-beat 2.4s ease-in-out infinite;
+}
+@keyframes pilot-beat {
+  0%,
+  86%,
+  100% {
+    transform: scale(1);
+  }
+  92% {
+    transform: scale(1.18);
+  }
+}
+
+/* ---------- Boutons : relief et réaction au clic ---------- */
+.button {
+  transition:
+    background-color 0.15s,
+    box-shadow 0.2s,
+    transform 0.1s;
+}
+.button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.button--primary {
+  background: linear-gradient(135deg, #f26a1b, #d0450a);
+  box-shadow: 0 4px 14px rgb(208 69 10 / 0.28);
+}
+.button--primary:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgb(208 69 10 / 0.38);
+}
+
+/* ---------- Statuts : un projet bloqué « respire » pour attirer l'œil ---------- */
+.pill--danger .pill__dot {
+  animation: pilot-pulse 1.8s ease-out infinite;
+}
+@keyframes pilot-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(220 38 38 / 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgb(220 38 38 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(220 38 38 / 0);
+  }
+}
+
+/* ---------- Cartes de la fiche et du point hebdo ---------- */
+.landmarks {
+  background: var(--color-panel);
+  box-shadow: var(--shadow-soft);
+}
+.weekly-block,
+.card-panel--event {
+  transition: box-shadow 0.2s;
+}
+.weekly-block:hover {
+  box-shadow: var(--shadow-lift);
+}
+
+/* Respect de « réduire les animations » (réglage du système). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+.contributors-list {
+  gap: 8px;
+}
+.contributor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.landmark__value .avatar {
+  margin-right: 6px;
+}

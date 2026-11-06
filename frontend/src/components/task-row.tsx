@@ -5,6 +5,7 @@ import { useCreateSpaceTask, useCreateTask, useMembers, useUpdateTask } from '..
 import { CERTAINTY, formatDay, TASK_STATUS, type TaskStatus } from '../labels'
 import { personPayload } from '../person'
 import { PersonField, type PersonValue } from './person-field'
+import { Avatar } from './avatar'
 import { Alert, StatusPill } from './ui'
 
 /** Une tâche : case « terminée », responsable, échéance et statut. `project` ajoute le lien
@@ -54,9 +55,16 @@ export function TaskRow({
         {task.deliverable && <span className="task-row__meta">Livrable : {task.deliverable}</span>}
       </span>
       <span className="task-row__person">
-        {task.assignee.name ?? <span className="muted">Non attribuée</span>}
-        {task.assignee.name && !task.assignee.has_account && (
-          <span className="owner__note">Sans compte</span>
+        {task.assignee.name ? (
+          <>
+            <Avatar name={task.assignee.name} size="tiny" />
+            <span>
+              {task.assignee.name}
+              {!task.assignee.has_account && <span className="owner__note">Sans compte</span>}
+            </span>
+          </>
+        ) : (
+          <span className="muted">Non attribuée</span>
         )}
       </span>
       <span className="task-row__due">

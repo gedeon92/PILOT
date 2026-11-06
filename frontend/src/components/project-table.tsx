@@ -3,24 +3,15 @@ import type { Project } from '../api/client'
 import { CERTAINTY, formatDay, isClosedProject, PROJECT_STATUS } from '../labels'
 import { StatusPill } from './ui'
 import { PortfolioMark } from './portfolio-mark'
+import { Avatar } from './avatar'
+import { ProgressBar } from './progress-bar'
 
 function Owner({ project }: { project: Project }) {
   const { owner } = project
   if (!owner.name) return <span className="owner owner--none">Non attribué</span>
   return (
     <span className="owner">
-      <span
-        className={
-          owner.has_account ? 'avatar avatar--small' : 'avatar avatar--small avatar--label'
-        }
-        aria-hidden="true"
-      >
-        {owner.name
-          .split(/\s+/)
-          .slice(0, 2)
-          .map((p) => p[0]?.toUpperCase())
-          .join('')}
-      </span>
+      <Avatar name={owner.name} size="small" />
       <span className="owner__text">
         <span>{owner.name}</span>
         {!owner.has_account && <span className="owner__note">Sans compte</span>}
@@ -130,6 +121,10 @@ export function ProjectTable({
                           </span>
                         )}
                       </span>
+                      <ProgressBar
+                        value={project.progress}
+                        label={`Avancement de ${project.title}`}
+                      />
                     </span>
                   </Link>
                 </td>
