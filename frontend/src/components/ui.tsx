@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Logo } from './icons'
+import { ThemeToggle } from './theme-toggle'
 
 export type Tone = 'ok' | 'warn' | 'danger' | 'neutral' | 'info' | 'violet'
 
@@ -73,6 +74,7 @@ export function AuthCard({
 }) {
   return (
     <main className="centered">
+      <ThemeToggle className="button button--small theme-corner" />
       <div className="panel auth-card">
         <div className="brand">
           <Logo size={34} />

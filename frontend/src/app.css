@@ -1638,7 +1638,7 @@ textarea:focus-visible {
   height: 24px;
   border-radius: 50%;
   background: var(--color-ink);
-  color: #fff;
+  color: var(--color-ink-inverse);
 }
 .calendar__num {
   display: block;
@@ -1867,7 +1867,7 @@ textarea:focus-visible {
   padding: 1px 8px;
   border-radius: 999px;
   background: var(--color-ink);
-  color: #fff;
+  color: var(--color-ink-inverse);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
@@ -1946,7 +1946,7 @@ textarea:focus-visible {
   border-radius: 10px;
 }
 .tl__row--active {
-  background: rgb(255 255 255 / 0.03);
+  background: rgb(var(--fx) / 0.03);
 }
 .tl__label {
   display: flex;
@@ -2776,7 +2776,7 @@ kbd {
   padding: 10px 14px;
   border-radius: 10px;
   background: var(--color-ink);
-  color: #fff;
+  color: var(--color-ink-inverse);
   font-weight: 600;
   text-decoration: none;
 }
@@ -3609,9 +3609,9 @@ a.weekly-line__title:hover {
    ===================================================================== */
 
 :root {
-  --shadow-soft: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 10px 30px rgb(0 0 0 / 0.35);
+  --shadow-soft: 0 1px 0 rgb(var(--fx) / 0.04) inset, 0 10px 30px rgb(0 0 0 / 0.35);
   --shadow-lift:
-    0 1px 0 rgb(255 255 255 / 0.06) inset, 0 18px 40px rgb(0 0 0 / 0.45),
+    0 1px 0 rgb(var(--fx) / 0.06) inset, 0 18px 40px rgb(0 0 0 / 0.45),
     0 0 0 1px rgb(255 122 26 / 0.25), 0 0 28px rgb(255 61 129 / 0.18);
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -3621,7 +3621,7 @@ a.weekly-line__title:hover {
   color: #fff;
 }
 * {
-  scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+  scrollbar-color: rgb(var(--fx) / 0.18) transparent;
 }
 
 /* ---------- Fond spatial : aurore qui dérive lentement + grille ---------- */
@@ -3656,8 +3656,8 @@ a.weekly-line__title:hover {
   inset: 0;
   z-index: -1;
   background-image:
-    linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+    linear-gradient(rgb(var(--fx) / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--fx) / 0.035) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 40%, transparent 100%);
   pointer-events: none;
@@ -3686,7 +3686,7 @@ h3,
 .page-header h1,
 .intro h1 {
   letter-spacing: -0.03em;
-  background: linear-gradient(180deg, #fff 30%, #c4cadb);
+  background: linear-gradient(180deg, var(--color-strong) 30%, var(--color-ink-soft));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -3775,7 +3775,7 @@ h3,
 }
 .card-panel:hover,
 .weekly-block:hover {
-  border-color: rgb(255 255 255 / 0.14);
+  border-color: rgb(var(--fx) / 0.14);
 }
 
 /* ---------- Menu latéral ---------- */
@@ -3795,7 +3795,7 @@ h3,
     transform 0.2s var(--ease-out);
 }
 .nav__link:not(.nav__link--static):hover {
-  background: rgb(255 255 255 / 0.05);
+  background: rgb(var(--fx) / 0.05);
   color: var(--color-ink);
   transform: translateX(3px);
 }
@@ -3807,7 +3807,7 @@ h3,
     rgb(255 61 129 / 0.08) 60%,
     transparent
   );
-  color: #fff;
+  color: var(--color-strong);
   box-shadow: none;
 }
 .nav__link--active::before {
@@ -3847,7 +3847,7 @@ h3,
 }
 .search-button,
 .space-switcher {
-  background: rgb(255 255 255 / 0.04);
+  background: rgb(var(--fx) / 0.04);
   border-color: var(--color-border);
   color: var(--color-ink-soft);
 }
@@ -3861,7 +3861,7 @@ h3,
 .button {
   position: relative;
   overflow: hidden;
-  background: rgb(255 255 255 / 0.05);
+  background: rgb(var(--fx) / 0.05);
   border: 1px solid var(--color-border-strong);
   color: var(--color-ink);
   transition:
@@ -3871,8 +3871,8 @@ h3,
     transform 0.12s;
 }
 .button:hover:not(:disabled) {
-  background: rgb(255 255 255 / 0.09);
-  border-color: rgb(255 255 255 / 0.26);
+  background: rgb(var(--fx) / 0.09);
+  border-color: rgb(var(--fx) / 0.26);
 }
 .button:active:not(:disabled) {
   transform: scale(0.96);
@@ -3884,7 +3884,7 @@ h3,
   color: #fff;
   font-weight: 700;
   box-shadow:
-    0 0 0 1px rgb(255 255 255 / 0.12) inset,
+    0 0 0 1px rgb(var(--fx) / 0.12) inset,
     0 8px 24px rgb(217 72 15 / 0.35);
 }
 .button--primary::after,
@@ -3892,12 +3892,7 @@ h3,
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    110deg,
-    transparent 30%,
-    rgb(255 255 255 / 0.35) 50%,
-    transparent 70%
-  );
+  background: linear-gradient(110deg, transparent 30%, rgb(var(--fx) / 0.35) 50%, transparent 70%);
   transform: translateX(-120%);
   transition: transform 0.7s var(--ease-out);
 }
@@ -3905,7 +3900,7 @@ h3,
 .button.hero__button:hover {
   background: var(--gradient-button);
   box-shadow:
-    0 0 0 1px rgb(255 255 255 / 0.18) inset,
+    0 0 0 1px rgb(var(--fx) / 0.18) inset,
     0 10px 30px rgb(255 61 129 / 0.45),
     0 0 22px rgb(255 122 26 / 0.45);
 }
@@ -3923,13 +3918,15 @@ h3,
   color: var(--tone-danger-fg);
 }
 .button.hero__button--ghost {
-  background: rgb(255 255 255 / 0.06);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.2);
+  background: rgb(var(--fx) / 0.06);
+  color: var(--color-strong);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgb(var(--fx) / 0.2);
 }
 .button.hero__button--ghost:hover {
-  background: rgb(255 255 255 / 0.12);
+  background: rgb(var(--fx) / 0.12);
   box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.35),
+    inset 0 0 0 1px rgb(var(--fx) / 0.35),
     0 0 20px rgb(34 211 238 / 0.25);
 }
 
@@ -3937,7 +3934,7 @@ h3,
 input,
 select,
 textarea {
-  background: rgb(255 255 255 / 0.04);
+  background: rgb(var(--fx) / 0.04);
   border-color: var(--color-border-strong);
   color: var(--color-ink);
   transition:
@@ -3952,7 +3949,7 @@ textarea::placeholder {
 input:hover,
 select:hover,
 textarea:hover {
-  border-color: rgb(255 255 255 / 0.26);
+  border-color: rgb(var(--fx) / 0.26);
 }
 input:focus-visible,
 select:focus-visible,
@@ -4079,7 +4076,7 @@ input[type='radio'] {
   bottom: 0;
   width: 30%;
   left: -40%;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.07), transparent);
+  background: linear-gradient(90deg, transparent, rgb(var(--fx) / 0.07), transparent);
   animation: scan 6s ease-in-out infinite;
   pointer-events: none;
 }
@@ -4101,7 +4098,7 @@ input[type='radio'] {
 .hero__date {
   margin: 0 0 6px;
   font-size: 12px;
-  color: rgb(255 255 255 / 0.65);
+  color: rgb(var(--fx) / 0.65);
   text-transform: uppercase;
 }
 .hero__date::before {
@@ -4305,7 +4302,7 @@ input[type='radio'] {
 
 /* ---------- Tableaux et listes ---------- */
 .table th {
-  background: rgb(255 255 255 / 0.03);
+  background: rgb(var(--fx) / 0.03);
   color: var(--color-muted);
 }
 .table tbody tr {
@@ -4325,7 +4322,7 @@ input[type='radio'] {
     text-shadow 0.2s;
 }
 .table tbody tr:hover .project-cell__title {
-  color: #fff;
+  color: var(--color-strong);
   text-shadow: 0 0 14px rgb(255 122 26 / 0.6);
 }
 .task-row,
@@ -4338,7 +4335,7 @@ input[type='radio'] {
 .task-row:hover,
 .doc-row:hover,
 .alert-row:hover {
-  background: rgb(255 255 255 / 0.03);
+  background: rgb(var(--fx) / 0.03);
 }
 .task-row__check {
   accent-color: var(--neon-1);
@@ -4353,7 +4350,7 @@ input[type='radio'] {
   justify-content: center;
   font-weight: 700;
   font-family: var(--font-display);
-  border: 1px solid rgb(255 255 255 / 0.14);
+  border: 1px solid rgb(var(--fx) / 0.14);
   box-shadow: 0 0 12px rgb(0 0 0 / 0.3);
 }
 .avatar--medium {
@@ -4402,7 +4399,7 @@ input[type='radio'] {
   min-width: 70px;
   max-width: 160px;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.08);
+  background: rgb(var(--fx) / 0.08);
   overflow: hidden;
 }
 .progress__fill {
@@ -4440,7 +4437,7 @@ input[type='radio'] {
 .tl__bar {
   background: color-mix(in srgb, var(--bar) 22%, transparent);
   border: 1px solid color-mix(in srgb, var(--bar) 70%, transparent);
-  color: color-mix(in srgb, var(--bar) 35%, white);
+  color: color-mix(in srgb, var(--bar) 35%, var(--color-strong));
   box-shadow: 0 0 14px color-mix(in srgb, var(--bar) 35%, transparent);
 }
 .tl__bar--window {
@@ -4484,16 +4481,16 @@ input[type='radio'] {
 
 /* ---------- Segments, puces, divers ---------- */
 .segmented {
-  background: rgb(255 255 255 / 0.04);
+  background: rgb(var(--fx) / 0.04);
   border: 1px solid var(--color-border);
 }
 .segmented__item--on {
   background: linear-gradient(135deg, rgb(255 122 26 / 0.22), rgb(255 61 129 / 0.16));
-  color: #fff;
+  color: var(--color-strong);
   box-shadow: 0 0 14px rgb(255 61 129 / 0.25);
 }
 .chip {
-  background: rgb(255 255 255 / 0.05);
+  background: rgb(var(--fx) / 0.05);
   border-color: var(--color-border-strong);
   color: var(--color-ink-soft);
 }
@@ -4503,7 +4500,7 @@ input[type='radio'] {
   box-shadow: 0 0 10px rgb(255 61 129 / 0.45);
 }
 .portfolio-emoji {
-  filter: drop-shadow(0 0 6px rgb(255 255 255 / 0.25));
+  filter: drop-shadow(0 0 6px rgb(var(--fx) / 0.25));
 }
 .swatch {
   box-shadow: 0 0 8px currentColor;
@@ -4534,6 +4531,87 @@ input[type='radio'] {
 }
 a {
   color: var(--color-action);
+}
+
+/* Bouton de mode sur les pages de connexion. */
+.theme-corner {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.avatar {
+  color: var(--avatar-fg);
+}
+
+/* ---------- Mode clair : mêmes formes, fond blanc et texte noir ---------- */
+:root[data-theme='light'] {
+  --shadow-soft: 0 1px 2px rgb(15 18 32 / 0.06), 0 8px 24px rgb(15 18 32 / 0.06);
+  --shadow-lift:
+    0 1px 2px rgb(15 18 32 / 0.08), 0 16px 36px rgb(15 18 32 / 0.1),
+    0 0 0 1px rgb(255 122 26 / 0.3), 0 0 24px rgb(255 61 129 / 0.12);
+}
+[data-theme='light'] .app::before,
+[data-theme='light'] .page::before,
+[data-theme='light'] .centered::before {
+  opacity: 0.45;
+}
+[data-theme='light'] .sidebar {
+  background: rgb(255 255 255 / 0.8);
+}
+[data-theme='light'] .avatar {
+  color: var(--avatar-fg-light);
+  box-shadow: none;
+}
+[data-theme='light'] .hero {
+  background:
+    radial-gradient(60% 120% at 0% 0%, rgb(255 122 26 / 0.16), transparent 60%),
+    radial-gradient(50% 120% at 100% 100%, rgb(139 92 246 / 0.16), transparent 60%),
+    rgb(255 255 255 / 0.85);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-soft);
+}
+[data-theme='light'] .hero__date {
+  color: var(--color-muted);
+}
+[data-theme='light'] .hero__summary {
+  color: var(--color-ink-soft);
+}
+[data-theme='light'] .nav__link--active svg,
+[data-theme='light'] .brand svg,
+[data-theme='light'] .brand img {
+  filter: none;
+}
+[data-theme='light'] .nav__link--active svg {
+  color: var(--color-action);
+}
+[data-theme='light'] input[type='date']::-webkit-calendar-picker-indicator {
+  filter: none;
+}
+[data-theme='light'] input::placeholder,
+[data-theme='light'] textarea::placeholder {
+  color: rgb(95 102 122 / 0.7);
+}
+[data-theme='light'] .stat-card .stat-card__value {
+  text-shadow: none;
+}
+[data-theme='light'] .stat-card--action {
+  --stat-color: #ea580c;
+}
+[data-theme='light'] .stat-card--info {
+  --stat-color: #0891b2;
+}
+[data-theme='light'] .stat-card--danger {
+  --stat-color: #e11d48;
+}
+[data-theme='light'] .table tbody tr:hover .project-cell__title {
+  text-shadow: none;
+}
+[data-theme='light'] .portfolio-emoji {
+  filter: none;
 }
 
 /* Impression : retour à un rendu clair et lisible sur papier. */

@@ -1,7 +1,11 @@
-/* Charte PILOT 2040 (décision D7, révisée le 6 nov. 2026) : espace sombre, verre dépoli,
-   lueurs orange → magenta → violet → cyan. Les textes gardent un contraste élevé. */
+/* Charte PILOT 2040 (décision D7, révisée le 6 nov. 2026) : verre dépoli, lueurs
+   orange → magenta → violet → cyan. Deux modes : sombre (par défaut, ci-dessous) et clair
+   (plus bas, choisi par chaque personne). Les textes gardent un contraste élevé. */
 :root {
   color-scheme: dark;
+  --fx: 255 255 255; /* teinte des voiles et reflets : blanc sur fond sombre */
+  --color-strong: #fff; /* texte le plus appuyé (titres, éléments actifs) */
+  --color-ink-inverse: #05060b; /* texte posé sur un aplat de couleur d'encre */
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Space Grotesk', 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -59,6 +63,47 @@
   color: var(--color-ink);
   background: var(--color-page);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Mode clair : fond blanc, texte noir, mêmes lueurs de couleur plus discrètes. */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --fx: 15 18 32;
+  --color-strong: #05060b;
+  --color-ink-inverse: #fff;
+
+  --color-page: #f5f6fa;
+  --color-panel: #fff;
+  --glass: rgb(255 255 255 / 0.78);
+  --glass-strong: rgb(255 255 255 / 0.94);
+  --surface-1: rgb(15 18 32 / 0.03);
+  --surface-2: rgb(15 18 32 / 0.05);
+  --surface-3: rgb(15 18 32 / 0.08);
+  --line: rgb(15 18 32 / 0.07);
+  --color-border: rgb(15 18 32 / 0.1);
+  --color-border-strong: rgb(15 18 32 / 0.18);
+  --color-ink: #0b0d17;
+  --color-ink-soft: #383e52;
+  --color-muted: #5f667a;
+
+  --color-action: #c2410c;
+  --color-action-tint: rgb(234 88 12 / 0.1);
+  --accent-line: rgb(194 65 12 / 0.3);
+  --accent-surface: rgb(234 88 12 / 0.05);
+
+  --tone-ok-bg: rgb(34 197 94 / 0.12);
+  --tone-ok-fg: #15803d;
+  --tone-warn-bg: rgb(234 179 8 / 0.16);
+  --tone-warn-fg: #8a5a00;
+  --tone-danger-bg: rgb(244 63 94 / 0.11);
+  --tone-danger-fg: #be123c;
+  --tone-neutral-bg: rgb(15 18 32 / 0.06);
+  --tone-neutral-fg: #383e52;
+  --tone-neutral-dot: #6b7280;
+  --tone-info-bg: rgb(56 189 248 / 0.13);
+  --tone-info-fg: #0369a1;
+  --tone-violet-bg: rgb(139 92 246 / 0.12);
+  --tone-violet-fg: #6d28d9;
 }
 
 * {

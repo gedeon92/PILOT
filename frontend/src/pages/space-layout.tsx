@@ -25,6 +25,7 @@ import { CommandPalette } from '../components/command-palette'
 import { Alert, FullPageLoader } from '../components/ui'
 import { PortfolioMark } from '../components/portfolio-mark'
 import { Avatar } from '../components/avatar'
+import { ThemeToggle } from '../components/theme-toggle'
 
 export type SpaceContext = { space: Space; me: Me }
 
@@ -197,6 +198,7 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
               <SettingsIcon />
               <span className="nav__label">Mon compte</span>
             </NavLink>
+            <ThemeToggle />
             <button
               type="button"
               className="nav__link"
