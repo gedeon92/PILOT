@@ -1,4 +1,3 @@
-import html
 from datetime import timedelta
 
 from fastapi import APIRouter, HTTPException, Request, Response
@@ -9,6 +8,7 @@ from sqlalchemy.orm import Session
 from pilot_api.audit import record
 from pilot_api.config import get_settings
 from pilot_api.deps import SESSION_COOKIE, CurrentUser, DbSession
+from pilot_api.email_theme import render_email
 from pilot_api.mailer import MailError, mail_configured, send_email
 from pilot_api.models import (
     AuthSession,
@@ -223,15 +223,19 @@ def request_email_change(
         f"(valable {EMAIL_CHANGE_HOURS} heures) :\n{link}\n\n"
         "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail."
     )
-    page = (
-        "<div style='font-family:Arial,sans-serif;color:#18181B;max-width:560px'>"
-        f"<p>Bonjour {html.escape(user.display_name)},</p>"
-        f"<p>Pour utiliser <strong>{html.escape(new_email)}</strong> comme adresse de votre compte "
-        f"PILOT, confirmez-la (lien valable {EMAIL_CHANGE_HOURS} heures) :</p>"
-        f"<p><a href='{html.escape(link)}' style='background:#D0450A;color:#fff;padding:10px 18px;"
-        "border-radius:10px;text-decoration:none;font-weight:700'>Confirmer mon adresse</a></p>"
-        "<p style='color:#6B7280;font-size:12px'>Si vous n'êtes pas à l'origine de cette demande, "
-        "ignorez cet e-mail : votre adresse actuelle reste inchangée.</p></div>"
+    page = render_email(
+        kicker="Sécurité du compte",
+        title="Confirmez votre nouvelle adresse",
+        paragraphs=[
+            f"Bonjour {user.display_name},",
+            f"Pour utiliser {new_email} comme adresse de votre compte PILOT, confirmez-la. "
+            f"Le lien est valable {EMAIL_CHANGE_HOURS} heures.",
+        ],
+        button_label="Confirmer mon adresse",
+        button_url=link,
+        footer="Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail : votre "
+        "adresse actuelle reste inchangée.",
+        preheader="Confirmez votre nouvelle adresse e-mail PILOT.",
     )
     try:
         send_email(
@@ -344,16 +348,19 @@ def request_password_reset(body: PasswordResetRequest, db: DbSession) -> dict[st
         f"(valable {RESET_MINUTES} minutes, une seule fois) :\n{link}\n\n"
         "Si vous n'avez rien demandé, ignorez cet e-mail : votre mot de passe reste inchangé."
     )
-    page = (
-        "<div style='font-family:Arial,sans-serif;color:#18181B;max-width:560px'>"
-        f"<p>Bonjour {html.escape(user.display_name)},</p>"
-        "<p>Pour choisir un nouveau mot de passe PILOT, cliquez sur le bouton "
-        f"(lien valable {RESET_MINUTES} minutes, une seule fois) :</p>"
-        f"<p><a href='{html.escape(link)}' style='background:#D0450A;color:#fff;padding:10px 18px;"
-        "border-radius:10px;text-decoration:none;font-weight:700'>Choisir un nouveau mot de "
-        "passe</a></p>"
-        "<p style='color:#6B7280;font-size:12px'>Si vous n'avez rien demandé, ignorez cet "
-        "e-mail : votre mot de passe reste inchangé.</p></div>"
+    page = render_email(
+        kicker="Mot de passe oublié",
+        title="Choisissez un nouveau mot de passe",
+        paragraphs=[
+            f"Bonjour {user.display_name},",
+            f"Cliquez sur le bouton pour choisir un nouveau mot de passe PILOT. Le lien est "
+            f"valable {RESET_MINUTES} minutes et ne fonctionne qu'une fois.",
+        ],
+        button_label="Choisir un nouveau mot de passe",
+        button_url=link,
+        footer="Si vous n'avez rien demandé, ignorez cet e-mail : votre mot de passe reste "
+        "inchangé.",
+        preheader="Votre lien pour choisir un nouveau mot de passe PILOT.",
     )
     try:
         send_email(

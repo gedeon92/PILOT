@@ -212,7 +212,8 @@ export function DashboardPage() {
             · {space.name}
           </p>
           <h1 className="hero__title">
-            Bonjour, {firstName} <span className="hero__wave">👋</span>
+            Bonjour, <span className="hero__name">{firstName}</span>{' '}
+            <span className="hero__wave">👋</span>
           </h1>
           <p className="hero__summary">{summary}</p>
         </div>

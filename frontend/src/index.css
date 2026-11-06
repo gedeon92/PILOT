@@ -1,37 +1,58 @@
-/* Charte PILOT (décision D7 du WORKFLOW). */
+/* Charte PILOT 2040 (décision D7, révisée le 6 nov. 2026) : espace sombre, verre dépoli,
+   lueurs orange → magenta → violet → cyan. Les textes gardent un contraste élevé. */
 :root {
+  color-scheme: dark;
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  --color-page: #f4f4f5;
-  --color-panel: #ffffff;
-  --color-border: #ececee;
-  --color-border-strong: #e4e4e7;
-  --color-ink: #18181b;
-  --color-ink-soft: #3f3f46;
-  --color-muted: #6b7280;
+  --color-page: #05060b;
+  --color-panel: #0f1220; /* surfaces opaques : menus, bulles, fenêtres, champs */
+  --glass: rgb(20 23 38 / 0.62); /* cartes en verre dépoli */
+  --glass-strong: rgb(24 27 44 / 0.86);
+  --surface-1: rgb(255 255 255 / 0.03);
+  --surface-2: rgb(255 255 255 / 0.06);
+  --surface-3: rgb(255 255 255 / 0.1);
+  --line: rgb(255 255 255 / 0.06);
+  --color-border: rgb(255 255 255 / 0.09);
+  --color-border-strong: rgb(255 255 255 / 0.16);
+  --color-ink: #eef1fb;
+  --color-ink-soft: #c4cadb;
+  --color-muted: #8f97ac;
 
-  --color-brand: #f26a1b;
-  --color-action: #d0450a; /* boutons : contraste suffisant pour le texte blanc */
-  --color-action-tint: #fff1e8;
+  --color-brand: #ff7a1a;
+  --color-action: #ff8a3d; /* liens et accents lisibles sur fond sombre */
+  --color-action-tint: rgb(255 122 26 / 0.14);
+  --accent-line: rgb(255 138 61 / 0.35);
+  --accent-surface: rgb(255 122 26 / 0.07);
+  --neon-1: #ff7a1a;
+  --neon-2: #ff3d81;
+  --neon-3: #8b5cf6;
+  --neon-4: #22d3ee;
+  --gradient-neon: linear-gradient(110deg, #ff7a1a, #ff3d81 45%, #8b5cf6 75%, #22d3ee);
+  --gradient-button: linear-gradient(135deg, #d9480f, #b0245e);
 
-  --tone-ok-bg: #f0fdf4;
-  --tone-ok-fg: #15803d;
-  --tone-ok-dot: #16a34a;
-  --tone-warn-bg: #fefce8;
-  --tone-warn-fg: #854d0e;
-  --tone-warn-dot: #ca8a04;
-  --tone-danger-bg: #fef2f2;
-  --tone-danger-fg: #b91c1c;
-  --tone-danger-dot: #dc2626;
-  --tone-neutral-bg: #f4f4f5;
-  --tone-neutral-fg: #3f3f46;
-  --tone-neutral-dot: #71717a;
-  --tone-info-bg: #eff4ff;
-  --tone-info-fg: #1d4ed8;
-  --tone-info-dot: #2563eb;
+  --tone-ok-bg: rgb(34 197 94 / 0.12);
+  --tone-ok-fg: #6ee7a0;
+  --tone-ok-dot: #22c55e;
+  --tone-warn-bg: rgb(234 179 8 / 0.12);
+  --tone-warn-fg: #fcd56a;
+  --tone-warn-dot: #eab308;
+  --tone-danger-bg: rgb(244 63 94 / 0.13);
+  --tone-danger-fg: #ff8fa3;
+  --tone-danger-dot: #f43f5e;
+  --tone-neutral-bg: rgb(255 255 255 / 0.07);
+  --tone-neutral-fg: #c4cadb;
+  --tone-neutral-dot: #8f97ac;
+  --tone-info-bg: rgb(56 189 248 / 0.12);
+  --tone-info-fg: #7dd3fc;
+  --tone-info-dot: #38bdf8;
+  --tone-violet-bg: rgb(139 92 246 / 0.15);
+  --tone-violet-fg: #c4b5fd;
+  --tone-violet-dot: #a78bfa;
 
-  --radius-panel: 20px;
-  --radius-card: 16px;
+  --radius-panel: 22px;
+  --radius-card: 18px;
   --radius-control: 12px;
 
   font-family: var(--font-sans);

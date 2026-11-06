@@ -1,4 +1,3 @@
-import html
 import uuid
 from datetime import timedelta
 
@@ -10,6 +9,7 @@ from pilot_api.alerts import is_test_address
 from pilot_api.audit import record
 from pilot_api.config import get_settings
 from pilot_api.deps import CurrentMembership, CurrentUser, DbSession, OwnerMembership
+from pilot_api.email_theme import render_email
 from pilot_api.mailer import MailError, mail_configured, send_email
 from pilot_api.models import (
     DEFAULT_PROJECT_TYPES,
@@ -173,15 +173,19 @@ def _send_invitation(db: Session, member: Membership, token: str) -> tuple[bool,
         f"Pour accepter (lien valable {days} jours) :\n{link}\n\n"
         "Si vous ne connaissez pas cette personne, ignorez cet e-mail."
     )
-    page = (
-        "<div style='font-family:Arial,sans-serif;color:#18181B;max-width:560px'>"
-        "<p>Bonjour,</p>"
-        f"<p><strong>{html.escape(who)}</strong> vous invite à rejoindre l'espace "
-        f"<strong>{html.escape(space.name)}</strong> sur PILOT, avec le rôle {role}.</p>"
-        f"<p><a href='{html.escape(link)}' style='background:#D0450A;color:#fff;padding:10px 18px;"
-        "border-radius:10px;text-decoration:none;font-weight:700'>Rejoindre l'espace</a></p>"
-        f"<p style='color:#6B7280;font-size:12px'>Lien valable {days} jours. Si vous ne "
-        "connaissez pas cette personne, ignorez cet e-mail.</p></div>"
+    page = render_email(
+        kicker=f"Invitation · {space.name}",
+        title=f"{who} vous invite sur PILOT",
+        paragraphs=[
+            "Bonjour,",
+            f"{who} vous invite à rejoindre l'espace « {space.name} » avec le rôle {role}. "
+            "PILOT rassemble les projets, les échéances et les décisions de l'équipe.",
+            f"Le lien est valable {days} jours.",
+        ],
+        button_label="Rejoindre l'espace",
+        button_url=link,
+        footer="Si vous ne connaissez pas cette personne, ignorez cet e-mail.",
+        preheader=f"{who} vous invite dans « {space.name} » sur PILOT.",
     )
     try:
         send_email(

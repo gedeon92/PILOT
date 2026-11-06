@@ -2,13 +2,13 @@
  * nom), ce qui aide à la reconnaître d'un écran à l'autre. Décoratif : le nom est écrit à côté. */
 
 const PALETTE = [
-  { bg: '#ffedd5', fg: '#c2410c' }, // orange
-  { bg: '#dbeafe', fg: '#1d4ed8' }, // bleu
-  { bg: '#ede9fe', fg: '#6d28d9' }, // violet
-  { bg: '#dcfce7', fg: '#15803d' }, // vert
-  { bg: '#ccfbf1', fg: '#0f766e' }, // turquoise
-  { bg: '#fce7f3', fg: '#be185d' }, // rose
-  { bg: '#fef3c7', fg: '#b45309' }, // ambre
+  { bg: 'rgb(255 122 26 / 0.18)', fg: '#ffb27a' }, // orange
+  { bg: 'rgb(56 189 248 / 0.18)', fg: '#8fdcff' }, // bleu
+  { bg: 'rgb(139 92 246 / 0.22)', fg: '#c9b6ff' }, // violet
+  { bg: 'rgb(34 197 94 / 0.18)', fg: '#86efac' }, // vert
+  { bg: 'rgb(34 211 238 / 0.18)', fg: '#7ff0ff' }, // turquoise
+  { bg: 'rgb(255 61 129 / 0.2)', fg: '#ffa3c4' }, // rose
+  { bg: 'rgb(234 179 8 / 0.18)', fg: '#fde68a' }, // ambre
 ]
 
 export function initials(name: string) {

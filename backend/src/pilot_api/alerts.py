@@ -15,6 +15,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from pilot_api.config import get_settings
+from pilot_api.email_theme import pill, render_email
 from pilot_api.mailer import MailError, mail_configured, send_email
 from pilot_api.models import (
     CLOSED_PROJECT_STATUSES,
@@ -301,16 +302,15 @@ def todays_alerts(
     return sorted(alerts, key=lambda a: (RULE_ORDER.index(a.rule), a.title))
 
 
-TAG_STYLE = "padding:8px 12px;color:#B4400A;font-weight:700;white-space:nowrap"
-LINK_STYLE = "color:#18181B;font-weight:600"
-BUTTON_STYLE = (
-    "background:#D0450A;color:#fff;padding:10px 18px;border-radius:10px;"
-    "text-decoration:none;font-weight:700"
-)
-FOOTER = (
-    "<p style='color:#6B7280;font-size:12px'>Vous recevez ce récapitulatif car il est activé "
-    "dans vos préférences d'alertes PILOT.</p>"
-)
+RULE_COLORS: dict[AlertRule, str] = {
+    AlertRule.OVERDUE: "#ff8fa3",
+    AlertRule.BLOCKED: "#ff8fa3",
+    AlertRule.DUE_SOON: "#fcd56a",
+    AlertRule.DECISION_PENDING: "#c4b5fd",
+    AlertRule.STALE: "#8f97ac",
+    AlertRule.MISSING_INFO: "#8f97ac",
+    AlertRule.PROPOSAL_PENDING: "#7dd3fc",
+}
 
 
 def digest_email(
@@ -333,12 +333,13 @@ def digest_email(
             url = f"{base}/espaces/{space.id}/projets/{alert.project_id}"
         lines_text.append(f"- [{RULES[alert.rule]}] {alert.title} : {alert.detail}\n  {url}")
         rows_html.append(
-            "<tr>"
-            f"<td style='{TAG_STYLE}'>{html.escape(RULES[alert.rule])}</td>"
-            f"<td style='padding:8px 12px'><a href='{html.escape(url)}' style='{LINK_STYLE}'>"
-            f"{html.escape(alert.title)}</a>"
-            f"<br><span style='color:#6B7280'>{html.escape(alert.detail)}</span></td>"
-            "</tr>"
+            "<tr><td style='padding:12px 0;border-top:1px solid #23263a'>"
+            f"{pill(RULES[alert.rule], RULE_COLORS[alert.rule])}"
+            f"<div style='margin-top:6px'><a href='{html.escape(url)}' style='color:#eef1fb;"
+            f"font-size:15px;font-weight:600;text-decoration:none'>{html.escape(alert.title)}"
+            "</a></div>"
+            f"<div style='margin-top:2px;font-size:13px;color:#8f97ac'>"
+            f"{html.escape(alert.detail)}</div></td></tr>"
         )
     day = short_date(today).rstrip(".")
     intro = f"Bonjour {user.display_name}, voici ce qui demande votre attention le {day}."
@@ -348,18 +349,27 @@ def digest_email(
         + ("\n".join(lines_text) or "Aucun rappel aujourd'hui.")
         + f"\n\nOuvrir PILOT : {link}\n"
     )
-    body = (
-        "".join(rows_html) or "<tr><td style='padding:8px 12px'>Aucun rappel aujourd'hui.</td></tr>"
+    rows = "".join(rows_html) or (
+        "<tr><td style='padding:12px 0;border-top:1px solid #23263a;color:#8f97ac'>"
+        "Aucun rappel aujourd'hui : tout est sous contrôle.</td></tr>"
     )
-    page = (
-        "<div style='font-family:Arial,sans-serif;color:#18181B;max-width:620px'>"
-        f"<h1 style='font-size:20px'>{html.escape(space.name)}</h1>"
-        f"<p>{html.escape(intro)}</p>"
-        f"<table style='border-collapse:collapse;width:100%;font-size:14px'>{body}</table>"
-        f"<p style='margin-top:20px'><a href='{html.escape(link)}' style='{BUTTON_STYLE}'>"
-        "Ouvrir PILOT</a></p>"
-        f"{FOOTER}"
-        "</div>"
+    page = render_email(
+        kicker=f"Récapitulatif du {day} · {space.name}",
+        title=(
+            f"{len(alerts)} sujet{'s' if len(alerts) > 1 else ''} à suivre aujourd'hui"
+            if alerts
+            else "Aucun rappel aujourd'hui"
+        ),
+        paragraphs=[intro],
+        extra_html=(
+            "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' "
+            f"style='margin:6px 0 4px;font-family:Helvetica,Arial,sans-serif'>{rows}</table>"
+        ),
+        button_label="Ouvrir PILOT",
+        button_url=link,
+        footer="Vous recevez ce récapitulatif car il est activé dans vos préférences d'alertes "
+        "PILOT.",
+        preheader=intro,
     )
     return subject, page, text
 
