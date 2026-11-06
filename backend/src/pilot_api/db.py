@@ -37,7 +37,9 @@ def _session_factory(engine: Engine) -> sessionmaker[Session]:
 def get_db() -> Iterator[Session]:
     engine = get_engine()
     if engine is None:
-        raise HTTPException(503, "Base de données non configurée.")
+        raise HTTPException(
+            503, "PILOT est momentanément indisponible. Réessayez dans quelques minutes."
+        )
     with _session_factory(engine)() as session:
         yield session
 

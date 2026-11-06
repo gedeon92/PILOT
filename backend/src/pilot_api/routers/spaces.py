@@ -157,9 +157,9 @@ def _send_invitation(db: Session, member: Membership, token: str) -> tuple[bool,
     """Envoie l'invitation par e-mail. Un échec n'annule pas l'invitation : le lien reste
     affiché à la propriétaire, qui peut le transmettre elle-même."""
     if not mail_configured():
-        return False, "L'envoi d'e-mails n'est pas activé : transmettez le lien vous-même."
+        return False, "L'e-mail n'a pas pu partir : transmettez ce lien vous-même."
     if is_test_address(member.email):
-        return False, "Adresse d'essai : aucun e-mail envoyé."
+        return False, "Cette adresse ne peut pas recevoir d'e-mail : transmettez ce lien vous-même."
     space = db.get(Space, member.space_id)
     inviter = db.get(User, member.invited_by_id) if member.invited_by_id else None
     who = inviter.display_name if inviter else "Une personne"
@@ -195,8 +195,8 @@ def _send_invitation(db: Session, member: Membership, token: str) -> tuple[bool,
             html=page,
             text=text,
         )
-    except MailError as error:
-        return False, f"E-mail non envoyé ({error}) : transmettez le lien vous-même."
+    except MailError:
+        return False, "L'e-mail n'a pas pu partir : transmettez ce lien vous-même."
     return True, None
 
 

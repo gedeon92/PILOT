@@ -27,7 +27,7 @@ describe('page d’état', () => {
     expect(screen.getByText(/Version 0\.1\.0/)).toBeInTheDocument()
   })
 
-  it('signale une base non configurée', async () => {
+  it('signale des données indisponibles', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
@@ -45,6 +45,6 @@ describe('page d’état', () => {
 
     render(<StatusPage />)
 
-    expect(await screen.findByText('Non configurée')).toBeInTheDocument()
+    expect(await screen.findByText('Indisponible')).toBeInTheDocument()
   })
 })

@@ -107,10 +107,9 @@ function EmailForm({ current }: { current: string }) {
       {request.data && (
         <div className="form-grid__full">
           <Alert tone="ok">
-            Lien transmis pour envoi à <strong>{request.data.sent_to}</strong> (valable{' '}
-            {request.data.expires_hours} h). Ouvrez-le dans ce navigateur pour confirmer. Pensez à
-            regarder les spams. S’il n’arrive pas, l’expéditeur réglé dans Brevo est peut-être
-            refusé (journaux Brevo : Transactionnel &gt; Logs).
+            Lien de confirmation envoyé à <strong>{request.data.sent_to}</strong> (valable{' '}
+            {request.data.expires_hours} h). Ouvrez-le dans ce navigateur pour confirmer. S’il
+            n’arrive pas d’ici quelques minutes, regardez dans les courriers indésirables.
           </Alert>
         </div>
       )}

@@ -138,7 +138,7 @@ def update_preferences(
 def send_test_email(
     membership: CurrentMembership, user: CurrentUser, db: DbSession
 ) -> TestEmailResult:
-    """Envoie tout de suite le récapitulatif du jour à la personne connectée (vérification)."""
+    """Envoie tout de suite un aperçu du récapitulatif du jour à la personne connectée."""
     space = membership.space
     today = local_now(space).date()
     compute_alerts(db, space, today)
@@ -150,7 +150,7 @@ def send_test_email(
         send_email(
             to_email=user.email,
             to_name=user.display_name,
-            subject=f"[Test] {subject}",
+            subject=f"Aperçu · {subject}",
             html=page,
             text=text,
         )
@@ -159,8 +159,8 @@ def send_test_email(
     return TestEmailResult(
         sent=True,
         message=(
-            f"E-mail de test transmis à Brevo pour {user.email}. S'il n'arrive pas, "
-            "consultez les journaux Brevo (Transactionnel > Logs)."
+            f"Aperçu envoyé à {user.email}. Il arrive en général en moins d'une minute ; "
+            "pensez à regarder dans les courriers indésirables."
         ),
     )
 

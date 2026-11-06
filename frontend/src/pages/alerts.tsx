@@ -63,7 +63,7 @@ function AlertRow({ alert, spaceId }: { alert: AlertItem; spaceId: string }) {
 
 function Preferences({ spaceId, prefs }: { spaceId: string; prefs: AlertPreferences }) {
   const save = useSaveAlertPreferences(spaceId)
-  const test = useSendTestEmail(spaceId)
+  const preview = useSendTestEmail(spaceId)
   const [disabled, setDisabled] = useState<string[]>(prefs.disabled_rules)
   const [digest, setDigest] = useState(prefs.email_digest)
   const [hour, setHour] = useState(prefs.digest_hour)
@@ -117,7 +117,7 @@ function Preferences({ spaceId, prefs }: { spaceId: string; prefs: AlertPreferen
         </label>
         {!prefs.email_available && (
           <Alert tone="warn">
-            L’envoi d’e-mails n’est pas encore activé sur PILOT : les alertes restent visibles ici.
+            L’envoi d’e-mails est momentanément indisponible : vos alertes restent visibles ici.
           </Alert>
         )}
       </fieldset>
@@ -136,16 +136,18 @@ function Preferences({ spaceId, prefs }: { spaceId: string; prefs: AlertPreferen
         <button
           type="button"
           className="button"
-          disabled={!prefs.email_available || test.isPending}
-          onClick={() => test.mutate()}
+          disabled={!prefs.email_available || preview.isPending}
+          onClick={() => preview.mutate()}
         >
-          {test.isPending ? 'Envoi…' : 'M’envoyer un e-mail de test'}
+          {preview.isPending ? 'Envoi…' : 'Recevoir un aperçu par e-mail'}
         </button>
       </div>
       {save.isSuccess && !changed && <Alert tone="ok">Préférences enregistrées.</Alert>}
       {save.isError && <Alert>{errorMessage(save.error)}</Alert>}
-      {test.data && <Alert tone={test.data.sent ? 'ok' : 'warn'}>{test.data.message}</Alert>}
-      {test.isError && <Alert>{errorMessage(test.error)}</Alert>}
+      {preview.data && (
+        <Alert tone={preview.data.sent ? 'ok' : 'warn'}>{preview.data.message}</Alert>
+      )}
+      {preview.isError && <Alert>{errorMessage(preview.error)}</Alert>}
     </section>
   )
 }

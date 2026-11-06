@@ -41,7 +41,7 @@ export async function api<T>(path: string, options: { method?: Method; body?: un
             : JSON.stringify(options.body),
     })
   } catch {
-    throw new ApiError(0, 'Le serveur ne répond pas. Vérifiez votre connexion et réessayez.')
+    throw new ApiError(0, 'PILOT ne répond pas. Vérifiez votre connexion internet et réessayez.')
   }
 
   if (response.status === 204) return undefined as T

@@ -54,7 +54,9 @@ export function FullPageLoader() {
     <main className="centered" aria-busy="true">
       <div className="loader">
         <Logo size={40} />
-        <p>{waking ? 'Démarrage du serveur… (jusqu’à une minute)' : 'Chargement…'}</p>
+        <p>
+          {waking ? 'Démarrage de PILOT… cela peut prendre jusqu’à une minute.' : 'Chargement…'}
+        </p>
       </div>
     </main>
   )

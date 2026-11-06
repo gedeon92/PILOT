@@ -5,7 +5,7 @@ import { StatusPill, type Tone } from '../components/ui'
 type ApiState =
   { kind: 'loading' } | { kind: 'waking' } | { kind: 'ready'; health: Health } | { kind: 'error' }
 
-// Au-delà de ce délai sans réponse, on suppose que Render réveille l'API.
+// Au-delà de ce délai sans réponse, le service est probablement en train de redémarrer.
 const WAKING_HINT_MS = 3_000
 
 function apiStatus(state: ApiState): { tone: Tone; label: string } {
@@ -13,21 +13,21 @@ function apiStatus(state: ApiState): { tone: Tone; label: string } {
     case 'loading':
       return { tone: 'neutral', label: 'Vérification…' }
     case 'waking':
-      return { tone: 'warn', label: 'Démarrage du serveur…' }
+      return { tone: 'warn', label: 'Démarrage…' }
     case 'ready':
       return { tone: 'ok', label: 'Opérationnelle' }
     case 'error':
-      return { tone: 'danger', label: 'Injoignable' }
+      return { tone: 'danger', label: 'Indisponible' }
   }
 }
 
 function databaseStatus(state: ApiState): { tone: Tone; label: string } {
-  if (state.kind !== 'ready') return { tone: 'neutral', label: 'En attente de l’API' }
+  if (state.kind !== 'ready') return { tone: 'neutral', label: 'Vérification…' }
   switch (state.health.database) {
     case 'ok':
       return { tone: 'ok', label: 'Connectée' }
     case 'not_configured':
-      return { tone: 'warn', label: 'Non configurée' }
+      return { tone: 'warn', label: 'Indisponible' }
     case 'unavailable':
       return { tone: 'danger', label: 'Indisponible' }
   }
@@ -67,35 +67,31 @@ export function StatusPage() {
         </header>
 
         <div className="intro">
-          <h1>État de la plateforme</h1>
-          <p>Phase 0 : vérification de la chaîne interface → API → base de données.</p>
+          <h1>État du service</h1>
+          <p>Disponibilité de PILOT en temps réel.</p>
         </div>
 
         <ul className="checks" aria-live="polite">
           <li className="check">
-            <span className="check__label">Interface (Vercel)</span>
+            <span className="check__label">Application</span>
             <StatusPill tone="ok">En ligne</StatusPill>
           </li>
           <li className="check">
-            <span className="check__label">API (Render)</span>
+            <span className="check__label">Service</span>
             <StatusPill tone={api.tone}>{api.label}</StatusPill>
           </li>
           <li className="check">
-            <span className="check__label">Base de données (Neon)</span>
+            <span className="check__label">Données</span>
             <StatusPill tone={database.tone}>{database.label}</StatusPill>
           </li>
         </ul>
 
         {state.kind === 'waking' && (
           <p className="note">
-            L’API était en veille. Le premier chargement peut prendre jusqu’à une minute.
+            PILOT redémarre après une période d’inactivité : cela peut prendre jusqu’à une minute.
           </p>
         )}
-        {state.kind === 'ready' && (
-          <p className="note">
-            Version {state.health.version} · environnement {state.health.environment}
-          </p>
-        )}
+        {state.kind === 'ready' && <p className="note">Version {state.health.version}</p>}
       </div>
     </main>
   )

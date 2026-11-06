@@ -29,7 +29,7 @@ function RequireAuth({ children }: { children: (me: Me) => React.ReactNode }) {
   if (me.isPending) return <FullPageLoader />
   if (me.isError) {
     return (
-      <AuthCard title="Serveur indisponible">
+      <AuthCard title="PILOT est momentanément indisponible">
         <Alert>{me.error.message}</Alert>
         <button className="button" type="button" onClick={() => me.refetch()}>
           Réessayer

@@ -184,4 +184,4 @@ def test_invitation_still_works_when_email_is_off(make_client, monkeypatch):
 
     assert invited.status_code == 201
     assert invited.json()["emailed"] is False
-    assert "transmettez le lien" in invited.json()["email_note"]
+    assert "transmettez ce lien" in invited.json()["email_note"]

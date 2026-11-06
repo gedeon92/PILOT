@@ -203,7 +203,8 @@ def request_email_change(
         raise HTTPException(409, "Un compte existe déjà avec cette adresse e-mail.")
     if not mail_configured():
         raise HTTPException(
-            503, "L'envoi d'e-mails n'est pas disponible : impossible de confirmer l'adresse."
+            503,
+            "L'envoi d'e-mails est momentanément indisponible : réessayez dans quelques minutes.",
         )
 
     token, token_hash = new_token()
