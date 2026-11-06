@@ -987,7 +987,7 @@ export interface paths {
         put?: never;
         /**
          * Send Test Email
-         * @description Envoie tout de suite le récapitulatif du jour à la personne connectée (vérification).
+         * @description Envoie tout de suite un aperçu du récapitulatif du jour à la personne connectée.
          */
         post: operations["send_test_email_api_spaces__space_id__alert_preferences_test_email_post"];
         delete?: never;
