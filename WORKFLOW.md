@@ -254,6 +254,45 @@ Règles d'alerte (seuils réglables par espace) :
 - [x] Repères visuels : emoji de portefeuille et drapeau du pays, toujours à côté du nom (§13)
 - Décision : lecture **toujours avec un compte** (le lien public sans compte du CDC §15 n'est pas repris, plus sûr)
 
+## Suite prévue : fonctions inspirées d'Asana (demandées le 6 nov. 2026, pas commencées)
+
+Ce qui manque à PILOT par rapport à Asana pour le travail d'équipe au quotidien. À lancer quand la propriétaire du produit le décide, un lot à la fois, chacun testé et mis en ligne à part.
+
+**Règle commune : rien de ce qui existe ne change de comportement.**
+- On ajoute, on ne remplace pas : les projets, tâches, rôles, alertes, documents, mises à jour, exports et sauvegardes actuels continuent de fonctionner à l'identique.
+- Les données déjà saisies restent valables sans reprise.
+- Les migrations de la base ne font qu'ajouter des tables et des colonnes facultatives.
+- Chaque nouveauté est intégrée à ce qui existe déjà : journal, rappels, export/import, recherche, mode clair et mode sombre.
+- Avant chaque lot, relecture du cahier des charges pour vérifier la cohérence. En cas de conflit, on décide avant de coder.
+
+### Lot A — Tâches complètes
+- [ ] **Sous-tâches** : découper une tâche en petites étapes, avec un avancement « 2 sur 5 ».
+  - Une sous-tâche est une tâche rattachée à une autre : mêmes statuts, même responsable possible, mêmes rappels.
+- [ ] **Commentaires sur une tâche**, avec mention **@nom** d'un membre.
+  - La personne mentionnée est prévenue dans Alertes et dans son récapitulatif par e-mail.
+- [ ] **Abonnés** d'une tâche : ils sont prévenus des changements (statut, échéance, commentaire).
+  - Le responsable et l'auteur de la tâche sont abonnés automatiquement ; chacun peut se désabonner.
+- [ ] **Dépendances** : « cette tâche attend la fin de telle autre ».
+  - La tâche en attente est signalée comme bloquée tant que l'autre n'est pas terminée.
+  - Une boucle (A attend B, qui attend A) est refusée.
+
+### Lot B — Tableau avec cartes à glisser
+- [ ] Nouvelle vue **Tableau** pour les tâches d'un projet et pour la page Tâches : colonnes À faire / En cours / Terminé, avec la carte qu'on fait glisser d'une colonne à l'autre.
+  - Une autre manière d'afficher les mêmes tâches : la vue Liste reste. Les statuts ne changent pas.
+- [ ] Tout reste faisable au clavier et sur téléphone, sans glisser, avec le choix du statut sur la carte.
+- [ ] Les lecteurs voient le tableau mais ne peuvent pas déplacer les cartes.
+
+### Lot C — Droits plus fins
+- [ ] **Rôle par projet**, par exemple Contributeur sur un projet et Lecteur sur les autres.
+  - Le rôle de l'espace (Propriétaire, Contributeur, Lecteur) reste la règle par défaut ; le rôle sur un projet ne fait que le préciser.
+  - Un propriétaire de l'espace garde toujours tous les droits.
+- [ ] **Projets privés**, visibles seulement par leurs membres et par les propriétaires de l'espace.
+  - Les projets existants restent ouverts à tout l'espace, comme aujourd'hui.
+  - Un projet privé n'apparaît nulle part ailleurs (tableau de bord, timeline, recherche, alertes, Point hebdo, export) pour ceux qui n'y ont pas accès.
+- [ ] **Invités extérieurs** (prestataire, partenaire) : un compte limité à un ou plusieurs projets, sans voir le reste de l'espace.
+
+**Hors de ces lots** (à décider plus tard) : sections dans un projet, une même tâche dans plusieurs projets, champs personnalisés, règles automatiques.
+
 ## Phase 10 — Mise en production
 
 - [ ] Changer le mot de passe de la base Neon (il a circulé pendant la mise en place)
