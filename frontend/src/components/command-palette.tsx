@@ -8,6 +8,7 @@ type Result = { id: string; group: string; title: string; detail?: string; to: s
 
 const PAGES = [
   { title: 'Vue d’ensemble', path: '' },
+  { title: 'Point hebdo', path: '/point-hebdo' },
   { title: 'Projets', path: '/projets' },
   { title: 'Nouveau projet', path: '/projets/nouveau' },
   { title: 'Événements', path: '/evenements' },

@@ -61,6 +61,7 @@ function routes(extra: Record<string, (body: unknown) => { status: number; json?
     [`GET ${base}/projects/pr1/tasks`]: () => ({ status: 200, json: [] }),
     [`GET ${base}/projects/pr1/history`]: () => ({ status: 200, json: [] }),
     [`GET ${base}/projects/pr1/documents`]: () => ({ status: 200, json: [] }),
+    [`GET ${base}/projects/pr1/links`]: () => ({ status: 200, json: [] }),
     ...extra,
   }
 }

@@ -9,6 +9,7 @@ import { Alert, PageHeader } from '../components/ui'
 import { addDays, formatDay, todayIso } from '../labels'
 import type { SpaceContext } from './space-layout'
 import { eventDays, findOverlaps } from '../events'
+import { countryFlag } from '../countries'
 
 function monthLabel(year: number, month: number) {
   const text = new Intl.DateTimeFormat('fr-FR', {
@@ -136,7 +137,7 @@ export function EventsPage() {
           <option value="">Tous les pays</option>
           {countries.map((c) => (
             <option key={c} value={c}>
-              {c}
+              {`${countryFlag(c)} ${c}`.trim()}
             </option>
           ))}
         </select>

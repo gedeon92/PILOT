@@ -10,7 +10,7 @@ import uuid
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -202,17 +202,24 @@ def compute_alerts(db: Session, space: Space, today: date) -> int:
             Task.space_id == space.id,
             Task.status.not_in(CLOSED_TASK_STATUSES),
             Task.due_date.is_not(None),
-            Task.project_id.in_(list(by_id)),
+            # Tâches des projets ouverts, et tâches du suivi général (sans projet).
+            or_(Task.project_id.in_(list(by_id)), Task.project_id.is_(None)),
         )
     ).all()
     for t in tasks:
-        project = by_id[t.project_id]
-        users = [
-            user_of.get(t.assignee_member_id) if t.assignee_member_id else None,
-            user_of.get(project.owner_member_id) if project.owner_member_id else None,
-        ]
+        project = by_id.get(t.project_id) if t.project_id else None
+        assignee = user_of.get(t.assignee_member_id) if t.assignee_member_id else None
+        if project is not None:
+            users = [
+                assignee,
+                user_of.get(project.owner_member_id) if project.owner_member_id else None,
+            ]
+            title = f"{t.title} · {project.title}"
+        else:
+            # Suivi général : la personne désignée, sinon les propriétaires de l'espace.
+            users = [assignee] if assignee else list(owners)
+            title = f"{t.title} · Suivi général"
         days = (t.due_date - today).days
-        title = f"{t.title} · {project.title}"
         if days in DUE_SOON_DAYS:
             add(
                 users,
@@ -318,11 +325,12 @@ def digest_email(
         subject = f"PILOT · {space.name} : aucun rappel aujourd'hui"
     lines_text, rows_html = [], []
     for alert in alerts:
-        url = (
-            f"{base}/espaces/{space.id}/mises-a-jour"
-            if alert.target_type == "proposal"
-            else f"{base}/espaces/{space.id}/projets/{alert.project_id}"
-        )
+        if alert.target_type == "proposal":
+            url = f"{base}/espaces/{space.id}/mises-a-jour"
+        elif alert.project_id is None:
+            url = f"{base}/espaces/{space.id}/taches"  # tâche du suivi général
+        else:
+            url = f"{base}/espaces/{space.id}/projets/{alert.project_id}"
         lines_text.append(f"- [{RULES[alert.rule]}] {alert.title} : {alert.detail}\n  {url}")
         rows_html.append(
             "<tr>"

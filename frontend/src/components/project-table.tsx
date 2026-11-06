@@ -1,8 +1,8 @@
 import { Link } from 'react-router'
 import type { Project } from '../api/client'
-import { colorHex } from '../colors'
 import { CERTAINTY, formatDay, isClosedProject, PROJECT_STATUS } from '../labels'
 import { StatusPill } from './ui'
+import { PortfolioMark } from './portfolio-mark'
 
 function Owner({ project }: { project: Project }) {
   const { owner } = project
@@ -114,10 +114,9 @@ export function ProjectTable({
               <tr key={project.id}>
                 <td>
                   <Link className="project-cell" to={`/espaces/${spaceId}/projets/${project.id}`}>
-                    <span
-                      className="swatch"
-                      style={{ background: colorHex(project.portfolio.color) }}
-                      aria-hidden="true"
+                    <PortfolioMark
+                      color={project.portfolio.color}
+                      emoji={project.portfolio.emoji}
                     />
                     <span className="project-cell__text">
                       <span className="project-cell__title">{project.title}</span>

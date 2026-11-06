@@ -144,11 +144,13 @@ describe('paramètres et structure', () => {
     await user.click(within(section).getByRole('button', { name: /Ajouter/ }))
     await user.type(within(section).getByLabelText('Nom'), 'Événements')
     await user.selectOptions(within(section).getByLabelText('Couleur'), 'blue')
+    await user.selectOptions(within(section).getByLabelText('Repère (emoji)'), '🎪')
     await user.click(within(section).getByRole('button', { name: 'Ajouter le portefeuille' }))
 
     expect(calls.find((c) => c.key === `POST ${base}/portfolios`)?.body).toEqual({
       name: 'Événements',
       color: 'blue',
+      emoji: '🎪',
       description: '',
     })
     expect(await within(section).findByText('Événements')).toBeInTheDocument()

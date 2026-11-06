@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useOutletContext } from 'react-router'
 import { errorMessage, type Task } from '../api/client'
 import { useMembers, useProjects, useSpaceTasks } from '../api/queries'
-import { TasksIcon } from '../components/icons'
-import { TaskRow } from '../components/task-row'
+import { PlusIcon, TasksIcon } from '../components/icons'
+import { TaskAddForm, TaskRow } from '../components/task-row'
 import { Alert, PageHeader } from '../components/ui'
 import { addDays, todayIso } from '../labels'
 import type { SpaceContext } from './space-layout'
@@ -17,6 +17,8 @@ const VIEWS: Record<View, string> = {
   undated: 'Sans date',
 }
 
+const GENERAL = '__general'
+
 const closed = (t: Task) => t.status === 'done' || t.status === 'cancelled'
 
 export function TasksPage() {
@@ -28,6 +30,7 @@ export function TasksPage() {
   const [projectId, setProjectId] = useState('')
   const [q, setQ] = useState('')
   const [withClosed, setWithClosed] = useState(false)
+  const [adding, setAdding] = useState(false)
   const tasks = useSpaceTasks(space.id, withClosed)
   const projects = useProjects(space.id)
   const members = useMembers(space.id)
@@ -47,7 +50,10 @@ export function TasksPage() {
   const shown = all
     .filter(matches[view])
     .filter((t) => !mine || t.assignee.member_id === myMemberId)
-    .filter((t) => !projectId || t.project_id === projectId)
+    .filter(
+      (t) =>
+        !projectId || (projectId === GENERAL ? t.project_id === null : t.project_id === projectId),
+    )
     .filter((t) => !needle || t.title.toLocaleLowerCase('fr').includes(needle))
     .sort(
       (a, b) =>
@@ -63,8 +69,30 @@ export function TasksPage() {
     <div className="page-content">
       <PageHeader
         title="Tâches"
-        subtitle="Les tâches de tous les projets. Cochez une tâche quand elle est faite ; pour en ajouter, ouvrez la fiche du projet."
+        subtitle="Les tâches de tous les projets et du suivi général. Cochez une tâche quand elle est faite."
+        actions={
+          canWrite && !adding ? (
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={() => setAdding(true)}
+            >
+              <PlusIcon /> Nouvelle tâche
+            </button>
+          ) : undefined
+        }
       />
+      {adding && (
+        <section className="card-panel" aria-label="Ajouter une tâche">
+          <TaskAddForm
+            spaceId={space.id}
+            projects={(projects.data ?? [])
+              .filter((p) => p.status !== 'done' && p.status !== 'cancelled')
+              .map((p) => ({ id: p.id, title: p.title }))}
+            onDone={() => setAdding(false)}
+          />
+        </section>
+      )}
       <div className="filters tasks-filters">
         <div className="segmented" role="group" aria-label="Afficher">
           {(Object.keys(VIEWS) as View[]).map((v) => (
@@ -98,6 +126,7 @@ export function TasksPage() {
           onChange={(e) => setProjectId(e.target.value)}
         >
           <option value="">Tous les projets</option>
+          <option value={GENERAL}>Suivi général (sans projet)</option>
           {(projects.data ?? []).map((p) => (
             <option key={p.id} value={p.id}>
               {p.title}
@@ -128,21 +157,25 @@ export function TasksPage() {
             </span>
             <span>
               {all.length === 0
-                ? 'Aucune tâche pour l’instant. Ajoutez-en depuis la fiche d’un projet.'
+                ? 'Aucune tâche pour l’instant. Ajoutez-en avec « Nouvelle tâche ».'
                 : 'Aucune tâche ne correspond à ces filtres.'}
             </span>
           </div>
         ) : (
           <ul className="task-list">
             {shown.map((t) => {
-              const project = projectById.get(t.project_id)
+              const project = t.project_id ? projectById.get(t.project_id) : undefined
               return (
                 <TaskRow
                   key={t.id}
                   task={t}
                   spaceId={space.id}
                   canWrite={canWrite}
-                  project={project && { id: project.id, title: project.title }}
+                  project={
+                    t.project_id === null
+                      ? 'general'
+                      : project && { id: project.id, title: project.title }
+                  }
                 />
               )
             })}

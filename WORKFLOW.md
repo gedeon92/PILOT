@@ -240,6 +240,20 @@ Règles d'alerte (seuils réglables par espace) :
 
 **Terminé quand :** EXP01 passe et une restauration a été testée sur la branche `staging`.
 
+## Compléments du cahier des charges (6 nov. 2026)
+
+Écarts relevés en relisant le CDC section par section, puis comblés :
+
+- [x] Contributeurs du projet, distincts du responsable, sans droit supplémentaire (§21)
+- [x] Liens entre projets, symétriques et journalisés, sans duplication (§5)
+- [x] Tâches du « suivi général », sans projet : page Tâches, rappels, export/import (objets du modèle)
+- [x] Vue hebdomadaire « Point hebdo » : à surveiller, décisions, échéances, changements, informations manquantes ; date et source affichées ; impression (§7)
+- [x] Source et fraîcheur de la situation : saisie sur la fiche ou boîte de mise à jour, date et auteur (§21)
+- [x] Origine du besoin à la création et sur la fiche (§6, étape 1)
+- [x] Options de décision (3 au plus) avec leurs conséquences, sans jamais marquer d'option choisie (§7)
+- [x] Repères visuels : emoji de portefeuille et drapeau du pays, toujours à côté du nom (§13)
+- Décision : lecture **toujours avec un compte** (le lien public sans compte du CDC §15 n'est pas repris, plus sûr)
+
 ## Phase 10 — Mise en production
 
 - [ ] Changer le mot de passe de la base Neon (il a circulé pendant la mise en place)

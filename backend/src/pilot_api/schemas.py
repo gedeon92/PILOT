@@ -126,6 +126,7 @@ class InvitationInfo(BaseModel):
 Color = Literal["orange", "blue", "violet", "green", "teal", "pink", "gray"]
 Description = Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)]
 Country = Annotated[str, StringConstraints(strip_whitespace=True, max_length=80)]
+Emoji = Annotated[str, StringConstraints(strip_whitespace=True, max_length=16)]
 
 
 class _CatalogUpdate(BaseModel):
@@ -140,11 +141,13 @@ class PortfolioCreate(BaseModel):
     name: Name
     description: Description | None = None
     color: Color = "orange"
+    emoji: Emoji | None = None
 
 
 class PortfolioUpdate(_CatalogUpdate):
     description: Description | None = None
     color: Color | None = None
+    emoji: Emoji | None = None
 
 
 class PortfolioOut(BaseModel):
@@ -152,6 +155,7 @@ class PortfolioOut(BaseModel):
     name: str
     description: str | None
     color: str
+    emoji: str | None = None
     archived: bool
     version: int
 
@@ -230,6 +234,19 @@ class RefOut(BaseModel):
 
 class PortfolioRef(RefOut):
     color: str
+    emoji: str | None = None
+
+
+class PersonIn(BaseModel):
+    """Un membre de l'espace (`member_id`) ou un nom libre (`label`)."""
+
+    member_id: uuid.UUID | None = None
+    label: Label | None = None
+
+
+class DecisionOption(BaseModel):
+    label: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+    consequence: Description | None = None
 
 
 class ProjectTypeRef(RefOut):
@@ -266,10 +283,14 @@ class _ProjectFields(BaseModel):
     project_type_id: uuid.UUID | None = None
     owner_member_id: uuid.UUID | None = None
     owner_label: Label | None = None
+    # Liste complète des contributeurs : elle remplace la précédente (vingt au plus).
+    contributors: Annotated[list[PersonIn], Field(max_length=20)] | None = None
+    origin: LongText | None = None
     situation: LongText | None = None
     next_step: LongText | None = None
     decision_needed: LongText | None = None
     decision_maker: Label | None = None
+    decision_options: Annotated[list[DecisionOption], Field(max_length=3)] | None = None
     objective: LongText | None = None
     deliverables: LongText | None = None
     progress: Progress | None = None
@@ -322,12 +343,19 @@ class ProjectOut(BaseModel):
     entity: RefOut | None
     project_type: ProjectTypeRef | None
     owner: PersonRef
+    contributors: list[PersonRef] = []
     event: EventOut | None
+    origin: str | None = None
     situation: str | None
     situation_updated_at: datetime | None
+    # « manual » (fiche), « update » (boîte de mise à jour) ou « import » ; vide si inconnu.
+    situation_source: str | None = None
+    situation_source_label: str | None = None
+    situation_updated_by: str | None = None
     next_step: str | None
     decision_needed: str | None
     decision_maker: str | None
+    decision_options: list[DecisionOption] = []
     objective: str | None
     deliverables: str | None
     progress: int | None
@@ -366,6 +394,12 @@ class TaskCreate(_TaskFields):
     status: TaskStatus = TaskStatus.TODO
 
 
+class SpaceTaskCreate(TaskCreate):
+    """Tâche créée depuis la page Tâches : un projet, ou aucun (suivi général)."""
+
+    project_id: uuid.UUID | None = None
+
+
 class TaskUpdate(_TaskFields):
     version: int
     title: Title | None = None
@@ -374,7 +408,7 @@ class TaskUpdate(_TaskFields):
 
 class TaskOut(BaseModel):
     id: uuid.UUID
-    project_id: uuid.UUID
+    project_id: uuid.UUID | None
     title: str
     deliverable: str | None
     status: TaskStatus
@@ -384,6 +418,25 @@ class TaskOut(BaseModel):
     late: bool
     closed_at: datetime | None
     version: int
+
+
+class ProjectLinkCreate(BaseModel):
+    project_id: uuid.UUID
+    note: Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)] | None = None
+
+
+class LinkedProject(BaseModel):
+    id: uuid.UUID
+    title: str
+    status: ProjectStatus
+    portfolio: PortfolioRef
+
+
+class ProjectLinkOut(BaseModel):
+    id: uuid.UUID
+    project: LinkedProject
+    note: str | None
+    created_at: datetime
 
 
 class HistoryEntry(BaseModel):

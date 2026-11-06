@@ -159,6 +159,8 @@ class Portfolio(_CatalogItem, Base):
 
     description: Mapped[str | None] = mapped_column(String(500))
     color: Mapped[str] = mapped_column(String(20), default="orange")
+    # Repère visuel facultatif (CDC §13) : complète le nom, ne le remplace jamais.
+    emoji: Mapped[str | None] = mapped_column(String(16))
 
 
 class Entity(_CatalogItem, Base):
@@ -269,11 +271,19 @@ class Project(Base):
     )
     owner_label: Mapped[str | None] = mapped_column(String(120))
 
+    # Origine du besoin (CDC §6, étape 1) : qui l'a exprimé, lors de quelle réunion…
+    origin: Mapped[str | None] = mapped_column(Text)
     situation: Mapped[str | None] = mapped_column(Text)
     situation_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Source et fraîcheur (CDC §21) : d'où vient la dernière situation, et qui l'a enregistrée.
+    situation_source: Mapped[str | None] = mapped_column(String(20))  # manual | update | import
+    situation_source_label: Mapped[str | None] = mapped_column(String(255))
+    situation_updated_by: Mapped[str | None] = mapped_column(String(120))
     next_step: Mapped[str | None] = mapped_column(Text)
     decision_needed: Mapped[str | None] = mapped_column(Text)
     decision_maker: Mapped[str | None] = mapped_column(String(120))
+    # Options d'arbitrage (CDC §7) : [{"label": …, "consequence": …}], trois au plus.
+    decision_options: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)
     objective: Mapped[str | None] = mapped_column(Text)
     deliverables: Mapped[str | None] = mapped_column(Text)
     # Mesure documentée et facultative : jamais déduite d'une date (CDC §2).
@@ -314,6 +324,52 @@ class Project(Base):
     event_details: Mapped["EventDetails | None"] = relationship(
         back_populates="project", uselist=False, cascade="all, delete-orphan"
     )
+    contributors: Mapped[list["ProjectContributor"]] = relationship(
+        cascade="all, delete-orphan", order_by="ProjectContributor.position"
+    )
+
+
+class ProjectContributor(Base):
+    """Personne qui participe au projet, distincte du responsable du suivi (CDC §21).
+    Comme le responsable : un membre de l'espace ou un simple nom, sans droit supplémentaire."""
+
+    __tablename__ = "project_contributors"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    member_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("memberships.id", ondelete="SET NULL")
+    )
+    label: Mapped[str | None] = mapped_column(String(120))
+    position: Mapped[int] = mapped_column(Integer, default=0)
+
+    member: Mapped[Membership | None] = relationship()
+
+
+class ProjectLink(Base):
+    """Lien entre deux projets (CDC §5), sans dupliquer l'un dans l'autre. Le lien est
+    symétrique : il est stocké une seule fois, du plus petit identifiant vers le plus grand."""
+
+    __tablename__ = "project_links"
+    __table_args__ = (
+        UniqueConstraint("project_a_id", "project_b_id", name="uq_project_links_pair"),
+        CheckConstraint("project_a_id < project_b_id", name="ck_project_links_order"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    project_a_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    project_b_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    note: Mapped[str | None] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class EventDetails(Base):
@@ -346,7 +402,8 @@ class Task(Base):
     space_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("spaces.id", ondelete="CASCADE"), index=True
     )
-    project_id: Mapped[uuid.UUID] = mapped_column(
+    # Vide : tâche du « suivi général », rattachée à aucun projet (CDC §5, objets du modèle).
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("projects.id", ondelete="CASCADE"), index=True
     )
     title: Mapped[str] = mapped_column(String(200))

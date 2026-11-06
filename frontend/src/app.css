@@ -3345,3 +3345,247 @@ kbd {
 .task-row__project:hover {
   text-decoration: underline;
 }
+
+.task-row__general {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+.portfolio-emoji {
+  display: inline-block;
+  width: 18px;
+  font-size: 15px;
+  line-height: 1;
+  text-align: center;
+  flex-shrink: 0;
+}
+.country__flag {
+  margin-right: 5px;
+}
+
+/* Fiche projet : compléments du cahier des charges */
+.situation__source {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.decision-list {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.decision-list li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 14px;
+}
+.decision-list__consequence {
+  color: var(--color-ink-soft);
+}
+.decision-options__letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--color-action-tint);
+  color: var(--color-action);
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.decision-options {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.decision-options .field__label,
+.contributors .field__label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.decision-options__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.4fr) auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+.contributors .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.chip__remove {
+  margin-left: 4px;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.chip__remove:hover {
+  color: var(--color-ink);
+}
+.contributors__add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.contributors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.links-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.links-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.links-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+.links-list li + li {
+  border-top: 1px solid #f0f0f2;
+}
+.links-list__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  font-weight: 600;
+}
+.links-list__text a {
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.links-list__text a:hover {
+  text-decoration: underline;
+}
+.links-list__note {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+/* Point hebdo */
+.weekly__stamp {
+  margin: -8px 0 16px;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+.weekly__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.weekly-block h2 {
+  margin: 0 0 2px;
+  font-size: 16px;
+}
+.weekly-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.weekly-line {
+  padding: 10px 0;
+}
+.weekly-line + .weekly-line {
+  border-top: 1px solid #f0f0f2;
+}
+.weekly-line__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.weekly-line__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+a.weekly-line__title:hover {
+  text-decoration: underline;
+}
+.weekly-line__owner {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--color-ink-soft);
+}
+.weekly-line__detail {
+  margin: 4px 0 0 26px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.weekly-line__meta {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.weekly-line .decision-list {
+  margin-left: 26px;
+}
+@media (max-width: 720px) {
+  .weekly__grid {
+    grid-template-columns: 1fr;
+  }
+  .decision-options__row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .decision-options__row input:nth-of-type(2) {
+    grid-column: 2 / 3;
+  }
+}
+
+/* Impression (Point hebdo) : seul le contenu de la page est imprimé. */
+@media print {
+  .sidebar,
+  .skip-link,
+  .page-header__actions {
+    display: none !important;
+  }
+  .app,
+  .app__main {
+    display: block;
+    overflow: visible;
+    height: auto;
+  }
+  body {
+    background: #fff;
+  }
+  .weekly__grid {
+    display: block;
+  }
+  .weekly-block {
+    break-inside: avoid;
+    margin-bottom: 12px;
+    box-shadow: none;
+  }
+}

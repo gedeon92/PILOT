@@ -16,6 +16,7 @@ import {
 import { ATTENTION, inPeriod, matchesAttention, type Attention } from '../attention'
 import { personPayload } from '../person'
 import type { SpaceContext } from './space-layout'
+import { countryFlag } from '../countries'
 
 /** Filtres gardés dans l'adresse : une vue filtrée peut être partagée ou mise en favori. */
 const FILTER_KEYS = [
@@ -135,7 +136,7 @@ export function ProjectsPage() {
           <option value="">Tous les pays</option>
           {countries.map((c) => (
             <option key={c} value={c}>
-              {c}
+              {`${countryFlag(c)} ${c}`.trim()}
             </option>
           ))}
         </select>
@@ -227,6 +228,7 @@ export function NewProjectPage() {
     next_step: '',
     due_date: '',
     date_certainty: '',
+    origin: '',
   })
   const [owner, setOwner] = useState<PersonValue>({ memberId: null, label: '' })
   const set = (key: keyof typeof form) => (value: string) => setForm({ ...form, [key]: value })
@@ -261,6 +263,7 @@ export function NewProjectPage() {
         entity_id: form.entity_id || null,
         project_type_id: form.project_type_id || null,
         next_step: form.next_step || null,
+        origin: form.origin.trim() || null,
         due_date: form.due_date || null,
         date_certainty: form.due_date && form.date_certainty ? form.date_certainty : null,
         ...personPayload(owner, 'owner'),
@@ -387,6 +390,21 @@ export function NewProjectPage() {
               </option>
             ))}
           </select>
+        </div>
+        <div className="field form-grid__full">
+          <label htmlFor="p-origin">Origine du besoin</label>
+          <textarea
+            id="p-origin"
+            rows={2}
+            maxLength={5000}
+            placeholder="Ex. : demandé par la direction générale, réunion du 3 novembre"
+            value={form.origin}
+            onChange={(e) => set('origin')(e.target.value)}
+          />
+          <span className="field__hint">
+            Qui a exprimé ce besoin, et où. Un projet « À cadrer » reste une idée tant que son
+            lancement n’est pas validé.
+          </span>
         </div>
         {create.isError && (
           <div className="form-grid__full">

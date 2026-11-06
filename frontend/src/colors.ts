@@ -12,3 +12,23 @@ export const COLORS: { value: string; label: string; hex: string }[] = [
 export function colorHex(value: string | undefined): string | undefined {
   return COLORS.find((c) => c.value === value)?.hex
 }
+
+/** Emojis proposés pour repérer un portefeuille (CDC §13) : un repère en plus du nom. */
+export const PORTFOLIO_EMOJIS: { value: string; label: string }[] = [
+  { value: '🎪', label: 'Événement' },
+  { value: '🏢', label: 'Entreprise' },
+  { value: '📈', label: 'Croissance' },
+  { value: '🚀', label: 'Lancement' },
+  { value: '🎯', label: 'Objectif' },
+  { value: '📣', label: 'Communication' },
+  { value: '🤝', label: 'Partenariat' },
+  { value: '💡', label: 'Idée' },
+  { value: '🌍', label: 'International' },
+  { value: '🛠️', label: 'Technique' },
+  { value: '📦', label: 'Produit' },
+  { value: '🎓', label: 'Formation' },
+  { value: '💼', label: 'Affaires' },
+  { value: '🌱', label: 'Développement durable' },
+  { value: '🏗️', label: 'Construction' },
+  { value: '⭐', label: 'Prioritaire' },
+]

@@ -533,6 +533,10 @@ def refresh_proposal(
     return _proposal_response(db, membership, proposal)
 
 
+def _actor_name(membership: Membership) -> str | None:
+    return membership.user.display_name if membership.user else None
+
+
 def _apply_change(db: Session, project: Project, field: str, value: Any) -> None:
     if field == "status":
         project.status = ProjectStatus(value)
@@ -597,6 +601,11 @@ def apply_proposal(
             continue  # déjà la bonne valeur
         _apply_change(db, project, change["field"], change["value"])
         applied.append(change["field"])
+    if "situation" in applied:
+        # Source et fraîcheur (CDC §21) : la situation vient de cette demande.
+        project.situation_source = "update"
+        project.situation_source_label = proposal.source_label[:255]
+        project.situation_updated_by = _actor_name(membership)
     _check_dates(project)
 
     old, new = _diff(before_all, _project_snapshot(project))

@@ -40,6 +40,8 @@ from pilot_api.models import (
     Portfolio,
     Program,
     Project,
+    ProjectContributor,
+    ProjectLink,
     ProjectType,
     Role,
     Space,
@@ -47,7 +49,7 @@ from pilot_api.models import (
     User,
     utcnow,
 )
-from pilot_api.schemas import Color
+from pilot_api.schemas import Color, DecisionOption
 from pilot_api.storage import get_storage
 
 FORMAT = "pilot-export"
@@ -118,6 +120,19 @@ _URL = TypeAdapter(HttpUrl)
 _COLORS = set(get_args(Color))
 
 
+def _safe_options(value: Any) -> list[dict[str, Any]] | None:
+    """Options de décision lues dans un fichier : seules les entrées valides sont gardées."""
+    if not isinstance(value, list):
+        return None
+    options = []
+    for item in value[:3]:
+        try:
+            options.append(DecisionOption.model_validate(item).model_dump())
+        except ValidationError:
+            continue
+    return options or None
+
+
 def _safe_url(value: Any) -> str | None:
     """Un export peut avoir été modifié : seul un vrai lien http(s) est repris."""
     if not value:
@@ -176,6 +191,16 @@ def build_export(db: Session, space: Space, author: User, with_files: bool) -> t
     details = db.scalars(select(EventDetails).where(EventDetails.project_id.in_(project_ids))).all()
     data["event_details"] = [_dump(d) for d in details]
     data["tasks"] = [_dump(t) for t in db.scalars(select(Task).where(Task.space_id == sid)).all()]
+    data["contributors"] = [
+        _dump(c)
+        for c in db.scalars(
+            select(ProjectContributor).where(ProjectContributor.project_id.in_(project_ids))
+        ).all()
+    ]
+    data["project_links"] = [
+        _dump(link)
+        for link in db.scalars(select(ProjectLink).where(ProjectLink.space_id == sid)).all()
+    ]
 
     documents = db.scalars(select(Document).where(Document.space_id == sid)).all()
     storage = get_storage(db)
@@ -313,6 +338,8 @@ def import_space(
             values = _load(model, item, set())
             if "color" in values and values["color"] not in _COLORS:
                 values["color"] = "gray"
+            if values.get("emoji"):
+                values["emoji"] = str(values["emoji"])[:16]
             row = model(space_id=space.id, **values)
             db.add(row)
             db.flush()
@@ -361,6 +388,12 @@ def import_space(
                 )
             values["portfolio_id"] = fallback_portfolio
         values["external_url"] = _safe_url(values.get("external_url"))
+        values["decision_options"] = _safe_options(values.get("decision_options"))
+        if values.get("situation_source") not in {"manual", "update", "import", None}:
+            values["situation_source"] = None
+        for column, size in (("situation_source_label", 255), ("situation_updated_by", 120)):
+            if values.get(column):
+                values[column] = str(values[column])[:size]
         values["owner_member_id"], values["owner_label"] = person(
             item.get("owner_member_id"), item.get("owner_label")
         )
@@ -381,9 +414,10 @@ def import_space(
 
     tasks = 0
     for item in data.get("tasks", []):
-        project_id = project_ids.get(str(item.get("project_id")))
-        if project_id is None:
-            continue
+        source_project = item.get("project_id")
+        project_id = project_ids.get(str(source_project)) if source_project else None
+        if source_project and project_id is None:
+            continue  # tâche d'un projet absent de l'export
         values = _load(Task, item, {"project_id", "assignee_member_id", "assignee_label"})
         values["assignee_member_id"], values["assignee_label"] = person(
             item.get("assignee_member_id"), item.get("assignee_label")
@@ -391,6 +425,41 @@ def import_space(
         db.add(Task(space_id=space.id, project_id=project_id, **values))
         tasks += 1
     report.counts["tasks"] = tasks
+
+    for item in data.get("contributors", []):
+        project_id = project_ids.get(str(item.get("project_id")))
+        if project_id is None:
+            continue
+        member_id, label = person(item.get("member_id"), item.get("label"))
+        if member_id is None and not label:
+            continue
+        db.add(
+            ProjectContributor(
+                project_id=project_id,
+                member_id=member_id,
+                label=(label or "")[:120] or None,
+                position=int(item.get("position") or 0),
+            )
+        )
+    links = set()
+    for item in data.get("project_links", []):
+        a = project_ids.get(str(item.get("project_a_id")))
+        b = project_ids.get(str(item.get("project_b_id")))
+        if a is None or b is None or a == b:
+            continue
+        a, b = sorted([a, b], key=str)
+        if (a, b) in links:
+            continue
+        links.add((a, b))
+        note = item.get("note")
+        db.add(
+            ProjectLink(
+                space_id=space.id,
+                project_a_id=a,
+                project_b_id=b,
+                note=str(note)[:200] if note else None,
+            )
+        )
 
     # Pièces : restaurées seulement si le contenu est présent et conforme à son empreinte.
     storage = get_storage(db)

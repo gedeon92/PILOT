@@ -18,6 +18,7 @@ import { SpaceLayout } from './pages/space-layout'
 import { StatusPage } from './pages/status'
 import { TasksPage } from './pages/tasks'
 import { TimelinePage } from './pages/timeline'
+import { WeeklyPage } from './pages/weekly'
 import { UpdatesPage } from './pages/updates'
 
 /** Affiche `children(me)` si quelqu'un est connecté, sinon renvoie vers la connexion. */
@@ -85,6 +86,7 @@ export default function App() {
         <Route path="projets" element={<ProjectsPage />} />
         <Route path="evenements" element={<EventsPage />} />
         <Route path="taches" element={<TasksPage />} />
+        <Route path="point-hebdo" element={<WeeklyPage />} />
         <Route path="timeline" element={<TimelinePage />} />
         <Route path="documents" element={<DocumentsPage />} />
         <Route path="mises-a-jour" element={<UpdatesPage />} />

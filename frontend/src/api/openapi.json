@@ -2013,6 +2013,58 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "projets"
+        ],
+        "summary": "Create Space Task",
+        "description": "Depuis la page Tâches : dans un projet, ou sans projet (suivi général, CDC §5).",
+        "operationId": "create_space_task_api_spaces__space_id__tasks_post",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpaceTaskCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/spaces/{space_id}/projects/{project_id}/tasks": {
@@ -2182,6 +2234,180 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/projects/{project_id}/links": {
+      "get": {
+        "tags": [
+          "projets"
+        ],
+        "summary": "List Links",
+        "operationId": "list_links_api_spaces__space_id__projects__project_id__links_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectLinkOut"
+                  },
+                  "title": "Response List Links Api Spaces  Space Id  Projects  Project Id  Links Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "projets"
+        ],
+        "summary": "Create Link",
+        "operationId": "create_link_api_spaces__space_id__projects__project_id__links_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectLinkCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectLinkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/projects/{project_id}/links/{other_id}": {
+      "delete": {
+        "tags": [
+          "projets"
+        ],
+        "summary": "Delete Link",
+        "operationId": "delete_link_api_spaces__space_id__projects__project_id__links__other_id__delete",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "other_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Other Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -3882,6 +4108,33 @@
         ],
         "title": "DateCertainty"
       },
+      "DecisionOption": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "consequence": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consequence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label"
+        ],
+        "title": "DecisionOption"
+      },
       "DocumentOut": {
         "properties": {
           "id": {
@@ -4537,6 +4790,33 @@
         ],
         "title": "InvitationToken"
       },
+      "LinkedProject": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProjectStatus"
+          },
+          "portfolio": {
+            "$ref": "#/components/schemas/PortfolioRef"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "portfolio"
+        ],
+        "title": "LinkedProject"
+      },
       "LoginIn": {
         "properties": {
           "email": {
@@ -4741,6 +5021,37 @@
         ],
         "title": "PasswordResetRequest"
       },
+      "PersonIn": {
+        "properties": {
+          "member_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Id"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "title": "PersonIn",
+        "description": "Un membre de l'espace (`member_id`) ou un nom libre (`label`)."
+      },
       "PersonRef": {
         "properties": {
           "member_id": {
@@ -4813,6 +5124,18 @@
             ],
             "title": "Color",
             "default": "orange"
+          },
+          "emoji": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emoji"
           }
         },
         "type": "object",
@@ -4846,6 +5169,17 @@
           "color": {
             "type": "string",
             "title": "Color"
+          },
+          "emoji": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emoji"
           },
           "archived": {
             "type": "boolean",
@@ -4881,6 +5215,17 @@
           "color": {
             "type": "string",
             "title": "Color"
+          },
+          "emoji": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emoji"
           }
         },
         "type": "object",
@@ -4952,6 +5297,18 @@
               }
             ],
             "title": "Color"
+          },
+          "emoji": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emoji"
           }
         },
         "type": "object",
@@ -5142,6 +5499,33 @@
             ],
             "title": "Owner Label"
           },
+          "contributors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PersonIn"
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contributors"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
+          },
           "situation": {
             "anyOf": [
               {
@@ -5189,6 +5573,21 @@
               }
             ],
             "title": "Decision Maker"
+          },
+          "decision_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DecisionOption"
+                },
+                "type": "array",
+                "maxItems": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Options"
           },
           "objective": {
             "anyOf": [
@@ -5410,6 +5809,68 @@
         ],
         "title": "ProjectKind"
       },
+      "ProjectLinkCreate": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id"
+        ],
+        "title": "ProjectLinkCreate"
+      },
+      "ProjectLinkOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "project": {
+            "$ref": "#/components/schemas/LinkedProject"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "project",
+          "note",
+          "created_at"
+        ],
+        "title": "ProjectLinkOut"
+      },
       "ProjectOut": {
         "properties": {
           "id": {
@@ -5450,6 +5911,14 @@
           "owner": {
             "$ref": "#/components/schemas/PersonRef"
           },
+          "contributors": {
+            "items": {
+              "$ref": "#/components/schemas/PersonRef"
+            },
+            "type": "array",
+            "title": "Contributors",
+            "default": []
+          },
           "event": {
             "anyOf": [
               {
@@ -5459,6 +5928,17 @@
                 "type": "null"
               }
             ]
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
           },
           "situation": {
             "anyOf": [
@@ -5482,6 +5962,39 @@
               }
             ],
             "title": "Situation Updated At"
+          },
+          "situation_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Situation Source"
+          },
+          "situation_source_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Situation Source Label"
+          },
+          "situation_updated_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Situation Updated By"
           },
           "next_step": {
             "anyOf": [
@@ -5515,6 +6028,14 @@
               }
             ],
             "title": "Decision Maker"
+          },
+          "decision_options": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionOption"
+            },
+            "type": "array",
+            "title": "Decision Options",
+            "default": []
           },
           "objective": {
             "anyOf": [
@@ -5985,6 +6506,33 @@
             ],
             "title": "Owner Label"
           },
+          "contributors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PersonIn"
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contributors"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
+          },
           "situation": {
             "anyOf": [
               {
@@ -6032,6 +6580,21 @@
               }
             ],
             "title": "Decision Maker"
+          },
+          "decision_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DecisionOption"
+                },
+                "type": "array",
+                "maxItems": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Options"
           },
           "objective": {
             "anyOf": [
@@ -6652,6 +7215,96 @@
         ],
         "title": "SpaceSummary"
       },
+      "SpaceTaskCreate": {
+        "properties": {
+          "deliverable": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deliverable"
+          },
+          "assignee_member_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Member Id"
+          },
+          "assignee_label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Label"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "due_certainty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DateCertainty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus",
+            "default": "todo"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "SpaceTaskCreate",
+        "description": "Tâche créée depuis la page Tâches : un projet, ou aucun (suivi général)."
+      },
       "SpaceUpdate": {
         "properties": {
           "version": {
@@ -6774,8 +7427,15 @@
             "title": "Id"
           },
           "project_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Project Id"
           },
           "title": {

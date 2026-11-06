@@ -4,17 +4,23 @@ import { ApiError, errorMessage, type HistoryEntry, type Project } from '../api/
 import {
   useCatalog,
   useChangeProjectStatus,
-  useCreateTask,
   useHistory,
   useMembers,
   useProject,
   useTasks,
   useUpdateProject,
 } from '../api/queries'
-import { colorHex } from '../colors'
 import { DocumentsSection } from '../components/documents'
-import { TaskRow } from '../components/task-row'
+import { TaskAddForm, TaskRow } from '../components/task-row'
 import { PlusIcon } from '../components/icons'
+import { ContributorsField } from '../components/contributors-field'
+import { Country } from '../components/country'
+import { PortfolioMark } from '../components/portfolio-mark'
+import { ProjectLinksSection } from '../components/project-links'
+import {
+  DecisionOptionsField,
+  type DecisionOptionValue,
+} from '../components/decision-options-field'
 import { PersonField } from '../components/person-field'
 import { Alert, FullPageLoader, StatusPill } from '../components/ui'
 import {
@@ -137,6 +143,7 @@ type FormState = Record<string, string>
 
 const TEXT_FIELDS = [
   'title',
+  'origin',
   'situation',
   'next_step',
   'decision_needed',
@@ -183,6 +190,12 @@ function ProjectEditForm({
   const members = useMembers(spaceId)
   const [form, setForm] = useState(() => initialForm(project))
   const [owner, setOwner] = useState<PersonValue>(() => personValue(project.owner))
+  const [contributors, setContributors] = useState<PersonValue[]>(() =>
+    project.contributors.map(personValue),
+  )
+  const [options, setOptions] = useState<DecisionOptionValue[]>(() =>
+    project.decision_options.map((o) => ({ label: o.label, consequence: o.consequence ?? '' })),
+  )
   const programs = useCatalog(spaceId, 'programs')
   const [eventForm, setEventForm] = useState(() => ({
     venue: project.event?.venue ?? '',
@@ -260,6 +273,12 @@ function ProjectEditForm({
     body.risk_level = form.risk_level || null
     body.progress = form.progress === '' ? null : Number(form.progress)
     Object.assign(body, personPayload(owner, 'owner'))
+    body.contributors = contributors.map((c) =>
+      c.memberId ? { member_id: c.memberId } : { label: c.label },
+    )
+    body.decision_options = options
+      .filter((o) => o.label.trim())
+      .map((o) => ({ label: o.label.trim(), consequence: o.consequence.trim() || null }))
     if (isEvent) {
       body.event = {
         venue: eventForm.venue.trim() || null,
@@ -297,6 +316,11 @@ function ProjectEditForm({
         value={owner}
         onChange={setOwner}
       />
+      <ContributorsField
+        members={members.data ?? []}
+        value={contributors}
+        onChange={setContributors}
+      />
 
       <h3 className="form-grid__full form-grid__title">Situation</h3>
       {textarea(
@@ -311,6 +335,7 @@ function ProjectEditForm({
         'Ce qui bloque la progression et doit être tranché.',
       )}
       {input('decision_maker', 'Décideur', { maxLength: 120 })}
+      <DecisionOptionsField value={options} onChange={setOptions} />
 
       <h3 className="form-grid__full form-grid__title">Dates</h3>
       {input('due_date', 'Échéance', { type: 'date' })}
@@ -390,6 +415,11 @@ function ProjectEditForm({
       )}
 
       <h3 className="form-grid__full form-grid__title">Cadrage</h3>
+      {textarea(
+        'origin',
+        'Origine du besoin',
+        'Qui l’a demandé, lors de quelle réunion ou de quel échange.',
+      )}
       {textarea('objective', 'Objectif')}
       {textarea('deliverables', 'Livrables')}
       {input('progress', 'Avancement (%)', {
@@ -445,99 +475,6 @@ function ProjectEditForm({
 }
 
 // ---------- Tâches ----------
-
-function TaskAddForm({
-  spaceId,
-  projectId,
-  onDone,
-}: {
-  spaceId: string
-  projectId: string
-  onDone: () => void
-}) {
-  const create = useCreateTask(spaceId, projectId)
-  const members = useMembers(spaceId)
-  const [title, setTitle] = useState('')
-  const [deliverable, setDeliverable] = useState('')
-  const [due, setDue] = useState('')
-  const [certainty, setCertainty] = useState('')
-  const [assignee, setAssignee] = useState<PersonValue>({ memberId: null, label: '' })
-
-  function submit(event: FormEvent) {
-    event.preventDefault()
-    create.mutate(
-      {
-        title,
-        deliverable: deliverable || null,
-        due_date: due || null,
-        due_certainty: due && certainty ? certainty : null,
-        ...personPayload(assignee, 'assignee'),
-      },
-      { onSuccess: onDone },
-    )
-  }
-
-  return (
-    <form className="form-grid task-form" onSubmit={submit} aria-label="Nouvelle tâche">
-      <div className="field form-grid__full">
-        <label htmlFor="task-title">Tâche *</label>
-        <input
-          id="task-title"
-          required
-          maxLength={200}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-      </div>
-      <div className="field">
-        <label htmlFor="task-deliverable">Livrable</label>
-        <input
-          id="task-deliverable"
-          maxLength={300}
-          value={deliverable}
-          onChange={(e) => setDeliverable(e.target.value)}
-        />
-      </div>
-      <PersonField
-        id="task-assignee"
-        label="Responsable"
-        members={members.data ?? []}
-        value={assignee}
-        onChange={setAssignee}
-      />
-      <div className="field">
-        <label htmlFor="task-due">Échéance</label>
-        <input id="task-due" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
-      </div>
-      <div className="field">
-        <label htmlFor="task-certainty">Certitude</label>
-        <select
-          id="task-certainty"
-          disabled={!due}
-          value={certainty}
-          onChange={(e) => setCertainty(e.target.value)}
-        >
-          <option value="">Non précisée</option>
-          <option value="proposed">Proposée</option>
-          <option value="confirmed">Confirmée</option>
-        </select>
-      </div>
-      {create.isError && (
-        <div className="form-grid__full">
-          <Alert>{errorMessage(create.error)}</Alert>
-        </div>
-      )}
-      <div className="form-grid__full form-actions">
-        <button className="button button--primary" type="submit" disabled={create.isPending}>
-          Ajouter la tâche
-        </button>
-        <button className="button button--ghost" type="button" onClick={onDone}>
-          Annuler
-        </button>
-      </div>
-    </form>
-  )
-}
 
 function TasksSection({
   project,
@@ -626,6 +563,9 @@ const FIELD_LABELS: Record<string, string> = {
   assignee_label: 'responsable',
   deliverable: 'livrable',
   due_certainty: 'certitude',
+  origin: 'origine',
+  contributors: 'contributeurs',
+  decision_options: 'options de décision',
 }
 
 function statusLabel(value: unknown) {
@@ -663,6 +603,18 @@ function describe(entry: HistoryEntry): { what: string; detail?: string } {
       return { what: 'Document ajouté', detail: after.filename as string }
     case 'document.archived':
       return { what: 'Document retiré', detail: before.filename as string }
+    case 'document.replaced':
+      return {
+        what: `Nouvelle version d’un document (v${after.revision})`,
+        detail: after.filename as string,
+      }
+    case 'project.linked':
+      return {
+        what: 'Projet lié',
+        detail: [after.linked_project, after.note].filter(Boolean).join(' — '),
+      }
+    case 'project.unlinked':
+      return { what: 'Lien retiré', detail: after.linked_project as string }
     default:
       return { what: entry.action }
   }
@@ -727,7 +679,15 @@ function EventCard({ project, today }: { project: Project; today: string }) {
         />
         <Info
           label="Lieu"
-          value={[event.venue, project.city, project.country].filter(Boolean).join(', ')}
+          value={
+            (event.venue || project.city || project.country) && (
+              <>
+                {[event.venue, project.city].filter(Boolean).join(', ')}
+                {(event.venue || project.city) && project.country && ', '}
+                <Country name={project.country} />
+              </>
+            )
+          }
         />
         <Info
           label="Programme"
@@ -748,6 +708,26 @@ function EventCard({ project, today }: { project: Project; today: string }) {
         />
       </dl>
     </section>
+  )
+}
+
+/** D'où vient la dernière situation (CDC §21 « Source et fraîcheur »). */
+function SituationSource({ project }: { project: Project }) {
+  if (!project.situation || !project.situation_updated_at) return null
+  const source =
+    project.situation_source === 'manual'
+      ? 'saisie sur la fiche'
+      : project.situation_source === 'update'
+        ? `boîte de mise à jour${project.situation_source_label ? ` (« ${project.situation_source_label} »)` : ''}`
+        : project.situation_source === 'import'
+          ? 'import d’une sauvegarde'
+          : null
+  return (
+    <p className="situation__source">
+      Actualisée le {formatMoment(project.situation_updated_at)}
+      {project.situation_updated_by && ` par ${project.situation_updated_by}`}
+      {source ? ` · Source : ${source}` : ' · Source non renseignée'}
+    </p>
   )
 }
 
@@ -843,11 +823,7 @@ export function ProjectDetailPage() {
 
       <section className="landmarks" aria-label="Repères">
         <Landmark label="Portefeuille">
-          <span
-            className="swatch"
-            style={{ background: colorHex(p.portfolio.color) }}
-            aria-hidden="true"
-          />
+          <PortfolioMark color={p.portfolio.color} emoji={p.portfolio.emoji} />
           {p.portfolio.name}
         </Landmark>
         <Landmark label="Filiale">
@@ -887,6 +863,7 @@ export function ProjectDetailPage() {
               <div className="situation__block">
                 <h2 className="eyebrow">Situation</h2>
                 <p>{p.situation ?? <span className="muted">Pas encore renseignée.</span>}</p>
+                <SituationSource project={p} />
               </div>
               <div className="situation__block">
                 <h2 className="eyebrow">Prochaine étape</h2>
@@ -900,6 +877,23 @@ export function ProjectDetailPage() {
                     <span className="situation__who"> · Décideur : {p.decision_maker}</span>
                   )}
                 </p>
+                {p.decision_needed && p.decision_options.length > 0 && (
+                  <ol className="decision-list" aria-label="Options possibles">
+                    {p.decision_options.map((o, i) => (
+                      <li key={i}>
+                        <span className="decision-options__letter" aria-hidden="true">
+                          {String.fromCharCode(65 + i)}
+                        </span>
+                        <span>
+                          <strong>{o.label}</strong>
+                          {o.consequence && (
+                            <span className="decision-list__consequence"> — {o.consequence}</span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
               </div>
             </section>
             <TasksSection project={p} spaceId={space.id} canWrite={canWrite} />
@@ -912,6 +906,22 @@ export function ProjectDetailPage() {
               <h2 id="info-title">Informations</h2>
               <dl className="infos">
                 <Info label="Type" value={p.project_type?.name} />
+                <Info label="Origine du besoin" value={p.origin} />
+                <Info
+                  label="Contributeurs"
+                  value={
+                    p.contributors.length > 0 && (
+                      <span className="contributors-list">
+                        {p.contributors.map((c, i) => (
+                          <span key={`${c.member_id ?? c.name}-${i}`}>
+                            {c.name}
+                            {!c.has_account && <span className="owner__note">Sans compte</span>}
+                          </span>
+                        ))}
+                      </span>
+                    )
+                  }
+                />
                 <Info label="Objectif" value={p.objective} />
                 <Info label="Livrables" value={p.deliverables} />
                 <Info
@@ -930,7 +940,18 @@ export function ProjectDetailPage() {
                       : null
                   }
                 />
-                <Info label="Lieu" value={[p.city, p.country].filter(Boolean).join(', ')} />
+                <Info
+                  label="Lieu"
+                  value={
+                    (p.city || p.country) && (
+                      <>
+                        {p.city}
+                        {p.city && p.country && ', '}
+                        <Country name={p.country} />
+                      </>
+                    )
+                  }
+                />
                 <Info
                   label="Vigilance"
                   value={
@@ -951,6 +972,7 @@ export function ProjectDetailPage() {
                 />
               </dl>
             </section>
+            <ProjectLinksSection spaceId={space.id} projectId={p.id} canWrite={canWrite} />
             <HistorySection spaceId={space.id} projectId={p.id} />
           </aside>
         </div>

@@ -12,6 +12,7 @@ import {
   type Me,
   type Member,
   type Project,
+  type ProjectLink,
   type Proposal,
   type Role,
   type Space,
@@ -192,6 +193,7 @@ export type CatalogItem = {
   version: number
   description?: string | null
   color?: string
+  emoji?: string | null
   country?: string | null
   kind?: string
 }
@@ -259,20 +261,34 @@ export type ProjectFilters = {
   program_id?: string
 }
 
+/** Complète les champs récents qu'un serveur pas encore mis à jour ne renvoie pas
+ * (pendant un déploiement, l'interface peut arriver quelques minutes avant l'API). */
+function withDefaults(project: Project): Project {
+  return {
+    ...project,
+    contributors: project.contributors ?? [],
+    decision_options: project.decision_options ?? [],
+  }
+}
+
 export function useProjects(spaceId: string, filters: ProjectFilters = {}) {
   const params = new URLSearchParams(
     Object.entries(filters).filter((entry): entry is [string, string] => Boolean(entry[1])),
   ).toString()
   return useQuery({
     queryKey: [...projectKeys.all(spaceId), 'list', params],
-    queryFn: () => api<Project[]>(`/spaces/${spaceId}/projects${params ? `?${params}` : ''}`),
+    queryFn: async () =>
+      (await api<Project[]>(`/spaces/${spaceId}/projects${params ? `?${params}` : ''}`)).map(
+        withDefaults,
+      ),
   })
 }
 
 export function useProject(spaceId: string, projectId: string) {
   return useQuery({
     queryKey: [...projectKeys.one(spaceId, projectId), 'detail'],
-    queryFn: () => api<Project>(`/spaces/${spaceId}/projects/${projectId}`),
+    queryFn: async () =>
+      withDefaults(await api<Project>(`/spaces/${spaceId}/projects/${projectId}`)),
   })
 }
 
@@ -332,6 +348,16 @@ export function useCreateTask(spaceId: string, projectId: string) {
   })
 }
 
+/** Tâche créée depuis la page Tâches : dans un projet, ou sans projet (suivi général). */
+export function useCreateSpaceTask(spaceId: string) {
+  const refresh = useRefreshProjects(spaceId)
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      api<Task>(`/spaces/${spaceId}/tasks`, { method: 'POST', body }),
+    onSuccess: refresh,
+  })
+}
+
 export function useUpdateTask(spaceId: string) {
   const refresh = useRefreshProjects(spaceId)
   return useMutation({
@@ -339,6 +365,35 @@ export function useUpdateTask(spaceId: string) {
       api<Task>(`/spaces/${spaceId}/tasks/${task.id}`, {
         method: 'PATCH',
         body: { ...changes, version: task.version },
+      }),
+    onSettled: refresh,
+  })
+}
+
+// ---------- Liens entre projets ----------
+
+export function useProjectLinks(spaceId: string, projectId: string) {
+  return useQuery({
+    queryKey: [...projectKeys.one(spaceId, projectId), 'links'],
+    queryFn: () => api<ProjectLink[]>(`/spaces/${spaceId}/projects/${projectId}/links`),
+  })
+}
+
+export function useAddProjectLink(spaceId: string, projectId: string) {
+  const refresh = useRefreshProjects(spaceId)
+  return useMutation({
+    mutationFn: (body: { project_id: string; note: string | null }) =>
+      api<ProjectLink>(`/spaces/${spaceId}/projects/${projectId}/links`, { method: 'POST', body }),
+    onSettled: refresh,
+  })
+}
+
+export function useRemoveProjectLink(spaceId: string, projectId: string) {
+  const refresh = useRefreshProjects(spaceId)
+  return useMutation({
+    mutationFn: (otherId: string) =>
+      api<void>(`/spaces/${spaceId}/projects/${projectId}/links/${otherId}`, {
+        method: 'DELETE',
       }),
     onSettled: refresh,
   })

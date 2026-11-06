@@ -13,11 +13,12 @@ import { BackupSection } from '../components/backup-section'
 import { PlusIcon } from '../components/icons'
 import { Alert, PageHeader, StatusPill } from '../components/ui'
 import { allTimezones } from '../timezones'
-import { COLORS, colorHex } from '../colors'
+import { COLORS, PORTFOLIO_EMOJIS } from '../colors'
 import type { SpaceContext } from './space-layout'
+import { PortfolioMark } from '../components/portfolio-mark'
 
 type Field = {
-  key: 'description' | 'country' | 'color' | 'kind'
+  key: 'description' | 'country' | 'color' | 'kind' | 'emoji'
   label: string
   maxLength?: number
 }
@@ -42,6 +43,7 @@ const SECTIONS: Config[] = [
     placeholder: 'Ex. : Événements',
     fields: [
       { key: 'color', label: 'Couleur' },
+      { key: 'emoji', label: 'Repère (emoji)' },
       { key: 'description', label: 'Description', maxLength: 500 },
     ],
   },
@@ -79,12 +81,6 @@ const KINDS: { value: string; label: string }[] = [
   { value: 'event', label: 'Événement' },
 ]
 
-function Swatch({ color }: { color?: string }) {
-  const hex = colorHex(color)
-  if (!hex) return null
-  return <span className="swatch" style={{ background: hex }} aria-hidden="true" />
-}
-
 function FieldInput({
   field,
   value,
@@ -102,6 +98,18 @@ function FieldInput({
         {KINDS.map((k) => (
           <option key={k.value} value={k.value}>
             {k.label}
+          </option>
+        ))}
+      </select>
+    )
+  }
+  if (field.key === 'emoji') {
+    return (
+      <select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">Aucun (pastille de couleur)</option>
+        {PORTFOLIO_EMOJIS.map((e) => (
+          <option key={e.value} value={e.value}>
+            {e.value} {e.label}
           </option>
         ))}
       </select>
@@ -217,7 +225,7 @@ function ItemRow({
   const update = useUpdateCatalogItem(spaceId, config.resource)
   const [editing, setEditing] = useState(false)
   const details = config.fields
-    .filter((f) => f.key !== 'color' && f.key !== 'kind')
+    .filter((f) => f.key !== 'color' && f.key !== 'kind' && f.key !== 'emoji')
     .map((f) => item[f.key])
     .filter(Boolean)
     .join(' · ')
@@ -243,7 +251,7 @@ function ItemRow({
 
   return (
     <li className={item.archived ? 'item-row item-row--archived' : 'item-row'}>
-      <Swatch color={item.color} />
+      <PortfolioMark color={item.color} emoji={item.emoji} />
       <span className="item-row__text">
         <span className="item-row__name">{item.name}</span>
         {details && <span className="item-row__details">{details}</span>}

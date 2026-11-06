@@ -34,9 +34,11 @@ function AlertRow({ alert, spaceId }: { alert: AlertItem; spaceId: string }) {
       <Link
         className="alert-row__text"
         to={
-          alert.target_type === 'proposal' || !alert.project_id
+          alert.target_type === 'proposal'
             ? `/espaces/${spaceId}/mises-a-jour`
-            : `/espaces/${spaceId}/projets/${alert.project_id}`
+            : !alert.project_id
+              ? `/espaces/${spaceId}/taches`
+              : `/espaces/${spaceId}/projets/${alert.project_id}`
         }
         onClick={() => !alert.read && markRead.mutate(alert.id)}
       >

@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router'
 import { ROLE_LABELS, type Me, type Space } from '../api/client'
 import { useAlerts, useCatalog, useLogout, useMembers, useSpace } from '../api/queries'
-import { colorHex } from '../colors'
 import {
   BellIcon,
   BuildingIcon,
   CalendarIcon,
+  ClipboardIcon,
   ChevronsIcon,
   DashboardIcon,
   DocumentIcon,
@@ -23,6 +23,7 @@ import {
 } from '../components/icons'
 import { CommandPalette } from '../components/command-palette'
 import { Alert, FullPageLoader } from '../components/ui'
+import { PortfolioMark } from '../components/portfolio-mark'
 
 export type SpaceContext = { space: Space; me: Me }
 
@@ -102,6 +103,10 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
             <DashboardIcon />
             <span className="nav__label">Vue d’ensemble</span>
           </NavLink>
+          <NavLink to={`${base}/point-hebdo`} className={linkClass}>
+            <ClipboardIcon />
+            <span className="nav__label">Point hebdo</span>
+          </NavLink>
           <NavLink to={`${base}/projets`} className={linkClass}>
             <FolderIcon />
             <span className="nav__label">Projets</span>
@@ -158,11 +163,7 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
           {portfolios.data?.length === 0 && <span className="nav__empty">Aucun portefeuille</span>}
           {portfolios.data?.map((portfolio) => (
             <span key={portfolio.id} className="nav__link nav__link--static">
-              <span
-                className="swatch"
-                style={{ background: colorHex(portfolio.color) }}
-                aria-hidden="true"
-              />
+              <PortfolioMark color={portfolio.color} emoji={portfolio.emoji} />
               <span className="nav__label">{portfolio.name}</span>
             </span>
           ))}

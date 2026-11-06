@@ -108,6 +108,14 @@ export const InboxIcon = () => (
   </Icon>
 )
 
+export const ClipboardIcon = () => (
+  <Icon size={18}>
+    <rect x="8" y="2" width="8" height="4" rx="1" />
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+    <path d="M9 12h6M9 16h4" />
+  </Icon>
+)
+
 export const BellIcon = ({ size }: { size?: number }) => (
   <Icon size={size}>
     <path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8" />

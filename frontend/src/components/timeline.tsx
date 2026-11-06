@@ -169,8 +169,10 @@ export function ProjectTimeline({
   const base = `/espaces/${spaceId}`
 
   const tasksByProject = new Map<string, Task[]>()
+  // Les tâches du suivi général (sans projet) n'ont pas de ligne sur la timeline.
   for (const t of tasks)
-    tasksByProject.set(t.project_id, [...(tasksByProject.get(t.project_id) ?? []), t])
+    if (t.project_id)
+      tasksByProject.set(t.project_id, [...(tasksByProject.get(t.project_id) ?? []), t])
 
   const open = projects.filter((p) => p.status !== 'cancelled')
   const rows: Row[] = open
@@ -185,12 +187,24 @@ export function ProjectTimeline({
   const shown = compact ? rows.slice(0, maxRows ?? 12) : rows
 
   // Regroupement par portefeuille, dans l'ordre d'apparition.
-  const groups: { id: string; name: string; color: string; rows: Row[] }[] = []
+  const groups: {
+    id: string
+    name: string
+    color: string
+    emoji?: string | null
+    rows: Row[]
+  }[] = []
   for (const row of shown) {
     const pf = row.project.portfolio
     let group = groups.find((g) => g.id === pf.id)
     if (!group) {
-      group = { id: pf.id, name: pf.name, color: colorHex(pf.color) ?? '#71717A', rows: [] }
+      group = {
+        id: pf.id,
+        name: pf.name,
+        color: colorHex(pf.color) ?? '#71717A',
+        emoji: pf.emoji,
+        rows: [],
+      }
       groups.push(group)
     }
     group.rows.push(row)
@@ -341,7 +355,17 @@ export function ProjectTimeline({
             {groups.map((group) => (
               <div key={group.id} className="tl__group">
                 <div className="tl__group-head">
-                  <span className="swatch" style={{ background: group.color }} aria-hidden="true" />
+                  {group.emoji ? (
+                    <span className="portfolio-emoji" aria-hidden="true">
+                      {group.emoji}
+                    </span>
+                  ) : (
+                    <span
+                      className="swatch"
+                      style={{ background: group.color }}
+                      aria-hidden="true"
+                    />
+                  )}
                   {group.name}
                   <span className="tl__group-count">{group.rows.length}</span>
                 </div>

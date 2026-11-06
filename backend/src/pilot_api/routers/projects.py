@@ -29,7 +29,9 @@ from pilot_api.models import (
     Portfolio,
     Program,
     Project,
+    ProjectContributor,
     ProjectKind,
+    ProjectLink,
     ProjectStatus,
     ProjectType,
     Space,
@@ -41,14 +43,18 @@ from pilot_api.models import (
 from pilot_api.schemas import (
     EventOut,
     HistoryEntry,
+    LinkedProject,
     PersonRef,
     PortfolioRef,
     ProjectCreate,
+    ProjectLinkCreate,
+    ProjectLinkOut,
     ProjectOut,
     ProjectStatusChange,
     ProjectTypeRef,
     ProjectUpdate,
     RefOut,
+    SpaceTaskCreate,
     TaskCreate,
     TaskOut,
     TaskUpdate,
@@ -59,6 +65,7 @@ router = APIRouter(prefix="/api/spaces/{space_id}", tags=["projets"])
 # Champs copiés tels quels de la requête vers le projet (hors références et responsable).
 PROJECT_PLAIN_FIELDS = [
     "title",
+    "origin",
     "situation",
     "next_step",
     "decision_needed",
@@ -88,6 +95,7 @@ PROJECT_AUDIT_FIELDS = [
     "status",
     "outcome",
     "cancel_reason",
+    "decision_options",
 ]
 EVENT_FIELDS = ["venue", "audience", "expected_attendance", "program_id", "edition_label"]
 TASK_PLAIN_FIELDS = ["title", "deliverable", "due_date", "due_certainty"]
@@ -113,6 +121,8 @@ def _snapshot(obj: Any, fields: list[str]) -> dict[str, Any]:
 
 def _project_snapshot(project: Project) -> dict[str, Any]:
     data = _snapshot(project, PROJECT_AUDIT_FIELDS)
+    # Les contributeurs apparaissent au journal par leur nom (lisible même après un départ).
+    data["contributors"] = [_person(c.member, c.label).name for c in project.contributors] or None
     if project.event_details is not None:
         data |= {f"event_{k}": v for k, v in _snapshot(project.event_details, EVENT_FIELDS).items()}
     return data
@@ -197,6 +207,9 @@ def _project_query():
             selectinload(Project.project_type),
             selectinload(Project.owner_member).selectinload(Membership.user),
             selectinload(Project.event_details).selectinload(EventDetails.program),
+            selectinload(Project.contributors)
+            .selectinload(ProjectContributor.member)
+            .selectinload(Membership.user),
         )
     )
 
@@ -223,18 +236,26 @@ def _event_out(project: Project) -> EventOut | None:
     )
 
 
+def _portfolio_ref(portfolio: Portfolio) -> PortfolioRef:
+    return PortfolioRef(
+        id=portfolio.id, name=portfolio.name, color=portfolio.color, emoji=portfolio.emoji
+    )
+
+
 def _project_out(project: Project, counts: tuple[int, int] = (0, 0)) -> ProjectOut:
     entity, ptype, portfolio = project.entity, project.project_type, project.portfolio
     return ProjectOut(
         id=project.id,
         title=project.title,
         status=project.status,
-        portfolio=PortfolioRef(id=portfolio.id, name=portfolio.name, color=portfolio.color),
+        portfolio=_portfolio_ref(portfolio),
         entity=RefOut(id=entity.id, name=entity.name) if entity else None,
         project_type=ProjectTypeRef(id=ptype.id, name=ptype.name, kind=ptype.kind)
         if ptype
         else None,
         owner=_person(project.owner_member, project.owner_label),
+        contributors=[_person(c.member, c.label) for c in project.contributors],
+        decision_options=project.decision_options or [],
         event=_event_out(project),
         open_tasks=counts[0],
         late_tasks=counts[1],
@@ -251,6 +272,8 @@ def _project_out(project: Project, counts: tuple[int, int] = (0, 0)) -> ProjectO
                 "project_type",
                 "owner",
                 "event",
+                "contributors",
+                "decision_options",
             }
             | {"open_tasks", "late_tasks"}
         },
@@ -332,9 +355,37 @@ def _apply_project_fields(db: Session, project: Project, body: Any, sent: set[st
         project.owner_member_id, project.owner_label = _resolve_person(
             db, space_id, body.owner_member_id, body.owner_label
         )
+    if "contributors" in sent:
+        _apply_contributors(db, project, body.contributors or [])
+    if "decision_options" in sent:
+        options = [o.model_dump() for o in body.decision_options or []]
+        project.decision_options = options or None
     if "event" in sent and body.event is not None:
         _apply_event_fields(db, project, body.event)
     _check_dates(project)
+
+
+def _apply_contributors(db: Session, project: Project, people: list[Any]) -> None:
+    """Remplace la liste des contributeurs ; doublons et noms vides sont ignorés."""
+    seen: set[str] = set()
+    result: list[ProjectContributor] = []
+    for person in people:
+        member_id, label = _resolve_person(db, project.space_id, person.member_id, person.label)
+        if member_id is None and not label:
+            continue
+        key = str(member_id) if member_id else (label or "").casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(ProjectContributor(member_id=member_id, label=label, position=len(result)))
+    project.contributors = result
+
+
+def _mark_manual_situation(project: Project, membership: Membership) -> None:
+    project.situation_updated_at = utcnow()
+    project.situation_source = "manual"
+    project.situation_source_label = None
+    project.situation_updated_by = membership.user.display_name if membership.user else None
 
 
 def _apply_event_fields(db: Session, project: Project, event: Any) -> None:
@@ -417,10 +468,10 @@ def create_project(body: ProjectCreate, membership: WriterMembership, db: DbSess
         created_by_id=membership.user_id,
     )
     sent = body.model_fields_set - {"portfolio_id", "status", "client_request_id"}
+    db.add(project)
     _apply_project_fields(db, project, body, sent)
     if project.situation:
-        project.situation_updated_at = utcnow()
-    db.add(project)
+        _mark_manual_situation(project, membership)
     db.flush()
     record(
         db,
@@ -453,7 +504,7 @@ def update_project(
     old, new = _diff(before, _project_snapshot(project))
     if new:
         if "situation" in new:
-            project.situation_updated_at = utcnow()
+            _mark_manual_situation(project, membership)
         project.updated_at = utcnow()
         project.version += 1
         record(
@@ -620,31 +671,51 @@ def _apply_task_fields(db: Session, task: Task, body: Any, sent: set[str]) -> No
         task.closed_at = utcnow() if body.status in CLOSED_TASK_STATUSES else None
 
 
-@router.post("/projects/{project_id}/tasks", status_code=201)
-def create_task(
-    project_id: uuid.UUID, body: TaskCreate, membership: WriterMembership, db: DbSession
+def _create_task(
+    db: Session, membership: Membership, project: Project | None, body: TaskCreate
 ) -> TaskOut:
-    project = _load_project(db, membership.space_id, project_id)
-    if project.status in CLOSED_PROJECT_STATUSES:
+    if project is not None and project.status in CLOSED_PROJECT_STATUSES:
         raise HTTPException(400, "Ce projet est clôturé : rouvrez-le pour ajouter des tâches.")
     task = Task(
-        space_id=project.space_id, project_id=project.id, title=body.title, status=TaskStatus.TODO
+        space_id=membership.space_id,
+        project_id=project.id if project else None,
+        title=body.title,
+        status=TaskStatus.TODO,
     )
-    _apply_task_fields(db, task, body, body.model_fields_set - {"title"} | {"status"})
+    sent = body.model_fields_set - {"title", "project_id"} | {"status"}
+    _apply_task_fields(db, task, body, sent)
     db.add(task)
     db.flush()
-    project.updated_at = utcnow()
+    if project is not None:
+        project.updated_at = utcnow()
     record(
         db,
         action="task.created",
         actor_id=membership.user_id,
-        space_id=project.space_id,
+        space_id=membership.space_id,
         target_type="task",
         target_id=task.id,
         after={k: v for k, v in _snapshot(task, TASK_AUDIT_FIELDS).items() if v is not None},
     )
     db.commit()
-    return _task_out(_load_task(db, project.space_id, task.id), today_in(membership.space))
+    return _task_out(_load_task(db, membership.space_id, task.id), today_in(membership.space))
+
+
+@router.post("/projects/{project_id}/tasks", status_code=201)
+def create_task(
+    project_id: uuid.UUID, body: TaskCreate, membership: WriterMembership, db: DbSession
+) -> TaskOut:
+    project = _load_project(db, membership.space_id, project_id)
+    return _create_task(db, membership, project, body)
+
+
+@router.post("/tasks", status_code=201)
+def create_space_task(
+    body: SpaceTaskCreate, membership: WriterMembership, db: DbSession
+) -> TaskOut:
+    """Depuis la page Tâches : dans un projet, ou sans projet (suivi général, CDC §5)."""
+    project = _load_project(db, membership.space_id, body.project_id) if body.project_id else None
+    return _create_task(db, membership, project, body)
 
 
 @router.patch("/tasks/{task_id}")
@@ -659,7 +730,7 @@ def update_task(
     old, new = _diff(before, _snapshot(task, TASK_AUDIT_FIELDS))
     if new:
         task.version += 1
-        project = db.get(Project, task.project_id)
+        project = db.get(Project, task.project_id) if task.project_id else None
         if project is not None:
             project.updated_at = utcnow()
         record(
@@ -675,3 +746,94 @@ def update_task(
         db.commit()
         task = _load_task(db, membership.space_id, task_id)
     return _task_out(task, today_in(membership.space))
+
+
+# ---------- Liens entre projets (CDC §5) ----------
+
+
+def _linked_out(link: ProjectLink, other: Project) -> ProjectLinkOut:
+    return ProjectLinkOut(
+        id=link.id,
+        project=LinkedProject(
+            id=other.id,
+            title=other.title,
+            status=other.status,
+            portfolio=_portfolio_ref(other.portfolio),
+        ),
+        note=link.note,
+        created_at=link.created_at,
+    )
+
+
+@router.get("/projects/{project_id}/links")
+def list_links(
+    project_id: uuid.UUID, membership: CurrentMembership, db: DbSession
+) -> list[ProjectLinkOut]:
+    project = _load_project(db, membership.space_id, project_id)
+    links = db.scalars(
+        select(ProjectLink).where(
+            or_(ProjectLink.project_a_id == project.id, ProjectLink.project_b_id == project.id)
+        )
+    ).all()
+
+    def other_id(link: ProjectLink) -> uuid.UUID:
+        return link.project_b_id if link.project_a_id == project.id else link.project_a_id
+
+    ids = [other_id(lk) for lk in links]
+    others = {p.id: p for p in db.scalars(_project_query().where(Project.id.in_(ids)))}
+    result = [_linked_out(lk, others[other_id(lk)]) for lk in links]
+    return sorted(result, key=lambda r: r.project.title.casefold())
+
+
+def _record_link(db, membership, action, project, other, note=None):
+    for a, b in ((project, other), (other, project)):
+        record(
+            db,
+            action=action,
+            actor_id=membership.user_id,
+            space_id=membership.space_id,
+            target_type="project",
+            target_id=a.id,
+            after={"linked_project": b.title, **({"note": note} if note else {})},
+        )
+
+
+@router.post("/projects/{project_id}/links", status_code=201)
+def create_link(
+    project_id: uuid.UUID, body: ProjectLinkCreate, membership: WriterMembership, db: DbSession
+) -> ProjectLinkOut:
+    project = _load_project(db, membership.space_id, project_id)
+    if body.project_id == project.id:
+        raise HTTPException(422, "Un projet ne peut pas être lié à lui-même.")
+    other = _load_project(db, membership.space_id, body.project_id)
+    a, b = sorted([project.id, other.id], key=str)
+    existing = db.scalar(
+        select(ProjectLink).where(ProjectLink.project_a_id == a, ProjectLink.project_b_id == b)
+    )
+    if existing is not None:
+        raise HTTPException(409, f"Ce projet est déjà lié à « {other.title} ».")
+    link = ProjectLink(
+        space_id=membership.space_id, project_a_id=a, project_b_id=b, note=body.note or None
+    )
+    db.add(link)
+    db.flush()
+    _record_link(db, membership, "project.linked", project, other, link.note)
+    db.commit()
+    return _linked_out(link, other)
+
+
+@router.delete("/projects/{project_id}/links/{other_id}", status_code=204)
+def delete_link(
+    project_id: uuid.UUID, other_id: uuid.UUID, membership: WriterMembership, db: DbSession
+) -> None:
+    project = _load_project(db, membership.space_id, project_id)
+    other = _load_project(db, membership.space_id, other_id)
+    a, b = sorted([project.id, other.id], key=str)
+    link = db.scalar(
+        select(ProjectLink).where(ProjectLink.project_a_id == a, ProjectLink.project_b_id == b)
+    )
+    if link is None:
+        raise HTTPException(404, "Lien introuvable.")
+    db.delete(link)
+    _record_link(db, membership, "project.unlinked", project, other)
+    db.commit()
