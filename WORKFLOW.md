@@ -178,11 +178,13 @@ Demande du 3 nov. 2026 : suivre l'organisation des événements, les voir dans u
 - [x] Statut de calendrier distinct du statut opérationnel (certitude de la date)
 - [x] Timeline « vivante » (4 nov. 2026, à la demande de l'utilisateur) : regroupement par portefeuille, dates sur les barres, échéance en losange (rouge et pulsée si dépassée), tâches en points, infobulle détaillée au survol ou au clavier, zoom mois / trimestre / semestre, navigation, ligne « Aujourd'hui », week-ends et semaines en vue mois, animation d'ouverture (désactivée si l'utilisateur réduit les animations)
 - [x] Page « Timeline » : filtres portefeuille, filiale, nature (projets / événements), projets terminés ; version compacte sur la vue d'ensemble
-- [ ] Liste des projets sans date
+- [x] Liste des projets sans date (sous la timeline ; le compteur « N sans date » y mène)
 - [x] Fuseau horaire de l'espace
 - [x] Annulation : retrait du calendrier actif, dossier et anciennes dates conservés
 
 **Terminé quand :** CAL01 et CAL02 passent.
+
+✅ **Phase 6 terminée le 6 nov. 2026.**
 
 ## Phase 7 — Alertes et rappels (CDC §16, §19)
 

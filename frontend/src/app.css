@@ -3256,3 +3256,25 @@ kbd {
 .add-docs .card-panel__help {
   margin: 10px 0 0;
 }
+
+/* Timeline : projets sans date */
+.undated {
+  margin-top: 16px;
+  scroll-margin-top: 16px;
+}
+.undated__head {
+  padding: 18px 20px 6px;
+}
+.undated__head h2 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+.undated__head p {
+  margin: 0;
+  font-size: 13px;
+}
+.undated__empty {
+  margin: 0;
+  padding: 8px 20px 18px;
+  color: var(--color-muted);
+}

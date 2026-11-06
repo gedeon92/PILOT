@@ -259,7 +259,14 @@ export function ProjectTimeline({
               <span className="tl__summary-late">{lateCount} avec du retard</span>
             </>
           )}
-          {undated > 0 && ` · ${undated} sans date`}
+          {undated > 0 && (
+            <>
+              {' · '}
+              <Link className="tl__more" to={`${base}/timeline#sans-date`}>
+                {undated} sans date
+              </Link>
+            </>
+          )}
           {compact && rows.length > shown.length && (
             <>
               {' · '}
