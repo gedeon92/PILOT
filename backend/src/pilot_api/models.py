@@ -417,11 +417,73 @@ class Task(Base):
     due_certainty: Mapped[DateCertainty | None] = mapped_column(
         _enum(DateCertainty, "task_due_certainty")
     )
+    # Sous-tâche : rattachée à une tâche du même projet (un seul niveau).
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tasks.id", ondelete="CASCADE", name="fk_tasks_parent_id_tasks"), index=True
+    )
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     assignee_member: Mapped[Membership | None] = relationship()
+
+
+class TaskComment(Base):
+    """Commentaire sur une tâche. Le nom de l'auteur est gardé en copie (lisible après un
+    départ) ; `mentions` liste les membres cités avec @nom, prévenus dans leurs alertes."""
+
+    __tablename__ = "task_comments"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    task_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tasks.id", ondelete="CASCADE"), index=True
+    )
+    author_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    author_name: Mapped[str] = mapped_column(String(120))
+    body: Mapped[str] = mapped_column(Text)
+    mentions: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class TaskFollower(Base):
+    """Personne abonnée à une tâche : prévenue des commentaires et des changements."""
+
+    __tablename__ = "task_followers"
+    __table_args__ = (UniqueConstraint("task_id", "user_id", name="uq_task_followers"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    task_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tasks.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class TaskDependency(Base):
+    """`task_id` attend la fin de `depends_on_id` (terminée ou annulée)."""
+
+    __tablename__ = "task_dependencies"
+    __table_args__ = (
+        UniqueConstraint("task_id", "depends_on_id", name="uq_task_dependencies"),
+        CheckConstraint("task_id <> depends_on_id", name="ck_task_dependencies_self"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    task_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tasks.id", ondelete="CASCADE"), index=True
+    )
+    depends_on_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tasks.id", ondelete="CASCADE"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class Document(Base):
@@ -475,6 +537,9 @@ class AlertRule(enum.StrEnum):
     STALE = "stale"
     MISSING_INFO = "missing_info"
     PROPOSAL_PENDING = "proposal_pending"
+    # Notifications déclenchées par un événement (CDC §16), distinctes des rappels calculés.
+    MENTION = "mention"
+    TASK_ACTIVITY = "task_activity"
 
 
 class Alert(Base):

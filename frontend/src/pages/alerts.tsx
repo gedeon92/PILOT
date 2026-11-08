@@ -22,6 +22,8 @@ const RULE_TONE: Record<string, string> = {
   stale: 'neutral',
   missing_info: 'neutral',
   proposal_pending: 'info',
+  mention: 'violet',
+  task_activity: 'info',
 }
 
 function AlertRow({ alert, spaceId }: { alert: AlertItem; spaceId: string }) {
@@ -34,11 +36,12 @@ function AlertRow({ alert, spaceId }: { alert: AlertItem; spaceId: string }) {
       <Link
         className="alert-row__text"
         to={
-          alert.target_type === 'proposal'
+          (alert.target_type === 'proposal'
             ? `/espaces/${spaceId}/mises-a-jour`
             : !alert.project_id
               ? `/espaces/${spaceId}/taches`
-              : `/espaces/${spaceId}/projets/${alert.project_id}`
+              : `/espaces/${spaceId}/projets/${alert.project_id}`) +
+          (alert.target_type === 'task' && alert.target_id ? `?tache=${alert.target_id}` : '')
         }
         onClick={() => !alert.read && markRead.mutate(alert.id)}
       >

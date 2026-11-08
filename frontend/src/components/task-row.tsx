@@ -7,6 +7,7 @@ import { personPayload } from '../person'
 import { PersonField, type PersonValue } from './person-field'
 import { Avatar } from './avatar'
 import { Alert, StatusPill } from './ui'
+import { useOpenTask } from './task-dialog'
 
 /** Une tâche : case « terminée », responsable, échéance et statut. `project` ajoute le lien
  * vers la fiche (page Tâches, où les tâches de tous les projets sont mélangées). */
@@ -15,13 +16,20 @@ export function TaskRow({
   spaceId,
   canWrite,
   project,
+  parentTitle,
 }: {
   task: Task
   spaceId: string
   canWrite: boolean
   project?: { id: string; title: string } | 'general'
+  /** Sous-tâche affichée dans une liste générale : nom de sa tâche (vide si inconnue). */
+  parentTitle?: string
 }) {
   const update = useUpdateTask(spaceId)
+  const openTask = useOpenTask()
+  const subtasks = task.subtasks_total ?? 0
+  const comments = task.comments_count ?? 0
+  const waiting = (task.waiting_on ?? 0) > 0
   const closed = task.status === 'done' || task.status === 'cancelled'
   const status = TASK_STATUS[task.status]
 
@@ -42,7 +50,39 @@ export function TaskRow({
         }
       />
       <span className="task-row__text">
-        <span className="task-row__title">{task.title}</span>
+        <button
+          type="button"
+          className="task-row__title task-row__open"
+          onClick={() => openTask(task.id)}
+          title="Ouvrir la tâche : sous-tâches, commentaires, dépendances"
+        >
+          {task.title}
+        </button>
+        {(parentTitle !== undefined || subtasks > 0 || comments > 0 || (waiting && !closed)) && (
+          <span className="task-row__badges">
+            {parentTitle !== undefined && (
+              <span className="task-badge">
+                Sous-tâche{parentTitle ? ` de « ${parentTitle} »` : ''}
+              </span>
+            )}
+            {waiting && !closed && (
+              <span className="task-badge task-badge--waiting">En attente</span>
+            )}
+            {subtasks > 0 && (
+              <span
+                className="task-badge"
+                aria-label={`${task.subtasks_done ?? 0} sous-tâche(s) terminée(s) sur ${subtasks}`}
+              >
+                ☑ {task.subtasks_done ?? 0}/{subtasks}
+              </span>
+            )}
+            {comments > 0 && (
+              <span className="task-badge" aria-label={`${comments} commentaire(s)`}>
+                💬 {comments}
+              </span>
+            )}
+          </span>
+        )}
         {project === 'general' ? (
           <span className="task-row__general">Suivi général</span>
         ) : (

@@ -254,7 +254,7 @@ Règles d'alerte (seuils réglables par espace) :
 - [x] Repères visuels : emoji de portefeuille et drapeau du pays, toujours à côté du nom (§13)
 - Décision : lecture **toujours avec un compte** (le lien public sans compte du CDC §15 n'est pas repris, plus sûr)
 
-## Suite prévue : fonctions inspirées d'Asana (demandées le 6 nov. 2026, pas commencées)
+## Suite prévue : fonctions inspirées d'Asana (demandées le 6 nov. 2026, lot A fait le 8 nov.)
 
 Ce qui manque à PILOT par rapport à Asana pour le travail d'équipe au quotidien. À lancer quand la propriétaire du produit le décide, un lot à la fois, chacun testé et mis en ligne à part.
 
@@ -265,16 +265,23 @@ Ce qui manque à PILOT par rapport à Asana pour le travail d'équipe au quotidi
 - Chaque nouveauté est intégrée à ce qui existe déjà : journal, rappels, export/import, recherche, mode clair et mode sombre.
 - Avant chaque lot, relecture du cahier des charges pour vérifier la cohérence. En cas de conflit, on décide avant de coder.
 
-### Lot A — Tâches complètes
-- [ ] **Sous-tâches** : découper une tâche en petites étapes, avec un avancement « 2 sur 5 ».
+### Lot A — Tâches complètes (fait le 8 nov. 2026)
+- [x] **Sous-tâches** : découper une tâche en petites étapes, avec un avancement « 2 sur 5 ».
   - Une sous-tâche est une tâche rattachée à une autre : mêmes statuts, même responsable possible, mêmes rappels.
-- [ ] **Commentaires sur une tâche**, avec mention **@nom** d'un membre.
+- [x] **Commentaires sur une tâche**, avec mention **@nom** d'un membre.
   - La personne mentionnée est prévenue dans Alertes et dans son récapitulatif par e-mail.
-- [ ] **Abonnés** d'une tâche : ils sont prévenus des changements (statut, échéance, commentaire).
+- [x] **Abonnés** d'une tâche : ils sont prévenus des changements (statut, échéance, commentaire).
   - Le responsable et l'auteur de la tâche sont abonnés automatiquement ; chacun peut se désabonner.
-- [ ] **Dépendances** : « cette tâche attend la fin de telle autre ».
+- [x] **Dépendances** : « cette tâche attend la fin de telle autre ».
   - La tâche en attente est signalée comme bloquée tant que l'autre n'est pas terminée.
   - Une boucle (A attend B, qui attend A) est refusée.
+- Réalisation :
+  - Tout se passe dans une **fenêtre de la tâche**, ouverte en cliquant sur son titre depuis n'importe quelle page (adresse `?tache=…`, partageable). On peut aussi y modifier la tâche : titre, livrable, responsable, échéance.
+  - Dans les listes, des repères : « En attente », sous-tâches « 1/3 », nombre de commentaires.
+  - Notifications (CDC §16) : une alerte « Mention » ou « Tâche suivie » apparaît tout de suite dans Alertes, et figure dans le récapitulatif e-mail du jour s'il n'est pas encore parti. Pas d'e-mail à chaque commentaire. Une seule alerte par tâche et par jour, mise à jour à chaque nouvel événement.
+  - Lecteurs : consultent et peuvent suivre une tâche ; ils ne commentent pas et ne modifient rien.
+  - Un commentaire est retiré seulement par son auteur ou par un propriétaire.
+  - Journal du projet, export et import mis à jour. Les abonnements ne sont pas exportés : ils sont propres à chaque compte.
 
 ### Lot B — Tableau avec cartes à glisser
 - [ ] Nouvelle vue **Tableau** pour les tâches d'un projet et pour la page Tâches : colonnes À faire / En cours / Terminé, avec la carte qu'on fait glisser d'une colonne à l'autre.

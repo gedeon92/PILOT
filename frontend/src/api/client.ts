@@ -69,6 +69,9 @@ export const ROLE_LABELS: Record<Role, string> = {
 
 export type Project = Schemas['ProjectOut']
 export type Task = Schemas['TaskOut']
+export type TaskDetail = Schemas['TaskDetail']
+export type TaskRef = Schemas['TaskRef']
+export type TaskComment = Schemas['CommentOut']
 export type ProjectLink = Schemas['ProjectLinkOut']
 export type HistoryEntry = Schemas['HistoryEntry']
 export type PersonRef = Schemas['PersonRef']

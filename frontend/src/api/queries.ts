@@ -18,6 +18,7 @@ import {
   type Space,
   type SpaceSummary,
   type Task,
+  type TaskDetail,
   type UpdateRequest,
 } from './client'
 
@@ -368,6 +369,76 @@ export function useUpdateTask(spaceId: string) {
       }),
     onSettled: refresh,
   })
+}
+
+// ---------- Fiche d'une tâche : sous-tâches, commentaires, abonnés, dépendances ----------
+
+export function useTaskDetail(spaceId: string, taskId: string | null) {
+  return useQuery({
+    queryKey: [...projectKeys.all(spaceId), 'task', taskId],
+    queryFn: () => api<TaskDetail>(`/spaces/${spaceId}/tasks/${taskId}`),
+    enabled: Boolean(taskId),
+  })
+}
+
+/** Action sur une tâche (commentaire, abonnement, dépendance…) : tout est rafraîchi ensuite. */
+function useTaskAction<V>(
+  spaceId: string,
+  request: (variables: V) => { path: string; method: 'POST' | 'DELETE'; body?: unknown },
+) {
+  const refresh = useRefreshProjects(spaceId)
+  return useMutation({
+    mutationFn: (variables: V) => {
+      const { path, method, body } = request(variables)
+      return api<unknown>(`/spaces/${spaceId}/tasks/${path}`, { method, body })
+    },
+    onSuccess: refresh,
+  })
+}
+
+export function useAddSubtask(spaceId: string, taskId: string) {
+  return useTaskAction(spaceId, (body: Record<string, unknown>) => ({
+    path: `${taskId}/subtasks`,
+    method: 'POST' as const,
+    body,
+  }))
+}
+
+export function useAddComment(spaceId: string, taskId: string) {
+  return useTaskAction(spaceId, (body: { body: string; mentions: string[] }) => ({
+    path: `${taskId}/comments`,
+    method: 'POST' as const,
+    body,
+  }))
+}
+
+export function useDeleteComment(spaceId: string, taskId: string) {
+  return useTaskAction(spaceId, (commentId: string) => ({
+    path: `${taskId}/comments/${commentId}`,
+    method: 'DELETE' as const,
+  }))
+}
+
+export function useFollowTask(spaceId: string, taskId: string) {
+  return useTaskAction(spaceId, (follow: boolean) => ({
+    path: `${taskId}/follow`,
+    method: follow ? ('POST' as const) : ('DELETE' as const),
+  }))
+}
+
+export function useAddDependency(spaceId: string, taskId: string) {
+  return useTaskAction(spaceId, (dependsOnId: string) => ({
+    path: `${taskId}/dependencies`,
+    method: 'POST' as const,
+    body: { depends_on_id: dependsOnId },
+  }))
+}
+
+export function useRemoveDependency(spaceId: string, taskId: string) {
+  return useTaskAction(spaceId, (dependsOnId: string) => ({
+    path: `${taskId}/dependencies/${dependsOnId}`,
+    method: 'DELETE' as const,
+  }))
 }
 
 // ---------- Liens entre projets ----------

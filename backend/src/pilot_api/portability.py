@@ -46,6 +46,8 @@ from pilot_api.models import (
     Role,
     Space,
     Task,
+    TaskComment,
+    TaskDependency,
     User,
     utcnow,
 )
@@ -191,6 +193,14 @@ def build_export(db: Session, space: Space, author: User, with_files: bool) -> t
     details = db.scalars(select(EventDetails).where(EventDetails.project_id.in_(project_ids))).all()
     data["event_details"] = [_dump(d) for d in details]
     data["tasks"] = [_dump(t) for t in db.scalars(select(Task).where(Task.space_id == sid)).all()]
+    data["task_comments"] = [
+        _dump(c, exclude={"author_id", "mentions"})
+        for c in db.scalars(select(TaskComment).where(TaskComment.space_id == sid)).all()
+    ]
+    data["task_dependencies"] = [
+        _dump(d)
+        for d in db.scalars(select(TaskDependency).where(TaskDependency.space_id == sid)).all()
+    ]
     data["contributors"] = [
         _dump(c)
         for c in db.scalars(
@@ -221,6 +231,7 @@ def build_export(db: Session, space: Space, author: User, with_files: bool) -> t
             "Mots de passe, sessions et liens d'invitation",
             "Demandes de la boîte de mise à jour (elles peuvent être privées)",
             "Alertes et préférences d'alertes (recalculées)",
+            "Abonnements aux tâches (propres à chaque compte)",
         ]
         archive.writestr(DATA_NAME, json.dumps(data, ensure_ascii=False, indent=2))
     summary = {
@@ -412,19 +423,62 @@ def import_space(
         values["program_id"] = ids["programs"].get(str(program)) if program else None
         db.add(EventDetails(project_id=project_id, **values))
 
-    tasks = 0
+    task_ids: dict[str, Task] = {}
+    parents: list[tuple[Task, str]] = []
     for item in data.get("tasks", []):
         source_project = item.get("project_id")
         project_id = project_ids.get(str(source_project)) if source_project else None
         if source_project and project_id is None:
             continue  # tâche d'un projet absent de l'export
-        values = _load(Task, item, {"project_id", "assignee_member_id", "assignee_label"})
+        values = _load(
+            Task, item, {"project_id", "assignee_member_id", "assignee_label", "parent_id"}
+        )
         values["assignee_member_id"], values["assignee_label"] = person(
             item.get("assignee_member_id"), item.get("assignee_label")
         )
-        db.add(Task(space_id=space.id, project_id=project_id, **values))
-        tasks += 1
-    report.counts["tasks"] = tasks
+        task = Task(space_id=space.id, project_id=project_id, **values)
+        db.add(task)
+        task_ids[str(item.get("id"))] = task
+        if item.get("parent_id"):
+            parents.append((task, str(item["parent_id"])))
+    db.flush()
+    # Sous-tâches : reliées à leur tâche si elle fait partie de l'import, du même projet.
+    for task, parent in parents:
+        parent_task = task_ids.get(parent)
+        if (
+            parent_task is not None
+            and parent_task.project_id == task.project_id
+            and parent_task.parent_id is None
+        ):
+            task.parent_id = parent_task.id
+    report.counts["tasks"] = len(task_ids)
+
+    for item in data.get("task_comments", []):
+        task = task_ids.get(str(item.get("task_id")))
+        body = str(item.get("body") or "").strip()
+        if task is None or not body:
+            continue
+        values = _load(TaskComment, item, {"task_id", "author_name", "body"})
+        db.add(
+            TaskComment(
+                space_id=space.id,
+                task_id=task.id,
+                author_name=str(item.get("author_name") or "Membre")[:120],
+                body=body[:2000],
+                mentions=[],
+                **{k: v for k, v in values.items() if k == "created_at"},
+            )
+        )
+    pairs = set()
+    for item in data.get("task_dependencies", []):
+        task = task_ids.get(str(item.get("task_id")))
+        other = task_ids.get(str(item.get("depends_on_id")))
+        if task is None or other is None or task is other or (task.id, other.id) in pairs:
+            continue
+        if (other.id, task.id) in pairs:
+            continue  # attente réciproque : écartée
+        pairs.add((task.id, other.id))
+        db.add(TaskDependency(space_id=space.id, task_id=task.id, depends_on_id=other.id))
 
     for item in data.get("contributors", []):
         project_id = project_ids.get(str(item.get("project_id")))

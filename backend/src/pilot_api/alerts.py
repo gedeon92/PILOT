@@ -51,6 +51,8 @@ RULES: dict[AlertRule, str] = {
     AlertRule.STALE: "Suivi non actualisé",
     AlertRule.MISSING_INFO: "Information manquante",
     AlertRule.PROPOSAL_PENDING: "Proposition à valider",
+    AlertRule.MENTION: "Mention",
+    AlertRule.TASK_ACTIVITY: "Tâche suivie",
 }
 RULE_ORDER = list(RULES)
 
@@ -275,6 +277,49 @@ def compute_alerts(db: Session, space: Space, today: date) -> int:
     return len(created)
 
 
+def notify(
+    db: Session,
+    space: Space,
+    user_ids,
+    rule: AlertRule,
+    task: Task,
+    detail: str,
+) -> None:
+    """Notification déclenchée par un événement (mention, activité sur une tâche suivie).
+    Une seule alerte par personne, règle et tâche dans la journée : un nouvel événement la
+    remet à jour et la signale de nouveau comme non lue (pas d'avalanche d'alertes)."""
+    users = {u for u in user_ids if u}
+    if not users:
+        return
+    today = local_now(space).date()
+    now = utcnow()
+    for user_id in users:
+        stmt = insert(Alert).values(
+            id=uuid.uuid4(),
+            space_id=space.id,
+            user_id=user_id,
+            rule=rule,
+            target_type="task",
+            target_id=task.id,
+            project_id=task.project_id,
+            alert_date=today,
+            title=task.title[:200],
+            detail=detail[:300],
+            created_at=now,
+        )
+        db.execute(
+            stmt.on_conflict_do_update(
+                constraint="uq_alerts_user_rule_target_day",
+                set_={
+                    "detail": stmt.excluded.detail,
+                    "title": stmt.excluded.title,
+                    "read_at": None,
+                    "created_at": now,
+                },
+            )
+        )
+
+
 def preference_for(db: Session, user_id: uuid.UUID, space_id: uuid.UUID) -> AlertPreference:
     pref = db.scalar(
         select(AlertPreference).where(
@@ -310,6 +355,8 @@ RULE_COLORS: dict[AlertRule, str] = {
     AlertRule.STALE: "#8f97ac",
     AlertRule.MISSING_INFO: "#8f97ac",
     AlertRule.PROPOSAL_PENDING: "#7dd3fc",
+    AlertRule.MENTION: "#ffa3c4",
+    AlertRule.TASK_ACTIVITY: "#7ff0ff",
 }
 
 
@@ -331,6 +378,8 @@ def digest_email(
             url = f"{base}/espaces/{space.id}/taches"  # tâche du suivi général
         else:
             url = f"{base}/espaces/{space.id}/projets/{alert.project_id}"
+        if alert.target_type == "task":
+            url += f"?tache={alert.target_id}"
         lines_text.append(f"- [{RULES[alert.rule]}] {alert.title} : {alert.detail}\n  {url}")
         rows_html.append(
             "<tr><td style='padding:12px 0;border-top:1px solid #23263a'>"

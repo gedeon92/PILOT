@@ -90,7 +90,9 @@ def test_task_due_today_alerts_assignee_and_responsible(make_client):
         json={"title": "Devis", "due_date": day(0), "assignee_member_id": member["id"]},
     )
 
-    assert _rules(contributor, base) == [("due_soon", "Devis · Salon")]
+    # Le rappel d'échéance est inchangé ; depuis le lot A, la personne à qui l'on confie la tâche
+    # reçoit en plus une notification « Tâche suivie » (l'auteur, lui, n'est pas prévenu).
+    assert _rules(contributor, base) == [("due_soon", "Devis · Salon"), ("task_activity", "Devis")]
     assert _rules(owner, base) == [("due_soon", "Devis · Salon")]
 
 

@@ -562,7 +562,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Task Detail */
+        get: operations["task_detail_api_spaces__space_id__tasks__task_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -602,6 +603,109 @@ export interface paths {
         post?: never;
         /** Delete Link */
         delete: operations["delete_link_api_spaces__space_id__projects__project_id__links__other_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/tasks/{task_id}/subtasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Subtask */
+        post: operations["create_subtask_api_spaces__space_id__tasks__task_id__subtasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/tasks/{task_id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Comment */
+        post: operations["add_comment_api_spaces__space_id__tasks__task_id__comments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/tasks/{task_id}/comments/{comment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Comment */
+        delete: operations["delete_comment_api_spaces__space_id__tasks__task_id__comments__comment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/tasks/{task_id}/follow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Follow Task */
+        post: operations["follow_task_api_spaces__space_id__tasks__task_id__follow_post"];
+        /** Unfollow Task */
+        delete: operations["unfollow_task_api_spaces__space_id__tasks__task_id__follow_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/tasks/{task_id}/dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Dependency */
+        post: operations["add_dependency_api_spaces__space_id__tasks__task_id__dependencies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/tasks/{task_id}/dependencies/{depends_on_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Dependency */
+        delete: operations["remove_dependency_api_spaces__space_id__tasks__task_id__dependencies__depends_on_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1057,6 +1161,8 @@ export interface components {
             rule_label: string;
             /** Target Type */
             target_type: string;
+            /** Target Id */
+            target_id?: string | null;
             /** Project Id */
             project_id: string | null;
             /**
@@ -1124,6 +1230,34 @@ export interface components {
             /** File */
             file: string;
         };
+        /** CommentCreate */
+        CommentCreate: {
+            /** Body */
+            body: string;
+            /** Mentions */
+            mentions?: string[];
+        };
+        /** CommentOut */
+        CommentOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Author Name */
+            author_name: string;
+            /** Body */
+            body: string;
+            /** Mentions */
+            mentions: components["schemas"]["MentionRef"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Can Delete */
+            can_delete: boolean;
+        };
         /**
          * DateCertainty
          * @enum {string}
@@ -1135,6 +1269,14 @@ export interface components {
             label: string;
             /** Consequence */
             consequence?: string | null;
+        };
+        /** DependencyCreate */
+        DependencyCreate: {
+            /**
+             * Depends On Id
+             * Format: uuid
+             */
+            depends_on_id: string;
         };
         /** DocumentOut */
         DocumentOut: {
@@ -1253,6 +1395,16 @@ export interface components {
             edition_label: string | null;
             /** Follow Up Until */
             follow_up_until: string | null;
+        };
+        /** FollowerOut */
+        FollowerOut: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Name */
+            name: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1434,6 +1586,16 @@ export interface components {
          * @enum {string}
          */
         MembershipStatus: "invited" | "active";
+        /** MentionRef */
+        MentionRef: {
+            /**
+             * Member Id
+             * Format: uuid
+             */
+            member_id: string;
+            /** Name */
+            name: string;
+        };
         /** PasswordChange */
         PasswordChange: {
             /** Current Password */
@@ -2081,6 +2243,25 @@ export interface components {
             /** @default todo */
             status: components["schemas"]["TaskStatus"];
         };
+        /** TaskDetail */
+        TaskDetail: {
+            task: components["schemas"]["TaskOut"];
+            /** Project Title */
+            project_title: string | null;
+            parent: components["schemas"]["TaskRef"] | null;
+            /** Subtasks */
+            subtasks: components["schemas"]["TaskOut"][];
+            /** Depends On */
+            depends_on: components["schemas"]["TaskRef"][];
+            /** Blocking */
+            blocking: components["schemas"]["TaskRef"][];
+            /** Comments */
+            comments: components["schemas"]["CommentOut"][];
+            /** Followers */
+            followers: components["schemas"]["FollowerOut"][];
+            /** Following */
+            following: boolean;
+        };
         /** TaskOut */
         TaskOut: {
             /**
@@ -2105,6 +2286,43 @@ export interface components {
             closed_at: string | null;
             /** Version */
             version: number;
+            /** Parent Id */
+            parent_id?: string | null;
+            /**
+             * Subtasks Total
+             * @default 0
+             */
+            subtasks_total: number;
+            /**
+             * Subtasks Done
+             * @default 0
+             */
+            subtasks_done: number;
+            /**
+             * Comments Count
+             * @default 0
+             */
+            comments_count: number;
+            /**
+             * Waiting On
+             * @default 0
+             */
+            waiting_on: number;
+        };
+        /** TaskRef */
+        TaskRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            status: components["schemas"]["TaskStatus"];
+            /** Project Id */
+            project_id: string | null;
+            /** Project Title */
+            project_title: string | null;
         };
         /**
          * TaskStatus
@@ -3619,6 +3837,38 @@ export interface operations {
             };
         };
     };
+    task_detail_api_spaces__space_id__tasks__task_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_task_api_spaces__space_id__tasks__task_id__patch: {
         parameters: {
             query?: never;
@@ -3742,6 +3992,242 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_subtask_api_spaces__space_id__tasks__task_id__subtasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_comment_api_spaces__space_id__tasks__task_id__comments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_comment_api_spaces__space_id__tasks__task_id__comments__comment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                comment_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    follow_task_api_spaces__space_id__tasks__task_id__follow_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unfollow_task_api_spaces__space_id__tasks__task_id__follow_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_dependency_api_spaces__space_id__tasks__task_id__dependencies_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DependencyCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_dependency_api_spaces__space_id__tasks__task_id__dependencies__depends_on_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                depends_on_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskDetail"];
+                };
             };
             /** @description Validation Error */
             422: {

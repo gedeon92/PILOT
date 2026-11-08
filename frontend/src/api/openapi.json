@@ -2246,6 +2246,57 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "tâches"
+        ],
+        "summary": "Task Detail",
+        "operationId": "task_detail_api_spaces__space_id__tasks__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/spaces/{space_id}/projects/{project_id}/links": {
@@ -2408,6 +2459,418 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/tasks/{task_id}/subtasks": {
+      "post": {
+        "tags": [
+          "tâches"
+        ],
+        "summary": "Create Subtask",
+        "operationId": "create_subtask_api_spaces__space_id__tasks__task_id__subtasks_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/tasks/{task_id}/comments": {
+      "post": {
+        "tags": [
+          "tâches"
+        ],
+        "summary": "Add Comment",
+        "operationId": "add_comment_api_spaces__space_id__tasks__task_id__comments_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/tasks/{task_id}/comments/{comment_id}": {
+      "delete": {
+        "tags": [
+          "tâches"
+        ],
+        "summary": "Delete Comment",
+        "operationId": "delete_comment_api_spaces__space_id__tasks__task_id__comments__comment_id__delete",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "comment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Comment Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/tasks/{task_id}/follow": {
+      "post": {
+        "tags": [
+          "tâches"
+        ],
+        "summary": "Follow Task",
+        "operationId": "follow_task_api_spaces__space_id__tasks__task_id__follow_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "tâches"
+        ],
+        "summary": "Unfollow Task",
+        "operationId": "unfollow_task_api_spaces__space_id__tasks__task_id__follow_delete",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/tasks/{task_id}/dependencies": {
+      "post": {
+        "tags": [
+          "tâches"
+        ],
+        "summary": "Add Dependency",
+        "operationId": "add_dependency_api_spaces__space_id__tasks__task_id__dependencies_post",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DependencyCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/tasks/{task_id}/dependencies/{depends_on_id}": {
+      "delete": {
+        "tags": [
+          "tâches"
+        ],
+        "summary": "Remove Dependency",
+        "operationId": "remove_dependency_api_spaces__space_id__tasks__task_id__dependencies__depends_on_id__delete",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "depends_on_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Depends On Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -3903,6 +4366,18 @@
             "type": "string",
             "title": "Target Type"
           },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
           "project_id": {
             "anyOf": [
               {
@@ -4099,6 +4574,73 @@
         ],
         "title": "Body_upload_document_api_spaces__space_id__projects__project_id__documents_post"
       },
+      "CommentCreate": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Body"
+          },
+          "mentions": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Mentions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "CommentCreate"
+      },
+      "CommentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "author_name": {
+            "type": "string",
+            "title": "Author Name"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "mentions": {
+            "items": {
+              "$ref": "#/components/schemas/MentionRef"
+            },
+            "type": "array",
+            "title": "Mentions"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "author_name",
+          "body",
+          "mentions",
+          "created_at",
+          "can_delete"
+        ],
+        "title": "CommentOut"
+      },
       "DateCertainty": {
         "type": "string",
         "enum": [
@@ -4134,6 +4676,20 @@
           "label"
         ],
         "title": "DecisionOption"
+      },
+      "DependencyCreate": {
+        "properties": {
+          "depends_on_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Depends On Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "depends_on_id"
+        ],
+        "title": "DependencyCreate"
       },
       "DocumentOut": {
         "properties": {
@@ -4518,6 +5074,25 @@
           "follow_up_until"
         ],
         "title": "EventOut"
+      },
+      "FollowerOut": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "name"
+        ],
+        "title": "FollowerOut"
       },
       "HTTPValidationError": {
         "properties": {
@@ -4962,6 +5537,25 @@
           "active"
         ],
         "title": "MembershipStatus"
+      },
+      "MentionRef": {
+        "properties": {
+          "member_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Member Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "member_id",
+          "name"
+        ],
+        "title": "MentionRef"
       },
       "PasswordChange": {
         "properties": {
@@ -7419,6 +8013,86 @@
         ],
         "title": "TaskCreate"
       },
+      "TaskDetail": {
+        "properties": {
+          "task": {
+            "$ref": "#/components/schemas/TaskOut"
+          },
+          "project_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Title"
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subtasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskOut"
+            },
+            "type": "array",
+            "title": "Subtasks"
+          },
+          "depends_on": {
+            "items": {
+              "$ref": "#/components/schemas/TaskRef"
+            },
+            "type": "array",
+            "title": "Depends On"
+          },
+          "blocking": {
+            "items": {
+              "$ref": "#/components/schemas/TaskRef"
+            },
+            "type": "array",
+            "title": "Blocking"
+          },
+          "comments": {
+            "items": {
+              "$ref": "#/components/schemas/CommentOut"
+            },
+            "type": "array",
+            "title": "Comments"
+          },
+          "followers": {
+            "items": {
+              "$ref": "#/components/schemas/FollowerOut"
+            },
+            "type": "array",
+            "title": "Followers"
+          },
+          "following": {
+            "type": "boolean",
+            "title": "Following"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task",
+          "project_title",
+          "parent",
+          "subtasks",
+          "depends_on",
+          "blocking",
+          "comments",
+          "followers",
+          "following"
+        ],
+        "title": "TaskDetail"
+      },
       "TaskOut": {
         "properties": {
           "id": {
@@ -7500,6 +8174,38 @@
           "version": {
             "type": "integer",
             "title": "Version"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "subtasks_total": {
+            "type": "integer",
+            "title": "Subtasks Total",
+            "default": 0
+          },
+          "subtasks_done": {
+            "type": "integer",
+            "title": "Subtasks Done",
+            "default": 0
+          },
+          "comments_count": {
+            "type": "integer",
+            "title": "Comments Count",
+            "default": 0
+          },
+          "waiting_on": {
+            "type": "integer",
+            "title": "Waiting On",
+            "default": 0
           }
         },
         "type": "object",
@@ -7517,6 +8223,54 @@
           "version"
         ],
         "title": "TaskOut"
+      },
+      "TaskRef": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "project_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "project_id",
+          "project_title"
+        ],
+        "title": "TaskRef"
       },
       "TaskStatus": {
         "type": "string",

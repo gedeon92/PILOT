@@ -12,14 +12,17 @@ from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import and_, case, func, or_, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, selectinload
 
+from pilot_api.alerts import notify, short_date
 from pilot_api.audit import record
 from pilot_api.deps import CurrentMembership, DbSession, WriterMembership
 from pilot_api.models import (
     CLOSED_PROJECT_STATUSES,
     CLOSED_TASK_STATUSES,
     EVENT_FOLLOW_UP_DAYS,
+    AlertRule,
     AuditLog,
     Document,
     Entity,
@@ -36,6 +39,9 @@ from pilot_api.models import (
     ProjectType,
     Space,
     Task,
+    TaskComment,
+    TaskDependency,
+    TaskFollower,
     TaskStatus,
     User,
     utcnow,
@@ -294,7 +300,42 @@ def _project_with_counts(db: Session, membership: Membership, project: Project) 
     return _project_out(project, counts.get(project.id, (0, 0)))
 
 
-def _task_out(task: Task, today: date) -> TaskOut:
+def task_extras(db: Session, task_ids: list[uuid.UUID]) -> dict[uuid.UUID, dict[str, int]]:
+    """Compteurs affichés sur chaque tâche : sous-tâches, commentaires, tâches attendues."""
+    extras: dict[uuid.UUID, dict[str, int]] = {}
+    if not task_ids:
+        return extras
+    for parent_id, total, done in db.execute(
+        select(
+            Task.parent_id,
+            func.count().filter(Task.status != TaskStatus.CANCELLED),
+            func.count().filter(Task.status == TaskStatus.DONE),
+        )
+        .where(Task.parent_id.in_(task_ids))
+        .group_by(Task.parent_id)
+    ):
+        extras.setdefault(parent_id, {}).update(subtasks_total=total, subtasks_done=done)
+    for task_id, count in db.execute(
+        select(TaskComment.task_id, func.count())
+        .where(TaskComment.task_id.in_(task_ids))
+        .group_by(TaskComment.task_id)
+    ):
+        extras.setdefault(task_id, {})["comments_count"] = count
+    blocker = Task.__table__.alias("blocker")
+    for task_id, count in db.execute(
+        select(TaskDependency.task_id, func.count())
+        .join(blocker, blocker.c.id == TaskDependency.depends_on_id)
+        .where(
+            TaskDependency.task_id.in_(task_ids),
+            blocker.c.status.not_in([s.value for s in CLOSED_TASK_STATUSES]),
+        )
+        .group_by(TaskDependency.task_id)
+    ):
+        extras.setdefault(task_id, {})["waiting_on"] = count
+    return extras
+
+
+def _task_out(task: Task, today: date, extras: dict | None = None) -> TaskOut:
     late = (
         task.status not in CLOSED_TASK_STATUSES
         and task.due_date is not None
@@ -312,7 +353,51 @@ def _task_out(task: Task, today: date) -> TaskOut:
         late=late,
         closed_at=task.closed_at,
         version=task.version,
+        parent_id=task.parent_id,
+        **(extras or {}).get(task.id, {}),
     )
+
+
+def tasks_out(db: Session, tasks: list[Task], today: date) -> list[TaskOut]:
+    extras = task_extras(db, [t.id for t in tasks])
+    return [_task_out(t, today, extras) for t in tasks]
+
+
+def task_out(db: Session, task: Task, today: date) -> TaskOut:
+    return tasks_out(db, [task], today)[0]
+
+
+def follow(db: Session, task: Task, user_ids) -> None:
+    """Abonne des personnes (ayant un compte) à une tâche, sans doublon."""
+    for user_id in {u for u in user_ids if u}:
+        db.execute(
+            insert(TaskFollower)
+            .values(id=uuid.uuid4(), task_id=task.id, user_id=user_id, created_at=utcnow())
+            .on_conflict_do_nothing(constraint="uq_task_followers")
+        )
+
+
+def followers_of(db: Session, task_id: uuid.UUID) -> set[uuid.UUID]:
+    return set(db.scalars(select(TaskFollower.user_id).where(TaskFollower.task_id == task_id)))
+
+
+def actor_name(membership: Membership) -> str:
+    user = membership.user
+    return user.display_name if user else membership.email
+
+
+def notify_followers(db: Session, membership: Membership, task: Task, detail: str, skip=()) -> None:
+    """Prévient les abonnés d'une tâche, sauf l'auteur du changement."""
+    users = followers_of(db, task.id) - {membership.user_id, *skip}
+    notify(db, membership.space, users, AlertRule.TASK_ACTIVITY, task, detail)
+
+
+TASK_STATUS_WORDS = {
+    TaskStatus.TODO: "À faire",
+    TaskStatus.IN_PROGRESS: "En cours",
+    TaskStatus.DONE: "Terminée",
+    TaskStatus.CANCELLED: "Annulée",
+}
 
 
 def _load_task(db: Session, space_id: uuid.UUID, task_id: uuid.UUID) -> Task:
@@ -630,8 +715,7 @@ def list_space_tasks(
     if not include_closed:
         query = query.where(Task.status.not_in(CLOSED_TASK_STATUSES))
     tasks = db.scalars(query.order_by(Task.due_date.asc().nulls_last()).limit(2000)).all()
-    today = today_in(membership.space)
-    return [_task_out(task, today) for task in tasks]
+    return tasks_out(db, list(tasks), today_in(membership.space))
 
 
 @router.get("/projects/{project_id}/tasks")
@@ -649,8 +733,7 @@ def list_tasks(
             Task.created_at,
         )
     ).all()
-    today = today_in(membership.space)
-    return [_task_out(task, today) for task in tasks]
+    return tasks_out(db, list(tasks), today_in(membership.space))
 
 
 def _apply_task_fields(db: Session, task: Task, body: Any, sent: set[str]) -> None:
@@ -671,14 +754,19 @@ def _apply_task_fields(db: Session, task: Task, body: Any, sent: set[str]) -> No
         task.closed_at = utcnow() if body.status in CLOSED_TASK_STATUSES else None
 
 
-def _create_task(
-    db: Session, membership: Membership, project: Project | None, body: TaskCreate
+def create_task_in(
+    db: Session,
+    membership: Membership,
+    project: Project | None,
+    body: TaskCreate,
+    parent: Task | None = None,
 ) -> TaskOut:
     if project is not None and project.status in CLOSED_PROJECT_STATUSES:
         raise HTTPException(400, "Ce projet est clôturé : rouvrez-le pour ajouter des tâches.")
     task = Task(
         space_id=membership.space_id,
         project_id=project.id if project else None,
+        parent_id=parent.id if parent else None,
         title=body.title,
         status=TaskStatus.TODO,
     )
@@ -695,10 +783,42 @@ def _create_task(
         space_id=membership.space_id,
         target_type="task",
         target_id=task.id,
-        after={k: v for k, v in _snapshot(task, TASK_AUDIT_FIELDS).items() if v is not None},
+        after={
+            k: v
+            for k, v in (
+                _snapshot(task, TASK_AUDIT_FIELDS)
+                | ({"parent_title": parent.title} if parent else {})
+            ).items()
+            if v is not None
+        },
     )
+    # L'auteur et le responsable suivent la tâche ; la personne à qui on la confie est prévenue.
+    assignee_user = _member_user(db, task.assignee_member_id)
+    follow(db, task, [membership.user_id, assignee_user])
+    if parent is not None:
+        notify_followers(
+            db,
+            membership,
+            parent,
+            f"{actor_name(membership)} a ajouté la sous-tâche « {task.title} »",
+        )
+    if assignee_user and assignee_user != membership.user_id:
+        notify(
+            db,
+            membership.space,
+            [assignee_user],
+            AlertRule.TASK_ACTIVITY,
+            task,
+            f"{actor_name(membership)} vous a confié cette tâche",
+        )
     db.commit()
-    return _task_out(_load_task(db, membership.space_id, task.id), today_in(membership.space))
+    return task_out(db, _load_task(db, membership.space_id, task.id), today_in(membership.space))
+
+
+def _member_user(db: Session, member_id: uuid.UUID | None) -> uuid.UUID | None:
+    if member_id is None:
+        return None
+    return db.scalar(select(Membership.user_id).where(Membership.id == member_id))
 
 
 @router.post("/projects/{project_id}/tasks", status_code=201)
@@ -706,7 +826,7 @@ def create_task(
     project_id: uuid.UUID, body: TaskCreate, membership: WriterMembership, db: DbSession
 ) -> TaskOut:
     project = _load_project(db, membership.space_id, project_id)
-    return _create_task(db, membership, project, body)
+    return create_task_in(db, membership, project, body)
 
 
 @router.post("/tasks", status_code=201)
@@ -715,7 +835,7 @@ def create_space_task(
 ) -> TaskOut:
     """Depuis la page Tâches : dans un projet, ou sans projet (suivi général, CDC §5)."""
     project = _load_project(db, membership.space_id, body.project_id) if body.project_id else None
-    return _create_task(db, membership, project, body)
+    return create_task_in(db, membership, project, body)
 
 
 @router.patch("/tasks/{task_id}")
@@ -726,6 +846,8 @@ def update_task(
     if task.version != body.version:
         raise HTTPException(409, CONFLICT)
     before = _snapshot(task, TASK_AUDIT_FIELDS)
+    old_assignee = task.assignee_member_id
+    was_closed = task.status in CLOSED_TASK_STATUSES
     _apply_task_fields(db, task, body, body.model_fields_set - {"version"})
     old, new = _diff(before, _snapshot(task, TASK_AUDIT_FIELDS))
     if new:
@@ -743,9 +865,75 @@ def update_task(
             before=old,
             after=new,
         )
+        _notify_changes(db, membership, task, new, old_assignee, was_closed)
         db.commit()
         task = _load_task(db, membership.space_id, task_id)
-    return _task_out(task, today_in(membership.space))
+    return task_out(db, task, today_in(membership.space))
+
+
+def _notify_changes(
+    db: Session,
+    membership: Membership,
+    task: Task,
+    new: dict,
+    old_assignee: uuid.UUID | None,
+    was_closed: bool,
+) -> None:
+    """Abonnés prévenus des changements utiles ; tâches en attente prévenues du déblocage."""
+    who = actor_name(membership)
+    changes = []
+    if "status" in new:
+        changes.append(f"statut « {TASK_STATUS_WORDS[task.status]} »")
+    if "due_date" in new:
+        changes.append(
+            f"échéance {short_date(task.due_date)}" if task.due_date else "échéance retirée"
+        )
+    assignee_user = None
+    if task.assignee_member_id != old_assignee:
+        assignee_user = _member_user(db, task.assignee_member_id)
+        follow(db, task, [assignee_user])
+        name = task.assignee_label  # copie du nom, à jour même pour un membre
+        changes.append(f"confiée à {name}" if name else "responsable retiré")
+        if assignee_user and assignee_user != membership.user_id:
+            notify(
+                db,
+                membership.space,
+                [assignee_user],
+                AlertRule.TASK_ACTIVITY,
+                task,
+                f"{who} vous a confié cette tâche",
+            )
+    if changes:
+        notify_followers(
+            db,
+            membership,
+            task,
+            f"{who} : " + ", ".join(changes),
+            skip=[assignee_user] if assignee_user else (),
+        )
+    if not was_closed and task.status in CLOSED_TASK_STATUSES:
+        _notify_unblocked(db, membership, task)
+
+
+def _notify_unblocked(db: Session, membership: Membership, blocker: Task) -> None:
+    waiting = db.scalars(
+        select(Task)
+        .join(TaskDependency, TaskDependency.task_id == Task.id)
+        .where(TaskDependency.depends_on_id == blocker.id)
+    ).all()
+    extras = task_extras(db, [t.id for t in waiting])
+    for task in waiting:
+        if task.status in CLOSED_TASK_STATUSES or extras.get(task.id, {}).get("waiting_on"):
+            continue
+        users = followers_of(db, task.id) - {membership.user_id}
+        notify(
+            db,
+            membership.space,
+            users,
+            AlertRule.TASK_ACTIVITY,
+            task,
+            f"« {blocker.title} » est terminée : cette tâche peut avancer",
+        )
 
 
 # ---------- Liens entre projets (CDC §5) ----------

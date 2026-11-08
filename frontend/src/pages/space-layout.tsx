@@ -26,6 +26,7 @@ import { Alert, FullPageLoader } from '../components/ui'
 import { PortfolioMark } from '../components/portfolio-mark'
 import { Avatar } from '../components/avatar'
 import { ThemeToggle } from '../components/theme-toggle'
+import { TaskDialogHost } from '../components/task-dialog'
 
 export type SpaceContext = { space: Space; me: Me }
 
@@ -245,6 +246,7 @@ export function SpaceLayout({ me }: { me: Me }) {
         <Outlet context={context} />
       </main>
       <CommandPalette spaceId={space.data.id} open={searching} setOpen={setSearching} />
+      <TaskDialogHost spaceId={space.data.id} canWrite={space.data.role !== 'reader'} />
     </div>
   )
 }

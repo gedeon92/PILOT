@@ -490,8 +490,10 @@ function TasksSection({
   const tasks = useTasks(spaceId, project.id)
   const [adding, setAdding] = useState(false)
   const closed = isClosedProject(project.status)
-  const open = tasks.data?.filter((t) => t.status !== 'done' && t.status !== 'cancelled') ?? []
-  const done = tasks.data?.filter((t) => t.status === 'done' || t.status === 'cancelled') ?? []
+  // Les sous-tâches s'affichent dans leur tâche (fenêtre de la tâche), pas dans la liste.
+  const main = tasks.data?.filter((t) => !t.parent_id) ?? []
+  const open = main.filter((t) => t.status !== 'done' && t.status !== 'cancelled')
+  const done = main.filter((t) => t.status === 'done' || t.status === 'cancelled')
 
   return (
     <section className="card-panel" aria-labelledby="tasks-title">
@@ -593,7 +595,26 @@ function describe(entry: HistoryEntry): { what: string; detail?: string } {
     case 'project.reopened':
       return { what: `Projet rouvert : ${statusLabel(after.status)}` }
     case 'task.created':
-      return { what: 'Tâche ajoutée', detail: after.title as string }
+      return after.parent_title
+        ? { what: 'Sous-tâche ajoutée', detail: `${after.title} (dans « ${after.parent_title} »)` }
+        : { what: 'Tâche ajoutée', detail: after.title as string }
+    case 'task.commented':
+      return {
+        what: `Commentaire sur « ${after.task} »`,
+        detail: after.comment as string,
+      }
+    case 'task.comment_deleted':
+      return { what: `Commentaire retiré de « ${before.task} »` }
+    case 'task.dependency_added':
+      return {
+        what: 'Dépendance ajoutée',
+        detail: `« ${after.task} » attend « ${after.waits_for} »`,
+      }
+    case 'task.dependency_removed':
+      return {
+        what: 'Dépendance retirée',
+        detail: `« ${before.task} » n’attend plus « ${before.waits_for} »`,
+      }
     case 'task.updated':
       return {
         what: after.status

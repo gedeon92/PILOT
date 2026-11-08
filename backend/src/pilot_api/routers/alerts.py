@@ -40,6 +40,7 @@ def _out(alert: Alert) -> AlertOut:
         rule=alert.rule.value,
         rule_label=RULES[alert.rule],
         target_type=alert.target_type,
+        target_id=alert.target_id,
         project_id=alert.project_id,
         alert_date=alert.alert_date,
         title=alert.title,

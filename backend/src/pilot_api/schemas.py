@@ -418,6 +418,68 @@ class TaskOut(BaseModel):
     late: bool
     closed_at: datetime | None
     version: int
+    # Sous-tâches, commentaires et dépendances (lot A) : valeurs par défaut pour rester
+    # compatible avec les écrans qui ne les connaissent pas.
+    parent_id: uuid.UUID | None = None
+    subtasks_total: int = 0
+    subtasks_done: int = 0
+    comments_count: int = 0
+    # Nombre de tâches encore ouvertes dont celle-ci attend la fin.
+    waiting_on: int = 0
+
+
+class TaskRef(BaseModel):
+    id: uuid.UUID
+    title: str
+    status: TaskStatus
+    project_id: uuid.UUID | None
+    project_title: str | None
+
+
+CommentBody = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)
+]
+
+
+class CommentCreate(BaseModel):
+    body: CommentBody
+    # Membres cités avec @nom (choisis dans la liste) : ils sont prévenus.
+    mentions: list[uuid.UUID] = Field(default_factory=list, max_length=20)
+
+
+class MentionRef(BaseModel):
+    member_id: uuid.UUID
+    name: str
+
+
+class CommentOut(BaseModel):
+    id: uuid.UUID
+    author_name: str
+    body: str
+    mentions: list[MentionRef]
+    created_at: datetime
+    can_delete: bool
+
+
+class FollowerOut(BaseModel):
+    user_id: uuid.UUID
+    name: str
+
+
+class DependencyCreate(BaseModel):
+    depends_on_id: uuid.UUID
+
+
+class TaskDetail(BaseModel):
+    task: TaskOut
+    project_title: str | None
+    parent: TaskRef | None
+    subtasks: list[TaskOut]
+    depends_on: list[TaskRef]
+    blocking: list[TaskRef]
+    comments: list[CommentOut]
+    followers: list[FollowerOut]
+    following: bool
 
 
 class ProjectLinkCreate(BaseModel):
@@ -475,6 +537,7 @@ class AlertOut(BaseModel):
     rule: str
     rule_label: str
     target_type: str
+    target_id: uuid.UUID | None = None
     project_id: uuid.UUID | None
     alert_date: date
     title: str
