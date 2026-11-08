@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -29,14 +30,19 @@ import { PersonField, type PersonValue } from './person-field'
 import { Alert, StatusPill } from './ui'
 
 const PARAM = 'tache'
+// Partie de la fenêtre à mettre en avant à l'ouverture (ex. « + Sous-tâche » dans la liste).
+const ZONE = 'zone'
+const SUBTASKS_ZONE = 'sous-taches'
 
 /** Ouvre la fenêtre d'une tâche en ajoutant `?tache=<id>` à l'adresse de la page :
  * le lien peut être partagé, et « Retour » du navigateur la referme. */
 export function useOpenTask() {
   const [params, setParams] = useSearchParams()
-  return (taskId: string) => {
+  return (taskId: string, zone?: 'sous-taches') => {
     const next = new URLSearchParams(params)
     next.set(PARAM, taskId)
+    if (zone) next.set(ZONE, zone)
+    else next.delete(ZONE)
     setParams(next)
   }
 }
@@ -49,6 +55,7 @@ export function TaskDialogHost({ spaceId, canWrite }: { spaceId: string; canWrit
   const close = () => {
     const next = new URLSearchParams(params)
     next.delete(PARAM)
+    next.delete(ZONE)
     setParams(next)
   }
   return (
@@ -416,6 +423,15 @@ function Subtasks({
   const update = useUpdateTask(spaceId)
   const openTask = useOpenTask()
   const [title, setTitle] = useState('')
+  const [params] = useSearchParams()
+  const focusHere = params.get(ZONE) === SUBTASKS_ZONE
+  const input = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!focusHere) return
+    input.current?.scrollIntoView?.({ block: 'center' })
+    input.current?.focus()
+  }, [focusHere])
   const subtasks = detail.subtasks
   const counted = subtasks.filter((t) => t.status !== 'cancelled')
   const done = counted.filter((t) => t.status === 'done').length
@@ -482,6 +498,7 @@ function Subtasks({
           </label>
           <input
             id="new-subtask"
+            ref={input}
             placeholder="Ajouter une sous-tâche…"
             maxLength={200}
             value={title}
@@ -711,6 +728,15 @@ function CommentComposer({ spaceId, taskId }: { spaceId: string; taskId: string 
   const [query, setQuery] = useState<string | null>(null)
   const [active, setActive] = useState(0)
   const field = useRef<HTMLTextAreaElement>(null)
+  // Position du curseur à rétablir juste après l'insertion d'une mention.
+  const caret = useRef<number | null>(null)
+
+  useLayoutEffect(() => {
+    if (caret.current === null) return
+    field.current?.focus()
+    field.current?.setSelectionRange(caret.current, caret.current)
+    caret.current = null
+  }, [text])
 
   const mentionable = useMemo(
     () => (members.data ?? []).filter((m) => m.status === 'active'),
@@ -729,17 +755,13 @@ function CommentComposer({ spaceId, taskId }: { spaceId: string; taskId: string 
   }
 
   function choose(member: Member) {
-    const el = field.current
-    const caret = el?.selectionStart ?? text.length
-    const before = text.slice(0, caret).replace(/@([^\s@]{0,30})$/u, `@${memberName(member)} `)
-    const next = before + text.slice(caret)
+    const at = field.current?.selectionStart ?? text.length
+    const before = text.slice(0, at).replace(/@([^\s@]{0,30})$/u, `@${memberName(member)} `)
+    const next = before + text.slice(at)
     setText(next)
     setPicked(new Map(picked).set(member.id, memberName(member)))
     setQuery(null)
-    requestAnimationFrame(() => {
-      el?.focus()
-      el?.setSelectionRange(before.length, before.length)
-    })
+    caret.current = before.length
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {

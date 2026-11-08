@@ -142,3 +142,33 @@ describe('fenêtre d’une tâche', () => {
     })
   })
 })
+
+describe('bouton « + Sous-tâche »', () => {
+  it('ouvre la tâche directement sur la case des sous-tâches', async () => {
+    const calls = mockApi(
+      routes({
+        [`POST ${base}/tasks/t1/subtasks`]: () => ({
+          status: 201,
+          json: task('s3', 'Acheter les timbres', { parent_id: 't1' }),
+        }),
+      }),
+    )
+    renderApp(`/espaces/${SPACE_ID}/taches`)
+    const user = userEvent.setup()
+
+    const list = await screen.findByRole('region', { name: 'Liste des tâches' })
+    await user.click(
+      await within(list).findByRole('button', {
+        name: 'Ajouter une sous-tâche à « Envoyer les invitations »',
+      }),
+    )
+    const dialog = await screen.findByRole('dialog', { name: 'Envoyer les invitations' })
+    const field = within(dialog).getByRole('textbox', { name: 'Nouvelle sous-tâche' })
+    expect(field).toHaveFocus()
+
+    await user.type(field, 'Acheter les timbres{Enter}')
+    expect(calls.find((c) => c.key === `POST ${base}/tasks/t1/subtasks`)?.body).toEqual({
+      title: 'Acheter les timbres',
+    })
+  })
+})
