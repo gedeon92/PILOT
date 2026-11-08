@@ -5200,9 +5200,17 @@ a {
   text-align: left;
   cursor: pointer;
 }
+.task-row__open {
+  text-decoration: underline dotted rgb(var(--fx) / 0.35);
+  text-underline-offset: 4px;
+}
 .task-row__open:hover {
   color: var(--color-action);
-  text-decoration: underline;
+  text-decoration: underline solid;
+}
+.task-row__details {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .task-row__badges {
   display: flex;

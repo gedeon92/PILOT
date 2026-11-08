@@ -140,6 +140,14 @@ export function TaskRow({
       ) : (
         <StatusPill tone={status.tone}>{status.label}</StatusPill>
       )}
+      <button
+        type="button"
+        className="button button--small task-row__details"
+        aria-label={`Ouvrir « ${task.title} » : sous-tâches, commentaires, dépendances`}
+        onClick={() => openTask(task.id)}
+      >
+        Ouvrir ›
+      </button>
       {update.isError && <Alert>{errorMessage(update.error)}</Alert>}
     </li>
   )
