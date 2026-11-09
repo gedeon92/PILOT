@@ -5552,6 +5552,13 @@ a {
   }
 }
 
+.tasks-summary__line {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
 /* ---------- Mode clair : mêmes formes, fond blanc et texte noir ---------- */
 :root[data-theme='light'] {
   --shadow-soft: 0 1px 2px rgb(15 18 32 / 0.06), 0 8px 24px rgb(15 18 32 / 0.06);

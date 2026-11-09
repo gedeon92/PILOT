@@ -165,18 +165,21 @@ export function TaskAddForm({
   spaceId,
   projectId,
   projects,
+  defaultProjectId = '',
   onDone,
 }: {
   spaceId: string
   projectId?: string
   projects?: { id: string; title: string }[]
+  /** Projet choisi d'avance (page Tâches filtrée sur un projet). */
+  defaultProjectId?: string
   onDone: () => void
 }) {
   const inProject = useCreateTask(spaceId, projectId ?? '')
   const inSpace = useCreateSpaceTask(spaceId)
   const create = projectId ? inProject : inSpace
   const members = useMembers(spaceId)
-  const [target, setTarget] = useState('')
+  const [target, setTarget] = useState(defaultProjectId)
   const [title, setTitle] = useState('')
   const [deliverable, setDeliverable] = useState('')
   const [due, setDue] = useState('')

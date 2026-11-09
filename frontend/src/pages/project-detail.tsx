@@ -11,8 +11,6 @@ import {
   useUpdateProject,
 } from '../api/queries'
 import { DocumentsSection } from '../components/documents'
-import { TaskAddForm, TaskRow } from '../components/task-row'
-import { PlusIcon } from '../components/icons'
 import { Avatar } from '../components/avatar'
 import { ContributorsField } from '../components/contributors-field'
 import { Country } from '../components/country'
@@ -478,59 +476,41 @@ function ProjectEditForm({
 
 // ---------- Tâches ----------
 
-function TasksSection({
-  project,
-  spaceId,
-  canWrite,
-}: {
-  project: Project
-  spaceId: string
-  canWrite: boolean
-}) {
+function TasksSection({ project, spaceId }: { project: Project; spaceId: string }) {
+  // Les tâches et sous-tâches se gèrent dans l'onglet Tâches ; la fiche n'en garde qu'un résumé.
   const tasks = useTasks(spaceId, project.id)
-  const [adding, setAdding] = useState(false)
-  const closed = isClosedProject(project.status)
-  // Les sous-tâches s'affichent dans leur tâche (fenêtre de la tâche), pas dans la liste.
   const main = tasks.data?.filter((t) => !t.parent_id) ?? []
-  const open = main.filter((t) => t.status !== 'done' && t.status !== 'cancelled')
-  const done = main.filter((t) => t.status === 'done' || t.status === 'cancelled')
+  const open = main.filter((t) => t.status !== 'done' && t.status !== 'cancelled').length
+  const late = main.filter((t) => t.late).length
+  const done = main.length - open
 
   return (
-    <section className="card-panel" aria-labelledby="tasks-title">
+    <section className="card-panel tasks-summary" aria-labelledby="tasks-title">
       <div className="card-panel__head">
-        <h2 id="tasks-title">
-          Tâches <span className="count">{open.length} ouverte(s)</span>
-        </h2>
-        {canWrite && !closed && !adding && (
-          <button type="button" className="button button--small" onClick={() => setAdding(true)}>
-            <PlusIcon /> Tâche
-          </button>
-        )}
+        <h2 id="tasks-title">Tâches</h2>
+        <Link
+          className="button button--small"
+          to={`/espaces/${spaceId}/taches?projet=${project.id}`}
+        >
+          Voir les tâches de ce projet →
+        </Link>
       </div>
-      {adding && (
-        <TaskAddForm spaceId={spaceId} projectId={project.id} onDone={() => setAdding(false)} />
-      )}
-      {tasks.isPending && <p className="muted">Chargement…</p>}
-      {tasks.data?.length === 0 && !adding && (
-        <p className="muted">Aucune tâche. Déclinez la prochaine étape en actions concrètes.</p>
-      )}
-      {open.length > 0 && (
-        <ul className="task-list">
-          {open.map((task) => (
-            <TaskRow key={task.id} task={task} spaceId={spaceId} canWrite={canWrite} />
-          ))}
-        </ul>
-      )}
-      {done.length > 0 && (
-        <details className="task-closed">
-          <summary>{done.length} tâche(s) clôturée(s)</summary>
-          <ul className="task-list">
-            {done.map((task) => (
-              <TaskRow key={task.id} task={task} spaceId={spaceId} canWrite={canWrite} />
-            ))}
-          </ul>
-        </details>
-      )}
+      <p className="tasks-summary__line">
+        {tasks.isPending
+          ? 'Chargement…'
+          : main.length === 0
+            ? 'Aucune tâche pour l’instant.'
+            : [
+                `${open} ouverte${open > 1 ? 's' : ''}`,
+                late > 0 ? `${late} en retard` : null,
+                `${done} clôturée${done > 1 ? 's' : ''}`,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+      </p>
+      <p className="task-drawer__hint">
+        Tâches et sous-tâches s’ajoutent et se suivent dans l’onglet Tâches.
+      </p>
     </section>
   )
 }
@@ -924,7 +904,7 @@ export function ProjectDetailPage() {
                 )}
               </div>
             </section>
-            <TasksSection project={p} spaceId={space.id} canWrite={canWrite} />
+            <TasksSection project={p} spaceId={space.id} />
             <DocumentsSection spaceId={space.id} projectId={p.id} canWrite={canWrite} />
           </div>
 

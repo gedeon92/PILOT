@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useOutletContext } from 'react-router'
+import { useOutletContext, useSearchParams } from 'react-router'
 import { errorMessage, type Task } from '../api/client'
 import { useMembers, useProjects, useSpaceTasks } from '../api/queries'
 import { PlusIcon, TasksIcon } from '../components/icons'
@@ -27,7 +27,9 @@ export function TasksPage() {
   const today = todayIso(space.timezone)
   const [view, setView] = useState<View>('all')
   const [mine, setMine] = useState(false)
-  const [projectId, setProjectId] = useState('')
+  // « Voir les tâches de ce projet » depuis une fiche arrive avec ?projet=<id>.
+  const [params] = useSearchParams()
+  const [projectId, setProjectId] = useState(params.get('projet') ?? '')
   const [q, setQ] = useState('')
   const [withClosed, setWithClosed] = useState(false)
   const [adding, setAdding] = useState(false)
@@ -90,6 +92,7 @@ export function TasksPage() {
             projects={(projects.data ?? [])
               .filter((p) => p.status !== 'done' && p.status !== 'cancelled')
               .map((p) => ({ id: p.id, title: p.title }))}
+            defaultProjectId={projectId !== GENERAL ? projectId : ''}
             onDone={() => setAdding(false)}
           />
         </section>

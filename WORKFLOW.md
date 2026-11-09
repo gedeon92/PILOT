@@ -278,6 +278,7 @@ Ce qui manque à PILOT par rapport à Asana pour le travail d'équipe au quotidi
 - Réalisation :
   - Tout se passe dans une **fenêtre de la tâche**, ouverte en cliquant sur son titre depuis n'importe quelle page (adresse `?tache=…`, partageable). On peut aussi y modifier la tâche : titre, livrable, responsable, échéance.
   - Dans les listes, des repères : « En attente », sous-tâches « 1/3 », nombre de commentaires.
+  - Décision du 9 nov. 2026 (propriétaire du produit) : tâches et sous-tâches se gèrent **uniquement dans l'onglet Tâches**. La fiche d'un projet n'affiche plus qu'un résumé (ouvertes, en retard, clôturées) et un bouton « Voir les tâches de ce projet », qui ouvre l'onglet Tâches filtré. Depuis une tâche, aucun lien ne renvoie vers le projet. Les sous-tâches ne sont pas des lignes de la liste : elles restent dans leur tâche.
   - Notifications (CDC §16) : une alerte « Mention » ou « Tâche suivie » apparaît tout de suite dans Alertes, et figure dans le récapitulatif e-mail du jour s'il n'est pas encore parti. Pas d'e-mail à chaque commentaire. Une seule alerte par tâche et par jour, mise à jour à chaque nouvel événement.
   - Lecteurs : consultent et peuvent suivre une tâche ; ils ne commentent pas et ne modifient rien.
   - Un commentaire est retiré seulement par son auteur ou par un propriétaire.
