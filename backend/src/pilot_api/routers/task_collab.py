@@ -12,9 +12,10 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, selectinload
 
+from pilot_api.access import project_role, visible_project_ids
 from pilot_api.alerts import notify
 from pilot_api.audit import record
-from pilot_api.deps import CurrentMembership, DbSession, WriterMembership
+from pilot_api.deps import CurrentMembership, DbSession
 from pilot_api.models import (
     CLOSED_TASK_STATUSES,
     AlertRule,
@@ -30,10 +31,10 @@ from pilot_api.models import (
     utcnow,
 )
 from pilot_api.routers.projects import (
-    _load_task,
     actor_name,
     create_task_in,
     follow,
+    load_task,
     notify_followers,
     task_out,
     tasks_out,
@@ -85,7 +86,7 @@ def _touch(db: Session, task: Task) -> None:
 
 @router.get("/tasks/{task_id}")
 def task_detail(task_id: uuid.UUID, membership: CurrentMembership, db: DbSession) -> TaskDetail:
-    task = _load_task(db, membership.space_id, task_id)
+    task = load_task(db, membership, task_id)
     today = today_in(membership.space)
     subtasks = db.scalars(
         select(Task)
@@ -105,6 +106,13 @@ def task_detail(task_id: uuid.UUID, membership: CurrentMembership, db: DbSession
         .where(TaskDependency.depends_on_id == task.id)
         .order_by(TaskDependency.created_at)
     ).all()
+    # Les tâches d'un projet invisible pour cette personne ne sont pas montrées.
+    visible = visible_project_ids(db, membership)
+
+    def shown(items):
+        return [t for t in items if visible is None or t.project_id in visible]
+
+    depends_on, blocking = shown(depends_on), shown(blocking)
     parent = db.get(Task, task.parent_id) if task.parent_id else None
     comments = db.scalars(
         select(TaskComment).where(TaskComment.task_id == task.id).order_by(TaskComment.created_at)
@@ -141,7 +149,14 @@ def task_detail(task_id: uuid.UUID, membership: CurrentMembership, db: DbSession
         ],
         followers=[FollowerOut(user_id=uid, name=name) for uid, name in followers],
         following=any(uid == membership.user_id for uid, _ in followers),
+        can_write=_can_write(db, membership, project),
     )
+
+
+def _can_write(db: Session, membership: Membership, project: Project | None) -> bool:
+    if project is None:
+        return membership.role in (Role.OWNER, Role.CONTRIBUTOR)
+    return project_role(db, membership, project) in (Role.OWNER, Role.CONTRIBUTOR)
 
 
 def _member_names(db: Session, space_id: uuid.UUID) -> dict[str, str]:
@@ -158,9 +173,9 @@ def _member_names(db: Session, space_id: uuid.UUID) -> dict[str, str]:
 
 @router.post("/tasks/{task_id}/subtasks", status_code=201)
 def create_subtask(
-    task_id: uuid.UUID, body: TaskCreate, membership: WriterMembership, db: DbSession
+    task_id: uuid.UUID, body: TaskCreate, membership: CurrentMembership, db: DbSession
 ) -> TaskOut:
-    parent = _load_task(db, membership.space_id, task_id)
+    parent = load_task(db, membership, task_id, write=True)
     if parent.parent_id is not None:
         raise HTTPException(422, "Une sous-tâche ne peut pas avoir elle-même de sous-tâches.")
     if parent.status in CLOSED_TASK_STATUSES:
@@ -174,9 +189,9 @@ def create_subtask(
 
 @router.post("/tasks/{task_id}/comments", status_code=201)
 def add_comment(
-    task_id: uuid.UUID, body: CommentCreate, membership: WriterMembership, db: DbSession
+    task_id: uuid.UUID, body: CommentCreate, membership: CurrentMembership, db: DbSession
 ) -> TaskDetail:
-    task = _load_task(db, membership.space_id, task_id)
+    task = load_task(db, membership, task_id, write=True)
     mentioned = db.execute(
         select(Membership.id, Membership.user_id).where(
             Membership.id.in_(set(body.mentions)),
@@ -227,9 +242,9 @@ def add_comment(
 
 @router.delete("/tasks/{task_id}/comments/{comment_id}", status_code=204)
 def delete_comment(
-    task_id: uuid.UUID, comment_id: uuid.UUID, membership: WriterMembership, db: DbSession
+    task_id: uuid.UUID, comment_id: uuid.UUID, membership: CurrentMembership, db: DbSession
 ) -> None:
-    task = _load_task(db, membership.space_id, task_id)
+    task = load_task(db, membership, task_id, write=True)
     comment = db.scalar(
         select(TaskComment).where(TaskComment.id == comment_id, TaskComment.task_id == task.id)
     )
@@ -257,7 +272,7 @@ def delete_comment(
 
 @router.post("/tasks/{task_id}/follow")
 def follow_task(task_id: uuid.UUID, membership: CurrentMembership, db: DbSession) -> TaskDetail:
-    task = _load_task(db, membership.space_id, task_id)
+    task = load_task(db, membership, task_id)
     follow(db, task, [membership.user_id])
     db.commit()
     return task_detail(task_id, membership, db)
@@ -265,7 +280,7 @@ def follow_task(task_id: uuid.UUID, membership: CurrentMembership, db: DbSession
 
 @router.delete("/tasks/{task_id}/follow")
 def unfollow_task(task_id: uuid.UUID, membership: CurrentMembership, db: DbSession) -> TaskDetail:
-    task = _load_task(db, membership.space_id, task_id)
+    task = load_task(db, membership, task_id)
     db.execute(
         delete(TaskFollower).where(
             TaskFollower.task_id == task.id, TaskFollower.user_id == membership.user_id
@@ -296,10 +311,10 @@ def _creates_cycle(db: Session, task_id: uuid.UUID, depends_on_id: uuid.UUID) ->
 
 @router.post("/tasks/{task_id}/dependencies", status_code=201)
 def add_dependency(
-    task_id: uuid.UUID, body: DependencyCreate, membership: WriterMembership, db: DbSession
+    task_id: uuid.UUID, body: DependencyCreate, membership: CurrentMembership, db: DbSession
 ) -> TaskDetail:
-    task = _load_task(db, membership.space_id, task_id)
-    other = _load_task(db, membership.space_id, body.depends_on_id)
+    task = load_task(db, membership, task_id, write=True)
+    other = load_task(db, membership, body.depends_on_id)
     if other.id == task.id:
         raise HTTPException(422, "Une tâche ne peut pas attendre sa propre fin.")
     exists = db.scalar(
@@ -337,9 +352,9 @@ def add_dependency(
 
 @router.delete("/tasks/{task_id}/dependencies/{depends_on_id}")
 def remove_dependency(
-    task_id: uuid.UUID, depends_on_id: uuid.UUID, membership: WriterMembership, db: DbSession
+    task_id: uuid.UUID, depends_on_id: uuid.UUID, membership: CurrentMembership, db: DbSession
 ) -> TaskDetail:
-    task = _load_task(db, membership.space_id, task_id)
+    task = load_task(db, membership, task_id, write=True)
     link = db.scalar(
         select(TaskDependency).where(
             TaskDependency.task_id == task.id, TaskDependency.depends_on_id == depends_on_id

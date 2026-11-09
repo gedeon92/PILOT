@@ -16,6 +16,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy import false as sa_false
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -28,6 +29,15 @@ def utcnow() -> datetime:
 
 class Role(enum.StrEnum):
     OWNER = "owner"
+    CONTRIBUTOR = "contributor"
+    READER = "reader"
+    # Invité extérieur (lot C) : ne voit que les projets auxquels on l'a ajouté.
+    GUEST = "guest"
+
+
+class ProjectRole(enum.StrEnum):
+    """Rôle d'une personne sur un projet précis (lot C) ; précise le rôle de l'espace."""
+
     CONTRIBUTOR = "contributor"
     READER = "reader"
 
@@ -324,9 +334,29 @@ class Project(Base):
     event_details: Mapped["EventDetails | None"] = relationship(
         back_populates="project", uselist=False, cascade="all, delete-orphan"
     )
+    # Projet privé (lot C) : visible seulement par ses membres et par les propriétaires.
+    private: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
     contributors: Mapped[list["ProjectContributor"]] = relationship(
         cascade="all, delete-orphan", order_by="ProjectContributor.position"
     )
+
+
+class ProjectMember(Base):
+    """Accès d'une personne à un projet précis (lot C) : rôle propre à ce projet, obligatoire
+    pour voir un projet privé ou pour un invité extérieur."""
+
+    __tablename__ = "project_members"
+    __table_args__ = (UniqueConstraint("project_id", "member_id", name="uq_project_members"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    member_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("memberships.id", ondelete="CASCADE"), index=True
+    )
+    role: Mapped[ProjectRole] = mapped_column(_enum(ProjectRole, "project_member_role"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class ProjectContributor(Base):

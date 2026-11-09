@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useOutletContext, useSearchParams } from 'react-router'
-import { errorMessage } from '../api/client'
+import { canWriteSpace, errorMessage } from '../api/client'
 import { useCatalog, useCreateProject, useMembers, useProjects } from '../api/queries'
 import { FolderIcon, PlusIcon } from '../components/icons'
 import { PersonField, type PersonValue } from '../components/person-field'
@@ -48,7 +48,7 @@ export function ProjectsPage() {
   const portfolios = useCatalog(space.id, 'portfolios')
   const entities = useCatalog(space.id, 'entities')
   const projects = useProjects(space.id)
-  const canWrite = space.role !== 'reader'
+  const canWrite = canWriteSpace(space.role)
   const today = todayIso(space.timezone)
 
   const all = projects.data ?? []
@@ -233,8 +233,8 @@ export function NewProjectPage() {
   const [owner, setOwner] = useState<PersonValue>({ memberId: null, label: '' })
   const set = (key: keyof typeof form) => (value: string) => setForm({ ...form, [key]: value })
 
-  if (space.role === 'reader') {
-    return <Alert>Votre rôle Lecteur permet de consulter les projets, pas d’en créer.</Alert>
+  if (!canWriteSpace(space.role)) {
+    return <Alert>Votre rôle permet de consulter les projets, pas d’en créer.</Alert>
   }
   if (portfolios.data && portfolios.data.length === 0) {
     return (

@@ -7,6 +7,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Header, HTTPException
 from sqlalchemy import select, update
 
+from pilot_api.access import visible_project_ids
 from pilot_api.alerts import (
     RULES,
     compute_alerts,
@@ -66,7 +67,14 @@ def list_alerts(membership: CurrentMembership, user: CurrentUser, db: DbSession)
         )
         .order_by(Alert.alert_date.desc(), Alert.created_at)
     ).all()
-    visible = [a for a in alerts if a.rule.value not in (pref.disabled_rules or [])]
+    # Lot C : une alerte sur un projet devenu invisible (accès retiré) n'est plus montrée.
+    projects = visible_project_ids(db, membership)
+    visible = [
+        a
+        for a in alerts
+        if a.rule.value not in (pref.disabled_rules or [])
+        and (projects is None or a.project_id is None or a.project_id in projects)
+    ]
     items = [_out(a) for a in visible]
     return AlertList(unread=sum(1 for a in visible if a.read_at is None), items=items)
 

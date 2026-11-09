@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router'
-import { errorMessage } from '../api/client'
+import { canWriteSpace, errorMessage } from '../api/client'
 import { useCatalog, useProjects } from '../api/queries'
 import { colorHex } from '../colors'
 import { CalendarIcon, PlusIcon } from '../components/icons'
@@ -96,7 +96,7 @@ export function EventsPage() {
         title="Événements"
         subtitle="Les projets de nature « événement » : dates, lieux, éditions et chevauchements."
         actions={
-          space.role !== 'reader' && (
+          canWriteSpace(space.role) && (
             <Link className="button button--primary" to={`${base}/projets/nouveau`}>
               Nouvel événement <PlusIcon />
             </Link>

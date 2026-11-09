@@ -129,7 +129,14 @@ export function TaskDialog({
             <Alert>{errorMessage(detail.error)}</Alert>
           </>
         )}
-        {detail.data && <TaskContent spaceId={spaceId} detail={detail.data} canWrite={canWrite} />}
+        {detail.data && (
+          // Lot C : le droit vient du rôle sur le projet de la tâche (donné par le serveur).
+          <TaskContent
+            spaceId={spaceId}
+            detail={detail.data}
+            canWrite={detail.data.can_write ?? canWrite}
+          />
+        )}
       </aside>
     </div>
   )

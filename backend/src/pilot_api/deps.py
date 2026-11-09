@@ -68,6 +68,9 @@ OwnerMembership = Annotated[Membership, Depends(require_owner)]
 def require_writer(membership: CurrentMembership) -> Membership:
     if membership.role == Role.READER:
         raise HTTPException(403, "Votre rôle Lecteur permet de consulter, pas de modifier.")
+    if membership.role == Role.GUEST:
+        # Un invité n'agit que dans ses projets (contrôle par projet, voir access.py).
+        raise HTTPException(403, "Action réservée aux membres de l'espace.")
     return membership
 
 

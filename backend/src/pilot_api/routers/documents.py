@@ -16,9 +16,10 @@ from fastapi import APIRouter, HTTPException, Query, Response, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from pilot_api.access import ensure_visible, ensure_writer, visible_projects
 from pilot_api.audit import record
 from pilot_api.config import get_settings
-from pilot_api.deps import CurrentMembership, DbSession, WriterMembership
+from pilot_api.deps import CurrentMembership, DbSession
 from pilot_api.models import Document, Project, utcnow
 from pilot_api.schemas import DocumentOut
 from pilot_api.storage import get_storage
@@ -96,6 +97,7 @@ def list_project_documents(
     project_id: uuid.UUID, membership: CurrentMembership, db: DbSession
 ) -> list[DocumentOut]:
     project = _get_project(db, membership.space_id, project_id)
+    ensure_visible(db, membership, project)
     documents = db.scalars(
         select(Document)
         .options(selectinload(Document.uploaded_by))
@@ -127,6 +129,7 @@ def list_space_documents(
             Document.space_id == membership.space_id,
             Document.archived_at.is_(None),
             Document.replaced_at.is_(None),
+            visible_projects(membership),
         )
     )
     if q:
@@ -177,9 +180,10 @@ async def _store(
 
 @router.post("/projects/{project_id}/documents", status_code=201)
 async def upload_document(
-    project_id: uuid.UUID, file: UploadFile, membership: WriterMembership, db: DbSession
+    project_id: uuid.UUID, file: UploadFile, membership: CurrentMembership, db: DbSession
 ) -> DocumentOut:
     project = _get_project(db, membership.space_id, project_id)
+    ensure_writer(db, membership, project)
     document = await _store(file, project, membership.user_id, db)
     record(
         db,
@@ -200,7 +204,7 @@ async def upload_document(
 
 @router.post("/documents/{document_id}/replace", status_code=201)
 async def replace_document(
-    document_id: uuid.UUID, file: UploadFile, membership: WriterMembership, db: DbSession
+    document_id: uuid.UUID, file: UploadFile, membership: CurrentMembership, db: DbSession
 ) -> DocumentOut:
     """Dépose une nouvelle version : l'ancienne est gardée et reste téléchargeable."""
     # Verrou : deux remplacements simultanés ne peuvent pas créer deux « versions courantes ».
@@ -211,6 +215,7 @@ async def replace_document(
     )
     if current is None:
         raise HTTPException(404, "Document introuvable.")
+    ensure_writer(db, membership, db.get(Project, current.project_id))
     if current.archived_at is not None:
         raise HTTPException(409, "Ce document a été retiré : il ne peut plus être remplacé.")
     if current.replaced_at is not None:
@@ -249,7 +254,8 @@ def document_versions(
     """La version demandée puis toutes les précédentes, de la plus récente à la plus ancienne."""
     document = _get_document(db, membership.space_id, document_id)
     project = db.get(Project, document.project_id)
-    title = project.title if project else ""
+    ensure_visible(db, membership, project)
+    title = project.title
     versions = [document]
     while versions[-1].previous_id and len(versions) < MAX_VERSIONS:
         previous = _get_document(db, membership.space_id, versions[-1].previous_id)
@@ -260,6 +266,7 @@ def document_versions(
 @router.get("/documents/{document_id}/download")
 def download_document(document_id: uuid.UUID, membership: CurrentMembership, db: DbSession):
     document = _get_document(db, membership.space_id, document_id)
+    ensure_visible(db, membership, db.get(Project, document.project_id))
     data = get_storage(db).get(document.storage_key)
     if data is None:
         raise HTTPException(410, "Le contenu de ce document n'est plus disponible.")
@@ -282,10 +289,11 @@ def download_document(document_id: uuid.UUID, membership: CurrentMembership, db:
 
 @router.post("/documents/{document_id}/archive")
 def archive_document(
-    document_id: uuid.UUID, membership: WriterMembership, db: DbSession
+    document_id: uuid.UUID, membership: CurrentMembership, db: DbSession
 ) -> DocumentOut:
     document = _get_document(db, membership.space_id, document_id)
     project = db.get(Project, document.project_id)
+    ensure_writer(db, membership, project)
     if document.replaced_at is not None:
         raise HTTPException(409, "Seule la version actuelle d'un document peut être retirée.")
     if document.archived_at is None:

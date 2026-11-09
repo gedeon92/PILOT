@@ -185,3 +185,68 @@ describe('historique du projet', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
+
+describe('accès au projet (lot C)', () => {
+  const MOUSSA = {
+    ...OWNER_MEMBER,
+    id: 'm2',
+    email: 'moussa@exemple.com',
+    display_name: 'Moussa Diop',
+    role: 'contributor',
+    is_me: false,
+  }
+
+  it('le propriétaire rend le projet privé et y ajoute une personne', async () => {
+    const calls = mockApi(
+      routes('owner', [], {
+        [`GET ${base}/members`]: () => ({ status: 200, json: [OWNER_MEMBER, MOUSSA] }),
+        [`GET ${base}/projects/pr1/access`]: () => ({
+          status: 200,
+          json: { private: false, members: [] },
+        }),
+        [`PUT ${base}/projects/pr1/access`]: () => ({
+          status: 200,
+          json: { private: true, members: [] },
+        }),
+      }),
+    )
+    renderApp(page)
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: 'Accès' }))
+    const drawer = await screen.findByRole('dialog', { name: 'Accès au projet' })
+    await user.click(await within(drawer).findByRole('radio', { name: /Privé/ }))
+    await user.selectOptions(within(drawer).getByLabelText('Ajouter une personne'), 'm2')
+    await user.click(within(drawer).getByRole('button', { name: 'Ajouter' }))
+    await user.selectOptions(
+      within(drawer).getByRole('combobox', { name: 'Rôle de Moussa Diop sur ce projet' }),
+      'reader',
+    )
+    await user.click(within(drawer).getByRole('button', { name: 'Enregistrer les accès' }))
+
+    await waitFor(() =>
+      expect(calls.find((c) => c.key === `PUT ${base}/projects/pr1/access`)?.body).toEqual({
+        private: true,
+        members: [{ member_id: 'm2', role: 'reader' }],
+      }),
+    )
+  })
+
+  it('un lecteur sur ce projet ne voit pas les boutons de modification', async () => {
+    mockApi({
+      ...routes('owner', TASKS),
+      'GET /api/auth/me': () => ({ status: 200, json: meWith('contributor') }),
+      [`GET ${base}`]: () => ({ status: 200, json: spaceWith('contributor') }),
+      [`GET ${base}/projects/pr1`]: () => ({
+        status: 200,
+        json: projectFixture({ my_role: 'reader', private: true }),
+      }),
+    })
+    renderApp(page)
+
+    expect(await screen.findByText('🔒 Privé')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Modifier la fiche' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Sous-tâche/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '🔒 Accès' })).toBeInTheDocument()
+  })
+})

@@ -7,6 +7,7 @@ un responsable saisi en nom libre n'en reçoit pas.
 
 import html
 import uuid
+from collections.abc import Callable
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
@@ -14,6 +15,12 @@ from sqlalchemy import or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
+from pilot_api.access import (
+    can_see,
+    project_overrides,
+    users_who_can_see,
+    visible_project_ids,
+)
 from pilot_api.config import get_settings
 from pilot_api.email_theme import pill, render_email
 from pilot_api.mailer import MailError, mail_configured, send_email
@@ -110,6 +117,20 @@ def compute_alerts(db: Session, space: Space, today: date) -> int:
     ).all()
     by_id = {p.id: p for p in projects}
     rows: list[dict] = []
+    # Lot C : un rappel sur un projet ne va qu'aux personnes qui voient ce projet.
+    member_of_user = {m.user_id: m for m in memberships}
+    overrides = project_overrides(db, by_id)
+
+    def allowed(project: Project) -> Callable[[uuid.UUID], bool]:
+        if project.id not in overrides and project.id not in by_id:
+            overrides.update(project_overrides(db, [project.id]))
+        project_roles = overrides.get(project.id, {})
+
+        def check(user_id: uuid.UUID) -> bool:
+            m = member_of_user.get(user_id)
+            return m is not None and can_see(m, project.private, project_roles)
+
+        return check
 
     def add(
         users,
@@ -120,7 +141,10 @@ def compute_alerts(db: Session, space: Space, today: date) -> int:
         title: str,
         detail: str,
     ):
-        for user_id in {u for u in users if u}:
+        users = {u for u in users if u}
+        if project is not None:
+            users = set(filter(allowed(project), users))
+        for user_id in users:
             rows.append(
                 {
                     "id": uuid.uuid4(),
@@ -288,7 +312,11 @@ def notify(
     """Notification déclenchée par un événement (mention, activité sur une tâche suivie).
     Une seule alerte par personne, règle et tâche dans la journée : un nouvel événement la
     remet à jour et la signale de nouveau comme non lue (pas d'avalanche d'alertes)."""
-    users = {u for u in user_ids if u}
+    users = (
+        users_who_can_see(db, db.get(Project, task.project_id), user_ids)
+        if (task.project_id)
+        else {u for u in user_ids if u}
+    )
     if not users:
         return
     today = local_now(space).date()
@@ -449,7 +477,7 @@ def run_daily(db: Session, send=send_email) -> dict:
             .join(User, User.id == Membership.user_id)
             .where(Membership.space_id == space.id, Membership.status == MembershipStatus.ACTIVE)
         ).all()
-        for _, user in members:
+        for member, user in members:
             pref = preference_for(db, user.id, space.id)
             if not (can_mail and pref.email_digest) or now.hour < pref.digest_hour:
                 continue
@@ -458,6 +486,10 @@ def run_daily(db: Session, send=send_email) -> dict:
             if pref.last_digest_date == today:
                 continue
             alerts = todays_alerts(db, user.id, space, today, pref)
+            # Lot C : rien sur un projet que cette personne ne voit plus.
+            projects = visible_project_ids(db, member)
+            if projects is not None:
+                alerts = [a for a in alerts if a.project_id is None or a.project_id in projects]
             pref.last_digest_date = today
             if not alerts:
                 continue  # pas d'e-mail vide

@@ -65,9 +65,16 @@ export const ROLE_LABELS: Record<Role, string> = {
   owner: 'Propriétaire',
   contributor: 'Contributeur',
   reader: 'Lecteur',
+  guest: 'Invité',
+}
+
+/** Peut créer des projets et agir à l'échelle de l'espace (pas un lecteur ni un invité). */
+export function canWriteSpace(role: Role) {
+  return role === 'owner' || role === 'contributor'
 }
 
 export type Project = Schemas['ProjectOut']
+export type ProjectAccess = Schemas['ProjectAccessOut']
 export type Task = Schemas['TaskOut']
 export type TaskDetail = Schemas['TaskDetail']
 export type TaskRef = Schemas['TaskRef']

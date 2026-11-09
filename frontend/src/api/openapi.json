@@ -2885,6 +2885,121 @@
         }
       }
     },
+    "/api/spaces/{space_id}/projects/{project_id}/access": {
+      "get": {
+        "tags": [
+          "projets"
+        ],
+        "summary": "Get Access",
+        "description": "Visible par toute personne qui voit le projet : chacun sait qui y a accès.",
+        "operationId": "get_access_api_spaces__space_id__projects__project_id__access_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectAccessOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "projets"
+        ],
+        "summary": "Set Access",
+        "operationId": "set_access_api_spaces__space_id__projects__project_id__access_put",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectAccessIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectAccessOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/spaces/{space_id}/projects/{project_id}/documents": {
       "get": {
         "tags": [
@@ -5260,7 +5375,8 @@
             "type": "string",
             "enum": [
               "reader",
-              "contributor"
+              "contributor",
+              "guest"
             ],
             "title": "Role"
           }
@@ -5518,7 +5634,8 @@
             "type": "string",
             "enum": [
               "reader",
-              "contributor"
+              "contributor",
+              "guest"
             ],
             "title": "Role"
           }
@@ -6042,6 +6159,103 @@
           "version"
         ],
         "title": "ProgramUpdate"
+      },
+      "ProjectAccessIn": {
+        "properties": {
+          "private": {
+            "type": "boolean",
+            "title": "Private"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectAccessMemberIn"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Members"
+          }
+        },
+        "type": "object",
+        "required": [
+          "private"
+        ],
+        "title": "ProjectAccessIn"
+      },
+      "ProjectAccessMember": {
+        "properties": {
+          "member_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Member Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "space_role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProjectRole"
+          },
+          "has_account": {
+            "type": "boolean",
+            "title": "Has Account"
+          }
+        },
+        "type": "object",
+        "required": [
+          "member_id",
+          "name",
+          "email",
+          "space_role",
+          "role",
+          "has_account"
+        ],
+        "title": "ProjectAccessMember"
+      },
+      "ProjectAccessMemberIn": {
+        "properties": {
+          "member_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Member Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProjectRole"
+          }
+        },
+        "type": "object",
+        "required": [
+          "member_id",
+          "role"
+        ],
+        "title": "ProjectAccessMemberIn"
+      },
+      "ProjectAccessOut": {
+        "properties": {
+          "private": {
+            "type": "boolean",
+            "title": "Private"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectAccessMember"
+            },
+            "type": "array",
+            "title": "Members"
+          }
+        },
+        "type": "object",
+        "required": [
+          "private",
+          "members"
+        ],
+        "title": "ProjectAccessOut"
       },
       "ProjectCreate": {
         "properties": {
@@ -6831,6 +7045,22 @@
           "version": {
             "type": "integer",
             "title": "Version"
+          },
+          "private": {
+            "type": "boolean",
+            "title": "Private",
+            "default": false
+          },
+          "my_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "My Role"
           }
         },
         "type": "object",
@@ -6871,6 +7101,15 @@
           "version"
         ],
         "title": "ProjectOut"
+      },
+      "ProjectRole": {
+        "type": "string",
+        "enum": [
+          "contributor",
+          "reader"
+        ],
+        "title": "ProjectRole",
+        "description": "Rôle d'une personne sur un projet précis (lot C) ; précise le rôle de l'espace."
       },
       "ProjectStatus": {
         "type": "string",
@@ -7715,7 +7954,8 @@
         "enum": [
           "owner",
           "contributor",
-          "reader"
+          "reader",
+          "guest"
         ],
         "title": "Role"
       },
@@ -8071,6 +8311,11 @@
           "following": {
             "type": "boolean",
             "title": "Following"
+          },
+          "can_write": {
+            "type": "boolean",
+            "title": "Can Write",
+            "default": true
           }
         },
         "type": "object",

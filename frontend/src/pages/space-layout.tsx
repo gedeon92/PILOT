@@ -116,10 +116,12 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
             <DocumentIcon />
             <span className="nav__label">Documents</span>
           </NavLink>
-          <NavLink to={`${base}/mises-a-jour`} className={linkClass}>
-            <InboxIcon />
-            <span className="nav__label">Mises à jour</span>
-          </NavLink>
+          {space.role !== 'guest' && (
+            <NavLink to={`${base}/mises-a-jour`} className={linkClass}>
+              <InboxIcon />
+              <span className="nav__label">Mises à jour</span>
+            </NavLink>
+          )}
           <NavLink to={`${base}/alertes`} className={linkClass}>
             <BellIcon />
             <span className="nav__label">Alertes</span>

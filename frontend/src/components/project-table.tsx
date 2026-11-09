@@ -110,7 +110,14 @@ export function ProjectTable({
                       emoji={project.portfolio.emoji}
                     />
                     <span className="project-cell__text">
-                      <span className="project-cell__title">{project.title}</span>
+                      <span className="project-cell__title">
+                        {project.private && (
+                          <span className="private-mark" title="Projet privé" aria-label="Privé">
+                            🔒{' '}
+                          </span>
+                        )}
+                        {project.title}
+                      </span>
                       <span className="project-cell__meta">
                         {project.portfolio.name}
                         {project.project_type && ` · ${project.project_type.name}`}

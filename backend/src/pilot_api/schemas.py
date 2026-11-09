@@ -10,6 +10,7 @@ from pilot_api.models import (
     DateCertainty,
     MembershipStatus,
     ProjectKind,
+    ProjectRole,
     ProjectStatus,
     RiskLevel,
     Role,
@@ -18,7 +19,8 @@ from pilot_api.models import (
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
 Password = Annotated[str, StringConstraints(min_length=10, max_length=128)]
-InvitableRole = Literal[Role.READER, Role.CONTRIBUTOR]
+# Lot C : un invité extérieur ne voit que les projets auxquels on l'ajoute.
+InvitableRole = Literal[Role.READER, Role.CONTRIBUTOR, Role.GUEST]
 
 
 class RegisterIn(BaseModel):
@@ -377,6 +379,10 @@ class ProjectOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     version: int
+    # Lot C : projet privé, et rôle de la personne connectée sur ce projet
+    # (owner, contributor ou reader) pour afficher ou non les boutons de modification.
+    private: bool = False
+    my_role: str | None = None
 
 
 class _TaskFields(BaseModel):
@@ -480,6 +486,8 @@ class TaskDetail(BaseModel):
     comments: list[CommentOut]
     followers: list[FollowerOut]
     following: bool
+    # Lot C : la personne connectée peut-elle modifier cette tâche (rôle sur son projet) ?
+    can_write: bool = True
 
 
 class ProjectLinkCreate(BaseModel):
@@ -686,3 +694,30 @@ class ImportResult(BaseModel):
     already_imported: bool
     counts: dict[str, int]
     warnings: list[str]
+
+
+# ---------- Accès à un projet (lot C) ----------
+
+
+class ProjectAccessMemberIn(BaseModel):
+    member_id: uuid.UUID
+    role: ProjectRole
+
+
+class ProjectAccessIn(BaseModel):
+    private: bool
+    members: list[ProjectAccessMemberIn] = Field(default_factory=list, max_length=200)
+
+
+class ProjectAccessMember(BaseModel):
+    member_id: uuid.UUID
+    name: str
+    email: str
+    space_role: Role
+    role: ProjectRole
+    has_account: bool
+
+
+class ProjectAccessOut(BaseModel):
+    private: bool
+    members: list[ProjectAccessMember]

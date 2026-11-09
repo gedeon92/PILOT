@@ -150,7 +150,12 @@ def list_members(membership: CurrentMembership, db: DbSession) -> list[MemberOut
     return [_member_out(member, membership) for member in members]
 
 
-ROLE_NAMES = {Role.READER: "lecteur", Role.CONTRIBUTOR: "contributeur", Role.OWNER: "propriétaire"}
+ROLE_NAMES = {
+    Role.READER: "lecteur",
+    Role.CONTRIBUTOR: "contributeur",
+    Role.OWNER: "propriétaire",
+    Role.GUEST: "invité",
+}
 
 
 def _send_invitation(db: Session, member: Membership, token: str) -> tuple[bool, str | None]:

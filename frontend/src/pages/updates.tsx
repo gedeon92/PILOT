@@ -6,6 +6,7 @@ import {
   type Proposal,
   type UpdateRequest,
   type UpdateSource,
+  canWriteSpace,
 } from '../api/client'
 import {
   sourceDownloadUrl,
@@ -704,7 +705,7 @@ function RequestCard({
 
 export function UpdatesPage() {
   const { space } = useOutletContext<SpaceContext>()
-  const canWrite = space.role !== 'reader'
+  const canWrite = canWriteSpace(space.role)
   const updates = useUpdates(space.id, canWrite)
   const projects = useProjects(space.id)
   const [filter, setFilter] = useState<'todo' | 'all'>('todo')

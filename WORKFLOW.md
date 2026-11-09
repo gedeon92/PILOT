@@ -254,7 +254,7 @@ Règles d'alerte (seuils réglables par espace) :
 - [x] Repères visuels : emoji de portefeuille et drapeau du pays, toujours à côté du nom (§13)
 - Décision : lecture **toujours avec un compte** (le lien public sans compte du CDC §15 n'est pas repris, plus sûr)
 
-## Suite prévue : fonctions inspirées d'Asana (demandées le 6 nov. 2026, lot A fait le 8 nov., lot B le 9 nov.)
+## Suite prévue : fonctions inspirées d'Asana (demandées le 6 nov. 2026 ; lots A, B et C faits les 8 et 9 nov.)
 
 Ce qui manque à PILOT par rapport à Asana pour le travail d'équipe au quotidien. À lancer quand la propriétaire du produit le décide, un lot à la fois, chacun testé et mis en ligne à part.
 
@@ -292,14 +292,29 @@ Ce qui manque à PILOT par rapport à Asana pour le travail d'équipe au quotidi
 - [x] Les lecteurs voient le tableau mais ne peuvent pas déplacer les cartes.
 - Réalisation : la colonne Terminé montre les 30 plus récentes (toutes restent en vue Liste) ; une tâche annulée y apparaît avec l'étiquette « Annulée ». Les filtres de la page (en retard, 7 jours, projet, mes tâches, recherche) s'appliquent aussi au tableau. Une carte déplacée reste à sa place sans attendre le serveur ; en cas d'erreur, elle revient et un message s'affiche.
 
-### Lot C — Droits plus fins
-- [ ] **Rôle par projet**, par exemple Contributeur sur un projet et Lecteur sur les autres.
+### Lot C — Droits plus fins (fait le 9 nov. 2026)
+- [x] **Rôle par projet**, par exemple Contributeur sur un projet et Lecteur sur les autres.
   - Le rôle de l'espace (Propriétaire, Contributeur, Lecteur) reste la règle par défaut ; le rôle sur un projet ne fait que le préciser.
   - Un propriétaire de l'espace garde toujours tous les droits.
-- [ ] **Projets privés**, visibles seulement par leurs membres et par les propriétaires de l'espace.
+- [x] **Projets privés**, visibles seulement par leurs membres et par les propriétaires de l'espace.
   - Les projets existants restent ouverts à tout l'espace, comme aujourd'hui.
   - Un projet privé n'apparaît nulle part ailleurs (tableau de bord, timeline, recherche, alertes, Point hebdo, export) pour ceux qui n'y ont pas accès.
-- [ ] **Invités extérieurs** (prestataire, partenaire) : un compte limité à un ou plusieurs projets, sans voir le reste de l'espace.
+- [x] **Invités extérieurs** (prestataire, partenaire) : un compte limité à un ou plusieurs projets, sans voir le reste de l'espace.
+- Réalisation :
+  - Une seule règle, dans `access.py`, appliquée à **tous les chemins** (CDC §4, point de gouvernance) :
+    - liste et fiche des projets ;
+    - tâches, fenêtre d'une tâche, dépendances ;
+    - documents : liste, versions, téléchargement ;
+    - historique et projets liés ;
+    - alertes, récapitulatif e-mail et notifications ;
+    - boîte de mise à jour : reconnaissance des projets et propositions ;
+    - recherche, tableau de bord, timeline et Point hebdo, qui s'appuient sur ces listes.
+  - Un projet invisible répond « introuvable ».
+  - Bouton **« Accès »** sur chaque fiche projet. Les propriétaires y rendent le projet privé et y ajoutent des personnes avec un rôle de projet (contributeur ou lecteur). Les autres membres consultent qui a accès. Chaque changement est journalisé (`project.access_changed`).
+  - Rôle **« Invité »** à l'invitation : il ne voit que les projets où on l'ajoute, ne crée pas de projet et n'a pas la boîte de mise à jour.
+  - Une marque 🔒 signale un projet privé.
+  - Export : la case « privé » suit le projet. Les accès par projet, propres aux comptes, sont à redonner après un import.
+  - Limite connue : un invité voit la liste des membres de l'espace (noms et adresses), nécessaire pour choisir un responsable. À restreindre si besoin.
 
 **Hors de ces lots** (à décider plus tard) : sections dans un projet, une même tâche dans plusieurs projets, champs personnalisés, règles automatiques.
 

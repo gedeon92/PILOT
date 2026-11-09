@@ -15,6 +15,14 @@ from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, selectinload
 
+from pilot_api.access import (
+    ensure_visible,
+    ensure_writer,
+    project_role,
+    users_who_can_see,
+    visible_project_ids,
+    visible_projects,
+)
 from pilot_api.alerts import notify, short_date
 from pilot_api.audit import record
 from pilot_api.deps import CurrentMembership, DbSession, WriterMembership
@@ -37,6 +45,7 @@ from pilot_api.models import (
     ProjectLink,
     ProjectStatus,
     ProjectType,
+    Role,
     Space,
     Task,
     TaskComment,
@@ -248,7 +257,9 @@ def _portfolio_ref(portfolio: Portfolio) -> PortfolioRef:
     )
 
 
-def _project_out(project: Project, counts: tuple[int, int] = (0, 0)) -> ProjectOut:
+def _project_out(
+    project: Project, counts: tuple[int, int] = (0, 0), my_role: str | None = None
+) -> ProjectOut:
     entity, ptype, portfolio = project.entity, project.project_type, project.portfolio
     return ProjectOut(
         id=project.id,
@@ -265,6 +276,7 @@ def _project_out(project: Project, counts: tuple[int, int] = (0, 0)) -> ProjectO
         event=_event_out(project),
         open_tasks=counts[0],
         late_tasks=counts[1],
+        my_role=my_role,
         **{
             name: getattr(project, name)
             for name in ProjectOut.model_fields
@@ -281,7 +293,7 @@ def _project_out(project: Project, counts: tuple[int, int] = (0, 0)) -> ProjectO
                 "contributors",
                 "decision_options",
             }
-            | {"open_tasks", "late_tasks"}
+            | {"open_tasks", "late_tasks", "my_role"}
         },
     )
 
@@ -295,9 +307,23 @@ def _load_project(db: Session, space_id: uuid.UUID, project_id: uuid.UUID) -> Pr
     return project
 
 
+def load_project(
+    db: Session, membership: Membership, project_id: uuid.UUID, write: bool = False
+) -> Project:
+    """Projet de l'espace, visible pour cette personne (404 sinon) ; `write` exige en plus le
+    droit de le modifier (403 sinon). Voir access.py."""
+    project = _load_project(db, membership.space_id, project_id)
+    if write:
+        ensure_writer(db, membership, project)
+    else:
+        ensure_visible(db, membership, project)
+    return project
+
+
 def _project_with_counts(db: Session, membership: Membership, project: Project) -> ProjectOut:
     counts = _task_counts(db, [project.id], today_in(membership.space))
-    return _project_out(project, counts.get(project.id, (0, 0)))
+    role = project_role(db, membership, project)
+    return _project_out(project, counts.get(project.id, (0, 0)), role.value if role else None)
 
 
 def task_extras(db: Session, task_ids: list[uuid.UUID]) -> dict[uuid.UUID, dict[str, int]]:
@@ -368,8 +394,12 @@ def task_out(db: Session, task: Task, today: date) -> TaskOut:
 
 
 def follow(db: Session, task: Task, user_ids) -> None:
-    """Abonne des personnes (ayant un compte) à une tâche, sans doublon."""
-    for user_id in {u for u in user_ids if u}:
+    """Abonne des personnes (ayant un compte) à une tâche, sans doublon ; seulement celles qui
+    voient son projet (lot C)."""
+    users = {u for u in user_ids if u}
+    if task.project_id:
+        users = users_who_can_see(db, db.get(Project, task.project_id), users)
+    for user_id in users:
         db.execute(
             insert(TaskFollower)
             .values(id=uuid.uuid4(), task_id=task.id, user_id=user_id, created_at=utcnow())
@@ -409,6 +439,21 @@ def _load_task(db: Session, space_id: uuid.UUID, task_id: uuid.UUID) -> Task:
     )
     if task is None:
         raise HTTPException(404, "Tâche introuvable.")
+    return task
+
+
+def load_task(db: Session, membership: Membership, task_id: uuid.UUID, write: bool = False) -> Task:
+    """Tâche de l'espace dont le projet est visible (404 sinon) ; `write` exige le droit de
+    modifier ce projet. Une ancienne tâche sans projet suit le rôle de l'espace."""
+    task = _load_task(db, membership.space_id, task_id)
+    project = db.get(Project, task.project_id) if task.project_id else None
+    if project is not None:
+        if write:
+            ensure_writer(db, membership, project)
+        else:
+            ensure_visible(db, membership, project)
+    elif membership.role == Role.GUEST or (write and membership.role == Role.READER):
+        raise HTTPException(404 if membership.role == Role.GUEST else 403, "Tâche introuvable.")
     return task
 
 
@@ -504,7 +549,9 @@ def list_projects(
     program_id: uuid.UUID | None = None,
     q: str | None = None,
 ) -> list[ProjectOut]:
-    query = _project_query().where(Project.space_id == membership.space_id)
+    query = _project_query().where(
+        Project.space_id == membership.space_id, visible_projects(membership)
+    )
     if kind:
         query = query.join(ProjectType, ProjectType.id == Project.project_type_id).where(
             ProjectType.kind == kind
@@ -528,7 +575,14 @@ def list_projects(
     )
     projects = db.scalars(query).all()
     counts = _task_counts(db, [p.id for p in projects], today_in(membership.space))
-    return [_project_out(p, counts.get(p.id, (0, 0))) for p in projects]
+    return [
+        _project_out(p, counts.get(p.id, (0, 0)), _role_value(db, membership, p)) for p in projects
+    ]
+
+
+def _role_value(db: Session, membership: Membership, project: Project) -> str | None:
+    role = project_role(db, membership, project)
+    return role.value if role else None
 
 
 @router.post("/projects", status_code=201)
@@ -573,15 +627,15 @@ def create_project(body: ProjectCreate, membership: WriterMembership, db: DbSess
 
 @router.get("/projects/{project_id}")
 def get_project(project_id: uuid.UUID, membership: CurrentMembership, db: DbSession) -> ProjectOut:
-    project = _load_project(db, membership.space_id, project_id)
+    project = load_project(db, membership, project_id)
     return _project_with_counts(db, membership, project)
 
 
 @router.patch("/projects/{project_id}")
 def update_project(
-    project_id: uuid.UUID, body: ProjectUpdate, membership: WriterMembership, db: DbSession
+    project_id: uuid.UUID, body: ProjectUpdate, membership: CurrentMembership, db: DbSession
 ) -> ProjectOut:
-    project = _load_project(db, membership.space_id, project_id)
+    project = load_project(db, membership, project_id, write=True)
     if project.version != body.version:
         raise HTTPException(409, CONFLICT)
     before = _project_snapshot(project)
@@ -609,11 +663,11 @@ def update_project(
 
 @router.post("/projects/{project_id}/status")
 def change_status(
-    project_id: uuid.UUID, body: ProjectStatusChange, membership: WriterMembership, db: DbSession
+    project_id: uuid.UUID, body: ProjectStatusChange, membership: CurrentMembership, db: DbSession
 ) -> ProjectOut:
     """Règles de transition (CDC §22) : bilan pour Terminé, motif et clôture des tâches
     ouvertes pour Annulé, réouverture explicite et journalisée."""
-    project = _load_project(db, membership.space_id, project_id)
+    project = load_project(db, membership, project_id, write=True)
     if project.version != body.version:
         raise HTTPException(409, CONFLICT)
     if body.status == project.status:
@@ -666,7 +720,7 @@ def change_status(
 def project_history(
     project_id: uuid.UUID, membership: CurrentMembership, db: DbSession
 ) -> list[HistoryEntry]:
-    project = _load_project(db, membership.space_id, project_id)
+    project = load_project(db, membership, project_id)
     task_ids = [str(t) for t in db.scalars(select(Task.id).where(Task.project_id == project.id))]
     document_ids = [
         str(d) for d in db.scalars(select(Document.id).where(Document.project_id == project.id))
@@ -712,6 +766,9 @@ def list_space_tasks(
         .options(selectinload(Task.assignee_member).selectinload(Membership.user))
         .where(Task.space_id == membership.space_id)
     )
+    visible = visible_project_ids(db, membership)
+    if visible is not None:
+        query = query.where(Task.project_id.in_(visible))
     if not include_closed:
         query = query.where(Task.status.not_in(CLOSED_TASK_STATUSES))
     tasks = db.scalars(query.order_by(Task.due_date.asc().nulls_last()).limit(2000)).all()
@@ -722,7 +779,7 @@ def list_space_tasks(
 def list_tasks(
     project_id: uuid.UUID, membership: CurrentMembership, db: DbSession
 ) -> list[TaskOut]:
-    project = _load_project(db, membership.space_id, project_id)
+    project = load_project(db, membership, project_id)
     tasks = db.scalars(
         select(Task)
         .options(selectinload(Task.assignee_member).selectinload(Membership.user))
@@ -823,27 +880,27 @@ def _member_user(db: Session, member_id: uuid.UUID | None) -> uuid.UUID | None:
 
 @router.post("/projects/{project_id}/tasks", status_code=201)
 def create_task(
-    project_id: uuid.UUID, body: TaskCreate, membership: WriterMembership, db: DbSession
+    project_id: uuid.UUID, body: TaskCreate, membership: CurrentMembership, db: DbSession
 ) -> TaskOut:
-    project = _load_project(db, membership.space_id, project_id)
+    project = load_project(db, membership, project_id, write=True)
     return create_task_in(db, membership, project, body)
 
 
 @router.post("/tasks", status_code=201)
 def create_space_task(
-    body: SpaceTaskCreate, membership: WriterMembership, db: DbSession
+    body: SpaceTaskCreate, membership: CurrentMembership, db: DbSession
 ) -> TaskOut:
     """Une tâche appartient toujours à un projet (décision du 9 nov. 2026 : plus de tâche du
     « suivi général » sans projet)."""
-    project = _load_project(db, membership.space_id, body.project_id)
+    project = load_project(db, membership, body.project_id, write=True)
     return create_task_in(db, membership, project, body)
 
 
 @router.patch("/tasks/{task_id}")
 def update_task(
-    task_id: uuid.UUID, body: TaskUpdate, membership: WriterMembership, db: DbSession
+    task_id: uuid.UUID, body: TaskUpdate, membership: CurrentMembership, db: DbSession
 ) -> TaskOut:
-    task = _load_task(db, membership.space_id, task_id)
+    task = load_task(db, membership, task_id, write=True)
     if task.version != body.version:
         raise HTTPException(409, CONFLICT)
     before = _snapshot(task, TASK_AUDIT_FIELDS)
@@ -958,7 +1015,7 @@ def _linked_out(link: ProjectLink, other: Project) -> ProjectLinkOut:
 def list_links(
     project_id: uuid.UUID, membership: CurrentMembership, db: DbSession
 ) -> list[ProjectLinkOut]:
-    project = _load_project(db, membership.space_id, project_id)
+    project = load_project(db, membership, project_id)
     links = db.scalars(
         select(ProjectLink).where(
             or_(ProjectLink.project_a_id == project.id, ProjectLink.project_b_id == project.id)
@@ -969,8 +1026,14 @@ def list_links(
         return link.project_b_id if link.project_a_id == project.id else link.project_a_id
 
     ids = [other_id(lk) for lk in links]
-    others = {p.id: p for p in db.scalars(_project_query().where(Project.id.in_(ids)))}
-    result = [_linked_out(lk, others[other_id(lk)]) for lk in links]
+    # Un projet lié invisible pour cette personne n'est pas montré (pas même son titre).
+    others = {
+        p.id: p
+        for p in db.scalars(
+            _project_query().where(Project.id.in_(ids), visible_projects(membership))
+        )
+    }
+    result = [_linked_out(lk, others[other_id(lk)]) for lk in links if other_id(lk) in others]
     return sorted(result, key=lambda r: r.project.title.casefold())
 
 
@@ -989,12 +1052,12 @@ def _record_link(db, membership, action, project, other, note=None):
 
 @router.post("/projects/{project_id}/links", status_code=201)
 def create_link(
-    project_id: uuid.UUID, body: ProjectLinkCreate, membership: WriterMembership, db: DbSession
+    project_id: uuid.UUID, body: ProjectLinkCreate, membership: CurrentMembership, db: DbSession
 ) -> ProjectLinkOut:
-    project = _load_project(db, membership.space_id, project_id)
+    project = load_project(db, membership, project_id, write=True)
     if body.project_id == project.id:
         raise HTTPException(422, "Un projet ne peut pas être lié à lui-même.")
-    other = _load_project(db, membership.space_id, body.project_id)
+    other = load_project(db, membership, body.project_id)
     a, b = sorted([project.id, other.id], key=str)
     existing = db.scalar(
         select(ProjectLink).where(ProjectLink.project_a_id == a, ProjectLink.project_b_id == b)
@@ -1013,9 +1076,9 @@ def create_link(
 
 @router.delete("/projects/{project_id}/links/{other_id}", status_code=204)
 def delete_link(
-    project_id: uuid.UUID, other_id: uuid.UUID, membership: WriterMembership, db: DbSession
+    project_id: uuid.UUID, other_id: uuid.UUID, membership: CurrentMembership, db: DbSession
 ) -> None:
-    project = _load_project(db, membership.space_id, project_id)
+    project = load_project(db, membership, project_id, write=True)
     other = _load_project(db, membership.space_id, other_id)
     a, b = sorted([project.id, other.id], key=str)
     link = db.scalar(

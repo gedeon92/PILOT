@@ -13,6 +13,7 @@ import {
 import { DocumentsSection } from '../components/documents'
 import { TaskAddForm, TaskRow } from '../components/task-row'
 import { TaskBoard } from '../components/task-board'
+import { ProjectAccessDrawer } from '../components/project-access'
 import { PlusIcon } from '../components/icons'
 import { Avatar } from '../components/avatar'
 import { ContributorsField } from '../components/contributors-field'
@@ -852,7 +853,7 @@ export function ProjectDetailPage() {
   const project = useProject(space.id, projectId)
   const [mode, setMode] = useState<'view' | 'edit' | 'status'>('view')
   const [showHistory, setShowHistory] = useState(false)
-  const canWrite = space.role !== 'reader'
+  const [showAccess, setShowAccess] = useState(false)
   const today = todayIso(space.timezone)
 
   if (project.isPending) return <FullPageLoader />
@@ -868,6 +869,8 @@ export function ProjectDetailPage() {
   }
 
   const p = project.data
+  // Lot C : le rôle sur ce projet précis (il peut différer du rôle dans l'espace).
+  const canWrite = p.my_role ? p.my_role !== 'reader' : space.role !== 'reader'
   const status = PROJECT_STATUS[p.status]
   const late = !isClosedProject(p.status) && p.due_date !== null && p.due_date < today
 
@@ -884,6 +887,14 @@ export function ProjectDetailPage() {
           <div className="title-line">
             <h1>{p.title}</h1>
             <StatusPill tone={status.tone}>{status.label}</StatusPill>
+            {p.private && (
+              <span
+                className="pill pill--violet"
+                title="Visible seulement par les personnes ajoutées"
+              >
+                🔒 Privé
+              </span>
+            )}
           </div>
           <p>
             Mis à jour le {formatMoment(p.updated_at)}
@@ -893,6 +904,9 @@ export function ProjectDetailPage() {
         </div>
         {mode === 'view' && (
           <div className="page-header__actions">
+            <button type="button" className="button" onClick={() => setShowAccess(true)}>
+              {p.private ? '🔒 Accès' : 'Accès'}
+            </button>
             <button type="button" className="button" onClick={() => setShowHistory(true)}>
               Historique
             </button>
@@ -913,6 +927,14 @@ export function ProjectDetailPage() {
           </div>
         )}
       </header>
+      {showAccess && (
+        <ProjectAccessDrawer
+          spaceId={space.id}
+          projectId={p.id}
+          isOwner={space.role === 'owner'}
+          onClose={() => setShowAccess(false)}
+        />
+      )}
       {showHistory && (
         <HistoryDrawer spaceId={space.id} projectId={p.id} onClose={() => setShowHistory(false)} />
       )}

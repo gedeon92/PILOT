@@ -233,6 +233,8 @@ def build_export(db: Session, space: Space, author: User, with_files: bool) -> t
             "Demandes de la boîte de mise à jour (elles peuvent être privées)",
             "Alertes et préférences d'alertes (recalculées)",
             "Abonnements aux tâches (propres à chaque compte)",
+            "Accès par projet (propres à chaque compte : à redonner après l'import ; un projet "
+            "privé le reste)",
         ]
         archive.writestr(DATA_NAME, json.dumps(data, ensure_ascii=False, indent=2))
     summary = {

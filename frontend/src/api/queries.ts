@@ -12,6 +12,7 @@ import {
   type Me,
   type Member,
   type Project,
+  type ProjectAccess,
   type ProjectLink,
   type Proposal,
   type Role,
@@ -439,6 +440,30 @@ export function useRemoveDependency(spaceId: string, taskId: string) {
     path: `${taskId}/dependencies/${dependsOnId}`,
     method: 'DELETE' as const,
   }))
+}
+
+// ---------- Accès à un projet (lot C) ----------
+
+export function useProjectAccess(spaceId: string, projectId: string) {
+  return useQuery({
+    queryKey: [...projectKeys.one(spaceId, projectId), 'access'],
+    queryFn: () => api<ProjectAccess>(`/spaces/${spaceId}/projects/${projectId}/access`),
+  })
+}
+
+export function useSetProjectAccess(spaceId: string, projectId: string) {
+  const refresh = useRefreshProjects(spaceId)
+  return useMutation({
+    mutationFn: (body: {
+      private: boolean
+      members: { member_id: string; role: 'contributor' | 'reader' }[]
+    }) =>
+      api<ProjectAccess>(`/spaces/${spaceId}/projects/${projectId}/access`, {
+        method: 'PUT',
+        body,
+      }),
+    onSuccess: refresh,
+  })
 }
 
 // ---------- Liens entre projets ----------

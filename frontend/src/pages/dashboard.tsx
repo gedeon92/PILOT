@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { Link, useOutletContext } from 'react-router'
-import type { Project } from '../api/client'
+import { canWriteSpace, type Project } from '../api/client'
 import { useProjects, useSpaceTasks } from '../api/queries'
 import {
   BellIcon,
@@ -218,7 +218,7 @@ export function DashboardPage() {
           <p className="hero__summary">{summary}</p>
         </div>
         <div className="hero__actions">
-          {space.role !== 'reader' && (
+          {canWriteSpace(space.role) && (
             <Link className="button hero__button" to={`${base}/projets/nouveau`}>
               Nouveau projet <PlusIcon />
             </Link>
@@ -350,7 +350,7 @@ export function DashboardPage() {
                     <span>
                       <strong>{projects.isPending ? 'Chargement…' : 'Aucun projet actif.'}</strong>{' '}
                       {!projects.isPending &&
-                        space.role !== 'reader' &&
+                        canWriteSpace(space.role) &&
                         'Créez le premier avec « Nouveau projet ».'}
                     </span>
                   </div>

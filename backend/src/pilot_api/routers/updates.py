@@ -20,6 +20,12 @@ from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, selectinload
 
+from pilot_api.access import (
+    ensure_visible,
+    ensure_writer,
+    visible_project_ids,
+    visible_projects,
+)
 from pilot_api.audit import record
 from pilot_api.config import get_settings
 from pilot_api.deps import DbSession, WriterMembership
@@ -266,7 +272,12 @@ def _requests_out(
             if proposal.project_id:
                 ids.add(proposal.project_id)
             ids.update(uuid.UUID(c) for c in proposal.candidate_ids)
-    projects = _projects_by_id(db, ids)
+    # Lot C : les propositions sur un projet invisible pour cette personne ne sont pas montrées,
+    # et un projet invisible n'apparaît pas parmi les projets possibles.
+    visible = visible_project_ids(db, membership)
+    projects = {
+        pid: p for pid, p in _projects_by_id(db, ids).items() if visible is None or pid in visible
+    }
     return [
         UpdateRequestOut(
             id=r.id,
@@ -286,7 +297,11 @@ def _requests_out(
                 )
                 for s in r.sources
             ],
-            proposals=[_proposal_out(p, projects) for p in r.proposals],
+            proposals=[
+                _proposal_out(p, projects)
+                for p in r.proposals
+                if p.project_id is None or p.project_id in projects
+            ],
             notes=r.notes,
         )
         for r in requests
@@ -314,7 +329,8 @@ def get_update(
 # ---------- Dépôt et préparation ----------
 
 
-def _space_projects(db: Session, space_id: uuid.UUID) -> list[Project]:
+def _space_projects(db: Session, membership: Membership) -> list[Project]:
+    """Projets que cette personne peut voir : seuls ceux-là peuvent être reconnus (lot C)."""
     return list(
         db.scalars(
             select(Project)
@@ -323,7 +339,11 @@ def _space_projects(db: Session, space_id: uuid.UUID) -> list[Project]:
                 selectinload(Project.owner_member).selectinload(Membership.user),
                 selectinload(Project.event_details).selectinload(EventDetails.program),
             )
-            .where(Project.space_id == space_id, Project.status != ProjectStatus.CANCELLED)
+            .where(
+                Project.space_id == membership.space_id,
+                Project.status != ProjectStatus.CANCELLED,
+                visible_projects(membership),
+            )
         ).all()
     )
 
@@ -430,7 +450,7 @@ async def create_update(
         if extracted.status == ExtractionStatus.READ:
             texts.append(TextSource(filename, extracted.text, filename))
 
-    projects = _space_projects(db, space_id)
+    projects = _space_projects(db, membership)
     by_id = {p.id: p for p in projects}
     analysis = analyse(texts, [_project_info(p) for p in projects], _members(db, space_id))
     notes = list(analysis.notes)
@@ -494,7 +514,11 @@ def _proposal_response(db: Session, membership: Membership, proposal: Proposal) 
     db.refresh(proposal)
     ids = {proposal.project_id} if proposal.project_id else set()
     ids.update(uuid.UUID(c) for c in proposal.candidate_ids)
-    return _proposal_out(proposal, _projects_by_id(db, ids))
+    visible = visible_project_ids(db, membership)
+    projects = {
+        pid: p for pid, p in _projects_by_id(db, ids).items() if visible is None or pid in visible
+    }
+    return _proposal_out(proposal, projects)
 
 
 @router.post("/proposals/{proposal_id}/target")
@@ -512,6 +536,7 @@ def choose_target(
     )
     if project is None:
         raise HTTPException(404, "Projet introuvable.")
+    ensure_writer(db, membership, project)
     _target(proposal, project)
     db.commit()
     return _proposal_response(db, membership, proposal)
@@ -528,6 +553,7 @@ def refresh_proposal(
     project = _projects_by_id(db, {proposal.project_id}).get(proposal.project_id)
     if project is None:
         raise HTTPException(404, "Projet introuvable.")
+    ensure_visible(db, membership, project)
     _target(proposal, project)
     db.commit()
     return _proposal_response(db, membership, proposal)
@@ -579,6 +605,7 @@ def apply_proposal(
     )
     if project is None:
         raise HTTPException(404, "Projet introuvable.")
+    ensure_writer(db, membership, project)
     if project.version != proposal.base_version or body.base_version != proposal.base_version:
         raise HTTPException(409, STALE)
     project = _load_project(db, membership.space_id, project.id)
@@ -645,6 +672,8 @@ def discard_proposal(
     proposal_id: uuid.UUID, body: ProposalDiscard, membership: WriterMembership, db: DbSession
 ) -> ProposalOut:
     proposal = _load_proposal(db, membership, proposal_id, lock=True)
+    if proposal.project_id is not None:
+        ensure_visible(db, membership, db.get(Project, proposal.project_id))
     if proposal.state == ProposalState.APPLIED:
         raise HTTPException(409, "Cette proposition est déjà appliquée.")
     if proposal.state != ProposalState.DISCARDED:

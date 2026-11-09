@@ -23,6 +23,8 @@ type InvitableRole = Exclude<Role, 'owner'>
 const ROLE_HELP: Record<InvitableRole, string> = {
   reader: 'consulte les projets et les documents',
   contributor: 'consulte, ajoute et modifie les projets',
+  guest:
+    'personne extérieure (prestataire, partenaire) : ne voit que les projets auxquels vous l’ajoutez, depuis le bouton « Accès » de chaque projet',
 }
 
 const dateFormat = new Intl.DateTimeFormat('fr-FR', {
@@ -133,6 +135,7 @@ function InviteForm({
         >
           <option value="contributor">Contributeur</option>
           <option value="reader">Lecteur</option>
+          <option value="guest">Invité (extérieur)</option>
         </select>
       </div>
       <button className="button button--primary" type="submit" disabled={invite.isPending}>

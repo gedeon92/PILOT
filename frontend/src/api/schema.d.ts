@@ -712,6 +712,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/spaces/{space_id}/projects/{project_id}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Access
+         * @description Visible par toute personne qui voit le projet : chacun sait qui y a accès.
+         */
+        get: operations["get_access_api_spaces__space_id__projects__project_id__access_get"];
+        /** Set Access */
+        put: operations["set_access_api_spaces__space_id__projects__project_id__access_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/spaces/{space_id}/projects/{project_id}/documents": {
         parameters: {
             query?: never;
@@ -1485,7 +1506,7 @@ export interface components {
              * Role
              * @enum {string}
              */
-            role: "reader" | "contributor";
+            role: "reader" | "contributor" | "guest";
         };
         /** InvitationInfo */
         InvitationInfo: {
@@ -1580,7 +1601,7 @@ export interface components {
              * Role
              * @enum {string}
              */
-            role: "reader" | "contributor";
+            role: "reader" | "contributor" | "guest";
         };
         /**
          * MembershipStatus
@@ -1743,6 +1764,45 @@ export interface components {
             archived?: boolean | null;
             /** Description */
             description?: string | null;
+        };
+        /** ProjectAccessIn */
+        ProjectAccessIn: {
+            /** Private */
+            private: boolean;
+            /** Members */
+            members?: components["schemas"]["ProjectAccessMemberIn"][];
+        };
+        /** ProjectAccessMember */
+        ProjectAccessMember: {
+            /**
+             * Member Id
+             * Format: uuid
+             */
+            member_id: string;
+            /** Name */
+            name: string;
+            /** Email */
+            email: string;
+            space_role: components["schemas"]["Role"];
+            role: components["schemas"]["ProjectRole"];
+            /** Has Account */
+            has_account: boolean;
+        };
+        /** ProjectAccessMemberIn */
+        ProjectAccessMemberIn: {
+            /**
+             * Member Id
+             * Format: uuid
+             */
+            member_id: string;
+            role: components["schemas"]["ProjectRole"];
+        };
+        /** ProjectAccessOut */
+        ProjectAccessOut: {
+            /** Private */
+            private: boolean;
+            /** Members */
+            members: components["schemas"]["ProjectAccessMember"][];
         };
         /** ProjectCreate */
         ProjectCreate: {
@@ -1927,7 +1987,20 @@ export interface components {
             updated_at: string;
             /** Version */
             version: number;
+            /**
+             * Private
+             * @default false
+             */
+            private: boolean;
+            /** My Role */
+            my_role?: string | null;
         };
+        /**
+         * ProjectRole
+         * @description Rôle d'une personne sur un projet précis (lot C) ; précise le rôle de l'espace.
+         * @enum {string}
+         */
+        ProjectRole: "contributor" | "reader";
         /**
          * ProjectStatus
          * @enum {string}
@@ -2153,7 +2226,7 @@ export interface components {
          * Role
          * @enum {string}
          */
-        Role: "owner" | "contributor" | "reader";
+        Role: "owner" | "contributor" | "reader" | "guest";
         /** SourceShare */
         SourceShare: {
             /**
@@ -2265,6 +2338,11 @@ export interface components {
             followers: components["schemas"]["FollowerOut"][];
             /** Following */
             following: boolean;
+            /**
+             * Can Write
+             * @default true
+             */
+            can_write: boolean;
         };
         /** TaskOut */
         TaskOut: {
@@ -4231,6 +4309,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_access_api_spaces__space_id__projects__project_id__access_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectAccessOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_access_api_spaces__space_id__projects__project_id__access_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectAccessIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectAccessOut"];
                 };
             };
             /** @description Validation Error */
