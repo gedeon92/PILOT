@@ -4905,21 +4905,7 @@ a {
   stroke-linecap: round;
 }
 
-/* Personnages */
-.sc-shoe {
-  fill: #11151f;
-}
-.sc-collar {
-  fill: none;
-  stroke: rgb(255 255 255 / 0.55);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.sc-cheek {
-  fill: #ff7aa2;
-  opacity: 0.35;
-}
+/* Personnages : avatars 3D (images générées pour PILOT), détourés, animés légèrement. */
 .sc-team {
   stroke: var(--color-panel);
   stroke-width: 2.5;
@@ -4955,134 +4941,6 @@ a {
     scale: 1.15;
   }
 }
-.sc-shadow {
-  fill: rgb(var(--fx) / 0.1);
-}
-.sc-leg {
-  stroke: none;
-}
-.sc-arm {
-  stroke: currentColor;
-  stroke-width: 7;
-  stroke-linecap: round;
-}
-.sc-eye {
-  fill: #1b1206;
-}
-.sc-smile {
-  fill: none;
-  stroke: #1b1206;
-  stroke-width: 1.4;
-  stroke-linecap: round;
-}
-.sc-head,
-.sc-leg,
-.sc-arm--up,
-.sc-arm--wave,
-.sc-arm--write,
-.sc-person__body {
-  transform-box: fill-box;
-}
-.sc-head {
-  transform-origin: center bottom;
-  animation: sc-nod 3s ease-in-out infinite;
-}
-@keyframes sc-nod {
-  0%,
-  100% {
-    transform: rotate(0);
-  }
-  50% {
-    transform: rotate(5deg);
-  }
-}
-.sc-p3 .sc-head {
-  animation-delay: -1.5s;
-}
-.sc-clip {
-  fill: #f8fafc;
-  stroke: #cbd5e1;
-}
-.sc-clipboard .sc-text {
-  fill: #94a3b8;
-  opacity: 1;
-}
-.sc-box {
-  fill: none;
-  stroke: #94a3b8;
-}
-.sc-check {
-  fill: none;
-  stroke: #16a34a;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0;
-  animation-duration: 8s;
-  animation-timing-function: ease-out;
-  animation-iteration-count: infinite;
-}
-.sc-check--1 {
-  animation-name: sc-check-1;
-}
-.sc-check--2 {
-  animation-name: sc-check-2;
-}
-.sc-check--3 {
-  animation-name: sc-check-3;
-}
-@keyframes sc-check-1 {
-  0%,
-  12% {
-    opacity: 0;
-  }
-  16%,
-  90% {
-    opacity: 1;
-  }
-  96%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes sc-check-2 {
-  0%,
-  36% {
-    opacity: 0;
-  }
-  40%,
-  90% {
-    opacity: 1;
-  }
-  96%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes sc-check-3 {
-  0%,
-  60% {
-    opacity: 0;
-  }
-  64%,
-  90% {
-    opacity: 1;
-  }
-  96%,
-  100% {
-    opacity: 0;
-  }
-}
-.sc-arm--write {
-  transform-origin: left top;
-  animation: sc-write 0.6s ease-in-out infinite alternate;
-}
-@keyframes sc-write {
-  to {
-    transform: rotate(-14deg) translateY(4px);
-  }
-}
-/* La personne orange accompagne la carte puis revient. */
 .sc-walker {
   animation: sc-walk 8s var(--ease-out) infinite;
 }
@@ -5100,68 +4958,37 @@ a {
     transform: translateX(0);
   }
 }
-.sc-p2 .sc-person__body {
-  transform-origin: center;
-  animation: sc-turn 8s steps(1) infinite;
+.sc-avatar {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: sc-float 4.2s ease-in-out infinite;
 }
-@keyframes sc-turn {
+.sc-avatar--2 {
+  animation-delay: -1.4s;
+}
+.sc-avatar--3 {
+  animation-delay: -2.8s;
+}
+@keyframes sc-float {
   0%,
-  70% {
-    transform: scaleX(1);
-  }
-  71%,
-  94% {
-    transform: scaleX(-1);
-  }
-  95%,
   100% {
-    transform: scaleX(1);
+    transform: translateY(0) scale(1);
   }
-}
-.sc-p2 .sc-leg {
-  transform-origin: center top;
-  animation: sc-step 0.5s ease-in-out infinite alternate;
-}
-.sc-p2 .sc-leg--r {
-  animation-direction: alternate-reverse;
-}
-@keyframes sc-step {
-  from {
-    transform: rotate(9deg);
-  }
-  to {
-    transform: rotate(-9deg);
-  }
-}
-.sc-arm--up {
-  transform-origin: left bottom;
-  animation: sc-reach 1.2s ease-in-out infinite alternate;
-}
-@keyframes sc-reach {
-  to {
-    transform: rotate(-12deg);
-  }
-}
-.sc-arm--wave {
-  transform-origin: right bottom;
-  animation: sc-wave 1s ease-in-out infinite alternate;
-}
-@keyframes sc-wave {
-  from {
-    transform: rotate(-10deg);
-  }
-  to {
-    transform: rotate(18deg);
-  }
-}
-.sc-p1 .sc-person__body,
-.sc-p3 .sc-person__body {
-  transform-origin: center bottom;
-  animation: sc-breathe 3.2s ease-in-out infinite;
-}
-@keyframes sc-breathe {
   50% {
-    transform: translateY(-3px);
+    transform: translateY(-4px) scale(1.012);
+  }
+}
+/* La personne en orange accompagne la carte : petit balancement pendant le trajet. */
+.sc-walker .sc-avatar {
+  animation: sc-bob 0.9s ease-in-out infinite;
+}
+@keyframes sc-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(1deg);
   }
 }
 
