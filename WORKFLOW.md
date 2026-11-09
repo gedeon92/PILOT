@@ -362,6 +362,11 @@ Audit technique et fonctionnel de tout l'existant (serveur, base de données, é
 - [ ] Publication puis vérification des données réellement disponibles
 - [ ] Documentation : installation, rôles, limites connues, procédure de livraison
 
+Décisions du 9 nov. 2026 (propriétaire du produit) :
+- **Adresse** : on garde pour l'instant `pilot-beta-swart.vercel.app`. Le nom de domaine et l'adresse d'expédition des e-mails dédiée viendront plus tard.
+- **Hébergement** : on reste sur les offres gratuites tant que PILOT est en test.
+- **Production séparée** : pas encore. L'application est toujours en construction ; on continue sur l'environnement actuel.
+
 **Terminé quand :** la propriétaire du produit valide la recette en production.
 
 ## Après la V1 (non engagé)
