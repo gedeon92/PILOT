@@ -96,6 +96,9 @@ describe('fiche projet et page Tâches', () => {
     const list = await screen.findByRole('region', { name: 'Liste des tâches' })
     expect(await within(list).findByText('Analyser les réponses')).toBeInTheDocument()
     expect(within(list).queryByText('Signer le traiteur')).not.toBeInTheDocument()
+    // Depuis le 9 nov. 2026, les tâches se gèrent dans la fiche projet : plus d'entrée au menu.
+    const nav = screen.getByRole('navigation', { name: 'Navigation principale' })
+    expect(within(nav).queryByRole('link', { name: 'Tâches' })).not.toBeInTheDocument()
   })
 })
 

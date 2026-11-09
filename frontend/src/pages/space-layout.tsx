@@ -18,7 +18,6 @@ import {
   PlusIcon,
   SearchIcon,
   SettingsIcon,
-  TasksIcon,
   TimelineIcon,
 } from '../components/icons'
 import { CommandPalette } from '../components/command-palette'
@@ -108,10 +107,6 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
           <NavLink to={`${base}/evenements`} className={linkClass}>
             <CalendarIcon />
             <span className="nav__label">Événements</span>
-          </NavLink>
-          <NavLink to={`${base}/taches`} className={linkClass}>
-            <TasksIcon />
-            <span className="nav__label">Tâches</span>
           </NavLink>
           <NavLink to={`${base}/timeline`} className={linkClass}>
             <TimelineIcon />

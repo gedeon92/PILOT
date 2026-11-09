@@ -278,14 +278,14 @@ Ce qui manque à PILOT par rapport à Asana pour le travail d'équipe au quotidi
 - Réalisation :
   - Tout se passe dans une **fenêtre de la tâche**, ouverte en cliquant sur son titre depuis n'importe quelle page (adresse `?tache=…`, partageable). On peut aussi y modifier la tâche : titre, livrable, responsable, échéance.
   - Dans les listes, des repères : « En attente », sous-tâches « 1/3 », nombre de commentaires.
-  - Décision du 9 nov. 2026 (propriétaire du produit) : tâches et sous-tâches se gèrent **uniquement dans l'onglet Tâches**. La fiche d'un projet n'affiche plus qu'un résumé (ouvertes, en retard, clôturées) et un bouton « Voir les tâches de ce projet », qui ouvre l'onglet Tâches filtré. Depuis une tâche, aucun lien ne renvoie vers le projet. Les sous-tâches ne sont pas des lignes de la liste : elles restent dans leur tâche.
+  - Décision du 9 nov. 2026, révisée le même jour (propriétaire du produit) : **« Tâches » est retiré du menu** ; les tâches se gèrent **dans la fiche de leur projet**, en liste ou en tableau (bouton « Liste / Tableau »). Les sous-tâches restent dans leur tâche (fenêtre de la tâche, compteur ☑), pas en lignes à part. Depuis une tâche, aucun lien ne renvoie ailleurs. La page `/taches` reste joignable par la recherche (⌘K) et par les alertes des tâches du « suivi général », qui n'ont pas de projet.
   - Notifications (CDC §16) : une alerte « Mention » ou « Tâche suivie » apparaît tout de suite dans Alertes, et figure dans le récapitulatif e-mail du jour s'il n'est pas encore parti. Pas d'e-mail à chaque commentaire. Une seule alerte par tâche et par jour, mise à jour à chaque nouvel événement.
   - Lecteurs : consultent et peuvent suivre une tâche ; ils ne commentent pas et ne modifient rien.
   - Un commentaire est retiré seulement par son auteur ou par un propriétaire.
   - Journal du projet, export et import mis à jour. Les abonnements ne sont pas exportés : ils sont propres à chaque compte.
 
 ### Lot B — Tableau avec cartes à glisser (fait le 9 nov. 2026)
-- [x] Nouvelle vue **Tableau** dans l'onglet Tâches (bouton « Liste / Tableau », adresse `?vue=tableau`) ; pour un projet, on filtre l'onglet sur ce projet : colonnes À faire / En cours / Terminé, avec la carte qu'on fait glisser d'une colonne à l'autre.
+- [x] Nouvelle vue **Tableau** dans la fiche de chaque projet (bouton « Liste / Tableau »), et aussi sur la page `/taches` (adresse `?vue=tableau`) : colonnes À faire / En cours / Terminé, avec la carte qu'on fait glisser d'une colonne à l'autre.
   - Une autre manière d'afficher les mêmes tâches : la vue Liste reste. Les statuts ne changent pas.
 - [x] Tout reste faisable au clavier et sur téléphone, sans glisser, avec le choix du statut sur la carte.
 - [x] Les lecteurs voient le tableau mais ne peuvent pas déplacer les cartes.

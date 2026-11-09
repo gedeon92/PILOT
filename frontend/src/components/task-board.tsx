@@ -193,7 +193,7 @@ function BoardCard({
       <button type="button" className="board-card__title" onClick={() => openTask(task.id)}>
         {task.title}
       </button>
-      <span className="board-card__project">{project}</span>
+      {project && <span className="board-card__project">{project}</span>}
       {(waiting || subtasks > 0 || comments > 0 || status === 'cancelled') && (
         <span className="task-row__badges">
           {status === 'cancelled' && <span className="task-badge">Annulée</span>}

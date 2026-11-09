@@ -11,6 +11,9 @@ import {
   useUpdateProject,
 } from '../api/queries'
 import { DocumentsSection } from '../components/documents'
+import { TaskAddForm, TaskRow } from '../components/task-row'
+import { TaskBoard } from '../components/task-board'
+import { PlusIcon } from '../components/icons'
 import { Avatar } from '../components/avatar'
 import { ContributorsField } from '../components/contributors-field'
 import { Country } from '../components/country'
@@ -476,41 +479,84 @@ function ProjectEditForm({
 
 // ---------- Tâches ----------
 
-function TasksSection({ project, spaceId }: { project: Project; spaceId: string }) {
-  // Les tâches et sous-tâches se gèrent dans l'onglet Tâches ; la fiche n'en garde qu'un résumé.
+function TasksSection({
+  project,
+  spaceId,
+  canWrite,
+}: {
+  project: Project
+  spaceId: string
+  canWrite: boolean
+}) {
+  // Les tâches se gèrent dans la fiche de leur projet (décision du 9 nov. 2026) : liste ou
+  // tableau ; les sous-tâches restent dans leur tâche (fenêtre de la tâche, compteur ☑).
   const tasks = useTasks(spaceId, project.id)
+  const [adding, setAdding] = useState(false)
+  const [board, setBoard] = useState(false)
+  const closed = isClosedProject(project.status)
   const main = tasks.data?.filter((t) => !t.parent_id) ?? []
-  const open = main.filter((t) => t.status !== 'done' && t.status !== 'cancelled').length
-  const late = main.filter((t) => t.late).length
-  const done = main.length - open
+  const open = main.filter((t) => t.status !== 'done' && t.status !== 'cancelled')
+  const done = main.filter((t) => t.status === 'done' || t.status === 'cancelled')
 
   return (
-    <section className="card-panel tasks-summary" aria-labelledby="tasks-title">
+    <section className="card-panel" aria-labelledby="tasks-title">
       <div className="card-panel__head">
-        <h2 id="tasks-title">Tâches</h2>
-        <Link
-          className="button button--small"
-          to={`/espaces/${spaceId}/taches?projet=${project.id}`}
-        >
-          Voir les tâches de ce projet →
-        </Link>
+        <h2 id="tasks-title">
+          Tâches <span className="count">{open.length} ouverte(s)</span>
+        </h2>
+        <div className="tasks-head__actions">
+          <div className="segmented" role="group" aria-label="Présentation des tâches">
+            <button
+              type="button"
+              aria-pressed={!board}
+              className={!board ? 'segmented__item segmented__item--on' : 'segmented__item'}
+              onClick={() => setBoard(false)}
+            >
+              ☰ Liste
+            </button>
+            <button
+              type="button"
+              aria-pressed={board}
+              className={board ? 'segmented__item segmented__item--on' : 'segmented__item'}
+              onClick={() => setBoard(true)}
+            >
+              ▦ Tableau
+            </button>
+          </div>
+          {canWrite && !closed && !adding && (
+            <button type="button" className="button button--small" onClick={() => setAdding(true)}>
+              <PlusIcon /> Tâche
+            </button>
+          )}
+        </div>
       </div>
-      <p className="tasks-summary__line">
-        {tasks.isPending
-          ? 'Chargement…'
-          : main.length === 0
-            ? 'Aucune tâche pour l’instant.'
-            : [
-                `${open} ouverte${open > 1 ? 's' : ''}`,
-                late > 0 ? `${late} en retard` : null,
-                `${done} clôturée${done > 1 ? 's' : ''}`,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-      </p>
-      <p className="task-drawer__hint">
-        Tâches et sous-tâches s’ajoutent et se suivent dans l’onglet Tâches.
-      </p>
+      {adding && (
+        <TaskAddForm spaceId={spaceId} projectId={project.id} onDone={() => setAdding(false)} />
+      )}
+      {tasks.isPending && <p className="muted">Chargement…</p>}
+      {tasks.data && main.length === 0 && !adding && (
+        <p className="muted">Aucune tâche. Déclinez la prochaine étape en actions concrètes.</p>
+      )}
+      {board && main.length > 0 && (
+        <TaskBoard tasks={main} spaceId={spaceId} canWrite={canWrite} projectTitle={() => ''} />
+      )}
+      {!board && open.length > 0 && (
+        <ul className="task-list">
+          {open.map((task) => (
+            <TaskRow key={task.id} task={task} spaceId={spaceId} canWrite={canWrite} />
+          ))}
+        </ul>
+      )}
+      {!board && done.length > 0 && (
+        <details className="task-closed">
+          <summary>{done.length} tâche(s) clôturée(s)</summary>
+          <ul className="task-list">
+            {done.map((task) => (
+              <TaskRow key={task.id} task={task} spaceId={spaceId} canWrite={canWrite} />
+            ))}
+          </ul>
+        </details>
+      )}
     </section>
   )
 }
@@ -904,7 +950,7 @@ export function ProjectDetailPage() {
                 )}
               </div>
             </section>
-            <TasksSection project={p} spaceId={space.id} />
+            <TasksSection project={p} spaceId={space.id} canWrite={canWrite} />
             <DocumentsSection spaceId={space.id} projectId={p.id} canWrite={canWrite} />
           </div>
 

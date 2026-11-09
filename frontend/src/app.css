@@ -5552,6 +5552,12 @@ a {
   }
 }
 
+.tasks-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
 .tasks-summary__line {
   margin: 0;
   font-size: 15px;
