@@ -87,8 +87,12 @@ export function TaskRow({
           <span className="task-row__general">Suivi général</span>
         ) : (
           project && (
-            <Link className="task-row__project" to={`/espaces/${spaceId}/projets/${project.id}`}>
-              {project.title}
+            <Link
+              className="task-row__project"
+              to={`/espaces/${spaceId}/projets/${project.id}`}
+              title="Ouvrir la fiche du projet"
+            >
+              Projet : {project.title}
             </Link>
           )
         )}

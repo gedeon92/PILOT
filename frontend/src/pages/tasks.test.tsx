@@ -52,7 +52,7 @@ describe('page Tâches', () => {
 
     const list = await screen.findByRole('region', { name: 'Liste des tâches' })
     expect(await within(list).findByText('Réserver la salle')).toBeInTheDocument()
-    expect(within(list).getAllByRole('link', { name: 'Salon Agri 2026' })).toHaveLength(2)
+    expect(within(list).getAllByRole('link', { name: 'Projet : Salon Agri 2026' })).toHaveLength(2)
 
     await user.click(screen.getByRole('button', { name: /En retard/ }))
     expect(within(list).queryByText('Réserver la salle')).not.toBeInTheDocument()
