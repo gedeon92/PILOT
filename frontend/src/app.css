@@ -480,8 +480,32 @@ select:focus-visible {
   white-space: nowrap;
 }
 .user-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   padding: 4px;
   border-top: 1px solid var(--line);
+}
+.user-card__actions .nav__link {
+  min-height: 34px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  font-size: 13.5px;
+}
+/* Sur ordinateur, la carte reste toujours visible en bas du menu, même sur un petit écran :
+   « Déconnexion » ne disparaît jamais sous le bord. */
+@media (min-width: 900px) {
+  .sidebar .user-card {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    flex-shrink: 0;
+    background: var(--color-panel);
+    /* Ombre pleine sous la carte : rien ne défile visiblement entre elle et le bas d'écran. */
+    box-shadow:
+      0 -18px 24px -6px var(--color-page),
+      0 24px 0 6px var(--color-page);
+  }
 }
 
 .avatar {
