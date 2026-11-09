@@ -164,8 +164,11 @@ function TaskContent({
               </button>
             </>
           ) : task.project_id ? (
-            <Link to={`/espaces/${spaceId}/projets/${task.project_id}`}>
-              {detail.project_title}
+            <Link
+              to={`/espaces/${spaceId}/projets/${task.project_id}`}
+              title="Quitter la tâche et ouvrir la fiche du projet"
+            >
+              Projet : {detail.project_title} ↗
             </Link>
           ) : (
             'Suivi général'
