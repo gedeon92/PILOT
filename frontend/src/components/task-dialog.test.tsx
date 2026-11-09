@@ -103,7 +103,8 @@ describe('fenêtre d’une tâche', () => {
     const list = await screen.findByRole('region', { name: 'Liste des tâches' })
     expect(await within(list).findByText('☑ 1/2')).toBeInTheDocument()
     expect(within(list).getByText('En attente')).toBeInTheDocument()
-    expect(within(list).getAllByText(/Sous-tâche de « Envoyer les invitations »/)).toHaveLength(2)
+    // Les sous-tâches ne sont pas des lignes de la liste : elles restent dans leur tâche.
+    expect(within(list).queryByText('Imprimer les cartons')).not.toBeInTheDocument()
 
     await user.click(within(list).getByRole('button', { name: 'Envoyer les invitations' }))
     const dialog = await screen.findByRole('dialog', { name: 'Envoyer les invitations' })

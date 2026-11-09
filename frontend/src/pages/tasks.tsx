@@ -37,8 +37,8 @@ export function TasksPage() {
   const myMemberId = members.data?.find((m) => m.is_me)?.id
 
   const projectById = new Map((projects.data ?? []).map((p) => [p.id, p]))
-  const titleById = new Map((tasks.data ?? []).map((t) => [t.id, t.title]))
-  const all = tasks.data ?? []
+  // Les sous-tâches restent dans leur tâche (fenêtre de la tâche, compteur ☑) : pas de ligne à part.
+  const all = (tasks.data ?? []).filter((t) => !t.parent_id)
   const inWeek = (t: Task) =>
     t.due_date !== null && t.due_date >= today && t.due_date <= addDays(today, 7)
   const matches: Record<View, (t: Task) => boolean> = {
@@ -172,7 +172,6 @@ export function TasksPage() {
                   task={t}
                   spaceId={space.id}
                   canWrite={canWrite}
-                  parentTitle={t.parent_id ? (titleById.get(t.parent_id) ?? '') : undefined}
                   project={
                     t.project_id === null
                       ? 'general'
