@@ -4959,12 +4959,7 @@ a {
   fill: rgb(var(--fx) / 0.1);
 }
 .sc-leg {
-  stroke: #1e2433;
-  stroke-width: 8;
-  stroke-linecap: round;
-}
-[data-theme='light'] .sc-leg {
-  stroke: #2b3245;
+  stroke: none;
 }
 .sc-arm {
   stroke: currentColor;
@@ -5132,10 +5127,10 @@ a {
 }
 @keyframes sc-step {
   from {
-    transform: rotate(16deg);
+    transform: rotate(9deg);
   }
   to {
-    transform: rotate(-16deg);
+    transform: rotate(-9deg);
   }
 }
 .sc-arm--up {
