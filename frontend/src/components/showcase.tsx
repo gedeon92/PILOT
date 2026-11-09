@@ -203,21 +203,15 @@ function Scene() {
         </g>
       </g>
       <g className="sc-avatar sc-avatar--3">
-        <svg x="410" y="190" width="96" height="146" viewBox="0 0 318 480">
-          <image href="/showcase/avatar-3-base.webp" width="318" height="480" />
-          <image
-            className="sc-p3-head"
-            href="/showcase/avatar-3-head.webp"
-            width="318"
-            height="480"
-          />
-          <image
-            className="sc-p3-hand"
-            href="/showcase/avatar-3-hand.webp"
-            width="318"
-            height="480"
-          />
-        </svg>
+        {/* Image entière (aucune découpe) : c'est tout le corps qui se penche vers le calendrier. */}
+        <image
+          className="sc-p3-body"
+          href="/showcase/avatar-3.webp"
+          x="410"
+          y="190"
+          width="96"
+          height="146"
+        />
       </g>
     </svg>
   )

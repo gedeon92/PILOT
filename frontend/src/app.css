@@ -4983,9 +4983,7 @@ a {
 .sc-p1-hands,
 .sc-p2-head,
 .sc-p2-arm,
-.sc-p2-hand,
-.sc-p3-head,
-.sc-p3-hand {
+.sc-p2-hand {
   transform-box: view-box;
 }
 /* 1 : hoche la tête et montre sa liste en la levant un peu. */
@@ -5040,30 +5038,32 @@ a {
     transform: rotate(11deg);
   }
 }
-/* 3 : tapote le calendrier du doigt et hoche la tête. */
-.sc-p3-head {
-  transform-origin: 215px 170px;
-  animation: sc-nod 3s ease-in-out infinite;
-  animation-delay: -1.6s;
+/* 3 : image entière, sans découpe. Tout le corps se penche vers le calendrier pour le
+   montrer, deux fois, puis se redresse en se balançant doucement. */
+.sc-p3-body {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: sc-point 3.4s ease-in-out infinite;
 }
-.sc-p3-hand {
-  transform-origin: 240px 250px;
-  animation: sc-tap 1.6s ease-in-out infinite;
-}
-@keyframes sc-tap {
+@keyframes sc-point {
   0%,
-  40%,
   100% {
-    transform: translate(0, 0);
+    transform: rotate(0deg) translateX(0);
   }
-  55% {
-    transform: translate(-6px, -5px);
+  18% {
+    transform: rotate(-3.5deg) translateX(-2px);
   }
-  70% {
-    transform: translate(0, 0);
+  30% {
+    transform: rotate(-1.5deg) translateX(-1px);
   }
-  82% {
-    transform: translate(-6px, -5px);
+  42% {
+    transform: rotate(-3.5deg) translateX(-2px);
+  }
+  62% {
+    transform: rotate(0.8deg) translateX(0);
+  }
+  80% {
+    transform: rotate(-0.6deg) translateX(0);
   }
 }
 @keyframes sc-nod {
