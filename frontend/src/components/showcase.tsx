@@ -161,64 +161,33 @@ function Scene() {
       <Sparkle x={24} y={190} size={0.8} delay={2.1} />
       <Sparkle x={250} y={222} size={0.6} delay={0.6} />
 
-      {/* L'équipe : avatars 3D découpés en morceaux (marionnettes) : tête, bras, mains et
-          liste bougent chacun autour de leur articulation (voir app.css, « Marionnettes »). */}
-      <g className="sc-avatar sc-avatar--1">
-        <svg x="30" y="182" width="77" height="154" viewBox="0 0 260 520">
-          <image href="/showcase/avatar-1-base.webp" width="260" height="520" />
-          <image
-            className="sc-p1-head"
-            href="/showcase/avatar-1-head.webp"
-            width="260"
-            height="520"
-          />
-          <image
-            className="sc-p1-hands"
-            href="/showcase/avatar-1-hands.webp"
-            width="260"
-            height="520"
-          />
-        </svg>
-      </g>
+      {/* L'équipe : avatars 3D (en buste), qui flottent doucement. */}
+      <image
+        className="sc-avatar sc-avatar--1"
+        href="/showcase/avatar-1.webp"
+        x="30"
+        y="182"
+        width="77"
+        height="154"
+      />
       <g className="sc-walker">
-        <g className="sc-avatar sc-avatar--2">
-          <svg x="140" y="186" width="94" height="150" viewBox="0 0 317 503">
-            <image href="/showcase/avatar-2-base.webp" width="317" height="503" />
-            <image
-              className="sc-p2-head"
-              href="/showcase/avatar-2-head.webp"
-              width="317"
-              height="503"
-            />
-            <g className="sc-p2-arm">
-              <image href="/showcase/avatar-2-arm.webp" width="317" height="503" />
-              <image
-                className="sc-p2-hand"
-                href="/showcase/avatar-2-hand.webp"
-                width="317"
-                height="503"
-              />
-            </g>
-          </svg>
-        </g>
+        <image
+          className="sc-avatar sc-avatar--2"
+          href="/showcase/avatar-2.webp"
+          x="140"
+          y="186"
+          width="94"
+          height="150"
+        />
       </g>
-      <g className="sc-avatar sc-avatar--3">
-        <svg x="410" y="190" width="96" height="146" viewBox="0 0 318 480">
-          <image href="/showcase/avatar-3-base.webp" width="318" height="480" />
-          <image
-            className="sc-p3-head"
-            href="/showcase/avatar-3-head.webp"
-            width="318"
-            height="480"
-          />
-          <image
-            className="sc-p3-hand"
-            href="/showcase/avatar-3-hand.webp"
-            width="318"
-            height="480"
-          />
-        </svg>
-      </g>
+      <image
+        className="sc-avatar sc-avatar--3"
+        href="/showcase/avatar-3.webp"
+        x="410"
+        y="190"
+        width="96"
+        height="146"
+      />
     </svg>
   )
 }
