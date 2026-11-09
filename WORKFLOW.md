@@ -254,7 +254,7 @@ Règles d'alerte (seuils réglables par espace) :
 - [x] Repères visuels : emoji de portefeuille et drapeau du pays, toujours à côté du nom (§13)
 - Décision : lecture **toujours avec un compte** (le lien public sans compte du CDC §15 n'est pas repris, plus sûr)
 
-## Suite prévue : fonctions inspirées d'Asana (demandées le 6 nov. 2026, lot A fait le 8 nov.)
+## Suite prévue : fonctions inspirées d'Asana (demandées le 6 nov. 2026, lot A fait le 8 nov., lot B le 9 nov.)
 
 Ce qui manque à PILOT par rapport à Asana pour le travail d'équipe au quotidien. À lancer quand la propriétaire du produit le décide, un lot à la fois, chacun testé et mis en ligne à part.
 
@@ -284,11 +284,12 @@ Ce qui manque à PILOT par rapport à Asana pour le travail d'équipe au quotidi
   - Un commentaire est retiré seulement par son auteur ou par un propriétaire.
   - Journal du projet, export et import mis à jour. Les abonnements ne sont pas exportés : ils sont propres à chaque compte.
 
-### Lot B — Tableau avec cartes à glisser
-- [ ] Nouvelle vue **Tableau** pour les tâches d'un projet et pour la page Tâches : colonnes À faire / En cours / Terminé, avec la carte qu'on fait glisser d'une colonne à l'autre.
+### Lot B — Tableau avec cartes à glisser (fait le 9 nov. 2026)
+- [x] Nouvelle vue **Tableau** dans l'onglet Tâches (bouton « Liste / Tableau », adresse `?vue=tableau`) ; pour un projet, on filtre l'onglet sur ce projet : colonnes À faire / En cours / Terminé, avec la carte qu'on fait glisser d'une colonne à l'autre.
   - Une autre manière d'afficher les mêmes tâches : la vue Liste reste. Les statuts ne changent pas.
-- [ ] Tout reste faisable au clavier et sur téléphone, sans glisser, avec le choix du statut sur la carte.
-- [ ] Les lecteurs voient le tableau mais ne peuvent pas déplacer les cartes.
+- [x] Tout reste faisable au clavier et sur téléphone, sans glisser, avec le choix du statut sur la carte.
+- [x] Les lecteurs voient le tableau mais ne peuvent pas déplacer les cartes.
+- Réalisation : la colonne Terminé montre les 30 plus récentes (toutes restent en vue Liste) ; une tâche annulée y apparaît avec l'étiquette « Annulée ». Les filtres de la page (en retard, 7 jours, projet, mes tâches, recherche) s'appliquent aussi au tableau. Une carte déplacée reste à sa place sans attendre le serveur ; en cas d'erreur, elle revient et un message s'affiche.
 
 ### Lot C — Droits plus fins
 - [ ] **Rôle par projet**, par exemple Contributeur sur un projet et Lecteur sur les autres.

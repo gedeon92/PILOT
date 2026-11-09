@@ -5559,6 +5559,179 @@ a {
   color: var(--color-ink);
 }
 
+/* ---------- Tableau des tâches (lot B) : colonnes et cartes à glisser ---------- */
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.board__col {
+  --col: var(--color-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 220px;
+  padding: 14px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background-color 0.2s;
+}
+.board__col--info {
+  --col: var(--neon-4);
+}
+.board__col--ok {
+  --col: #22c55e;
+}
+.board__col--over {
+  border-color: color-mix(in srgb, var(--col) 70%, transparent);
+  background: color-mix(in srgb, var(--col) 8%, var(--glass));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--col) 20%, transparent),
+    0 0 28px color-mix(in srgb, var(--col) 25%, transparent);
+}
+.board__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid color-mix(in srgb, var(--col) 45%, transparent);
+}
+.board__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--col);
+  box-shadow: 0 0 10px var(--col);
+}
+.board__dot--neutral {
+  background: var(--color-muted);
+}
+.board__title {
+  margin: 0;
+  font-size: 15px;
+}
+.board__cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.board__empty,
+.board__more {
+  margin: 0;
+  padding: 14px 8px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-control);
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+.board__more {
+  border-style: solid;
+  padding: 8px;
+}
+.board-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid color-mix(in srgb, var(--col) 80%, transparent);
+  background: var(--color-panel);
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 0.18s var(--ease-out),
+    box-shadow 0.18s,
+    opacity 0.18s;
+}
+.board-card--movable {
+  cursor: grab;
+}
+.board-card--movable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+}
+.board-card--dragging {
+  opacity: 0.45;
+  transform: rotate(2deg) scale(0.98);
+}
+.board-card--closed .board-card__title {
+  color: var(--color-muted);
+  text-decoration: line-through;
+}
+.board-card__title {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.board-card__title:hover {
+  color: var(--color-action);
+  text-decoration: underline;
+}
+.board-card__project {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+.board-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
+}
+.board-card__person {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.board-card__due {
+  white-space: nowrap;
+  color: var(--color-ink-soft);
+}
+.board-card__due--late {
+  color: var(--tone-danger-fg);
+  font-weight: 600;
+}
+.board-card__move {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.board-card__move select {
+  flex: 1 1 auto;
+  min-height: 30px;
+  padding: 2px 8px;
+  font-size: 12.5px;
+}
+@media (max-width: 900px) {
+  .board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .board__col {
+    min-height: 0;
+  }
+}
+
 /* ---------- Mode clair : mêmes formes, fond blanc et texte noir ---------- */
 :root[data-theme='light'] {
   --shadow-soft: 0 1px 2px rgb(15 18 32 / 0.06), 0 8px 24px rgb(15 18 32 / 0.06);

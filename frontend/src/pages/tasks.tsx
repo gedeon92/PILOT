@@ -4,6 +4,7 @@ import { errorMessage, type Task } from '../api/client'
 import { useMembers, useProjects, useSpaceTasks } from '../api/queries'
 import { PlusIcon, TasksIcon } from '../components/icons'
 import { TaskAddForm, TaskRow } from '../components/task-row'
+import { TaskBoard } from '../components/task-board'
 import { Alert, PageHeader } from '../components/ui'
 import { addDays, todayIso } from '../labels'
 import type { SpaceContext } from './space-layout'
@@ -28,12 +29,21 @@ export function TasksPage() {
   const [view, setView] = useState<View>('all')
   const [mine, setMine] = useState(false)
   // « Voir les tâches de ce projet » depuis une fiche arrive avec ?projet=<id>.
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const [projectId, setProjectId] = useState(params.get('projet') ?? '')
   const [q, setQ] = useState('')
   const [withClosed, setWithClosed] = useState(false)
   const [adding, setAdding] = useState(false)
-  const tasks = useSpaceTasks(space.id, withClosed)
+  // Affichage Liste ou Tableau, gardé dans l'adresse (?vue=tableau) : le lien peut être partagé.
+  const board = params.get('vue') === 'tableau'
+  const setBoard = (on: boolean) => {
+    const next = new URLSearchParams(params)
+    if (on) next.set('vue', 'tableau')
+    else next.delete('vue')
+    setParams(next)
+  }
+  // Le tableau montre toujours sa colonne « Terminé ».
+  const tasks = useSpaceTasks(space.id, withClosed || board)
   const projects = useProjects(space.id)
   const members = useMembers(space.id)
   const myMemberId = members.data?.find((m) => m.is_me)?.id
@@ -98,6 +108,24 @@ export function TasksPage() {
         </section>
       )}
       <div className="filters tasks-filters">
+        <div className="segmented" role="group" aria-label="Présentation">
+          <button
+            type="button"
+            aria-pressed={!board}
+            className={!board ? 'segmented__item segmented__item--on' : 'segmented__item'}
+            onClick={() => setBoard(false)}
+          >
+            ☰ Liste
+          </button>
+          <button
+            type="button"
+            aria-pressed={board}
+            className={board ? 'segmented__item segmented__item--on' : 'segmented__item'}
+            onClick={() => setBoard(true)}
+          >
+            ▦ Tableau
+          </button>
+        </div>
         <div className="segmented" role="group" aria-label="Afficher">
           {(Object.keys(VIEWS) as View[]).map((v) => (
             <button
@@ -141,51 +169,75 @@ export function TasksPage() {
           <input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} />
           Mes tâches
         </label>
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={withClosed}
-            onChange={(e) => setWithClosed(e.target.checked)}
-          />
-          Afficher les tâches terminées
-        </label>
+        {!board && (
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={withClosed}
+              onChange={(e) => setWithClosed(e.target.checked)}
+            />
+            Afficher les tâches terminées
+          </label>
+        )}
       </div>
       {tasks.isError && <Alert>{errorMessage(tasks.error)}</Alert>}
-      <section className="card-panel card-panel--flush" aria-label="Liste des tâches">
-        {tasks.isPending ? (
-          <p className="table-loading muted">Chargement…</p>
-        ) : shown.length === 0 ? (
-          <div className="table-empty">
-            <span className="icon-tile icon-tile--info">
-              <TasksIcon />
-            </span>
-            <span>
-              {all.length === 0
-                ? 'Aucune tâche pour l’instant. Ajoutez-en avec « Nouvelle tâche ».'
-                : 'Aucune tâche ne correspond à ces filtres.'}
-            </span>
-          </div>
-        ) : (
-          <ul className="task-list">
-            {shown.map((t) => {
-              const project = t.project_id ? projectById.get(t.project_id) : undefined
-              return (
-                <TaskRow
-                  key={t.id}
-                  task={t}
-                  spaceId={space.id}
-                  canWrite={canWrite}
-                  project={
-                    t.project_id === null
-                      ? 'general'
-                      : project && { id: project.id, title: project.title }
-                  }
-                />
-              )
-            })}
-          </ul>
-        )}
-      </section>
+      {board && tasks.data && (
+        <>
+          <p className="task-drawer__hint">
+            {canWrite
+              ? 'Faites glisser une carte d’une colonne à l’autre pour changer son statut, ou utilisez son menu « Colonne ». Cliquez sur une carte pour l’ouvrir.'
+              : 'Cliquez sur une carte pour l’ouvrir. Votre rôle Lecteur permet de consulter, pas de déplacer les cartes.'}
+          </p>
+          <TaskBoard
+            tasks={shown}
+            spaceId={space.id}
+            canWrite={canWrite}
+            projectTitle={(t) =>
+              t.project_id === null
+                ? 'Suivi général'
+                : `Projet : ${projectById.get(t.project_id)?.title ?? '…'}`
+            }
+          />
+        </>
+      )}
+      {board && tasks.isPending && <p className="muted">Chargement…</p>}
+      {!board && (
+        <section className="card-panel card-panel--flush" aria-label="Liste des tâches">
+          {tasks.isPending ? (
+            <p className="table-loading muted">Chargement…</p>
+          ) : shown.length === 0 ? (
+            <div className="table-empty">
+              <span className="icon-tile icon-tile--info">
+                <TasksIcon />
+              </span>
+              <span>
+                {all.length === 0
+                  ? 'Aucune tâche pour l’instant. Ajoutez-en avec « Nouvelle tâche ».'
+                  : 'Aucune tâche ne correspond à ces filtres.'}
+              </span>
+            </div>
+          ) : (
+            <ul className="task-list">
+              {shown.map((t) => {
+                const project = t.project_id ? projectById.get(t.project_id) : undefined
+                return (
+                  <TaskRow
+                    key={t.id}
+                    task={t}
+                    spaceId={space.id}
+                    canWrite={canWrite}
+                    project={
+                      t.project_id === null
+                        ? 'general'
+                        : project && { id: project.id, title: project.title }
+                    }
+                  />
+                )
+              })}
+            </ul>
+          )}
+        </section>
+      )}
     </div>
   )
 }
