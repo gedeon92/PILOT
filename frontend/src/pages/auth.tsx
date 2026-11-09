@@ -7,7 +7,8 @@ import { PasswordInput } from '../components/password-input'
 
 /** N'accepte qu'un chemin interne, pour qu'un lien piégé ne renvoie pas vers un autre site. */
 function safeNext(value: string | null): string {
-  return value && value.startsWith('/') && !value.startsWith('//') ? value : '/'
+  // Seulement un chemin de PILOT : ni « //autre-site », ni « /\autre-site » (lu « // »).
+  return value && /^\/(?![\/\\])/.test(value) ? value : '/'
 }
 
 function withNext(path: string, next: string) {

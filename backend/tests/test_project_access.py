@@ -180,3 +180,70 @@ def test_update_box_does_not_recognise_a_hidden_project(make_client):
     ).json()
     assert all(p["project"] is None for p in request["proposals"])
     assert all(c["id"] != secret["id"] for p in request["proposals"] for c in p["candidates"])
+
+
+# ---------- Corrections de l'audit du 9 nov. 2026 ----------
+
+
+def test_sharing_an_update_file_requires_write_rights_on_the_project(make_client):
+    """Audit E1 : la boîte de mise à jour ne contourne pas le rôle de projet."""
+    owner, space, base, project = _setup(make_client)
+    moussa = make_client()
+    member = invite_and_join(owner, moussa, space["id"], "moussa@exemple.com", "contributor")
+    salon = project("Salon Agri")
+    secret = project("Rachat confidentiel")
+    _access(owner, base, salon, False, [(member["id"], "reader")])
+    _access(owner, base, secret, True)
+    request = moussa.post(
+        f"{base}/updates",
+        data={"message": ""},
+        files=[("files", ("note.txt", b"Avancement : 30 %", "text/plain"))],
+    ).json()
+    url = f"{base}/update-sources/{request['sources'][0]['id']}/share"
+
+    assert moussa.post(url, json={"project_id": salon["id"]}).status_code == 403
+    assert moussa.post(url, json={"project_id": secret["id"]}).status_code == 404
+    assert owner.get(f"{base}/projects/{secret['id']}/documents").json() == []
+
+
+def test_history_does_not_reveal_a_hidden_linked_project(make_client):
+    """Audit M2 : l'historique d'un projet visible ne donne pas le titre d'un projet privé."""
+    owner, space, base, project = _setup(make_client)
+    moussa = make_client()
+    invite_and_join(owner, moussa, space["id"], "moussa@exemple.com", "contributor")
+    salon = project("Salon Agri")
+    secret = project("Rachat confidentiel")
+    owner.post(f"{base}/projects/{salon['id']}/links", json={"project_id": secret["id"]})
+    _access(owner, base, secret, True)
+
+    history = moussa.get(f"{base}/projects/{salon['id']}/history").json()
+    linked = next(h for h in history if h["action"] == "project.linked")
+    assert "Rachat" not in str(history)
+    assert linked["after"]["linked_project"] == "un projet auquel vous n'avez pas accès"
+    # Le propriétaire, lui, voit le titre.
+    mine = owner.get(f"{base}/projects/{salon['id']}/history").json()
+    assert any(
+        h["after"] and h["after"].get("linked_project") == "Rachat confidentiel" for h in mine
+    )
+
+
+def test_removed_member_is_no_longer_a_follower(make_client):
+    """Audit M7 : retirer un membre efface ses abonnements et ses alertes dans l'espace."""
+    owner, space, base, project = _setup(make_client)
+    moussa = make_client()
+    member = invite_and_join(owner, moussa, space["id"], "moussa@exemple.com", "contributor")
+    salon = project("Salon Agri")
+    task = owner.post(
+        f"{base}/projects/{salon['id']}/tasks",
+        json={"title": "Devis", "assignee_member_id": member["id"]},
+    ).json()
+    assert len(owner.get(f"{base}/tasks/{task['id']}").json()["followers"]) == 2
+
+    assert owner.delete(f"{base}/members/{member['id']}").status_code == 204
+    followers = owner.get(f"{base}/tasks/{task['id']}").json()["followers"]
+    assert [f["name"] for f in followers] == ["Aïcha Ndiaye"]
+
+
+def test_tasks_cannot_be_created_without_a_project(make_client):
+    owner, space, base, project = _setup(make_client)
+    assert owner.post(f"{base}/tasks", json={"title": "Seule"}).status_code == 422

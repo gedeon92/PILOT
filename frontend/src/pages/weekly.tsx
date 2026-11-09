@@ -245,12 +245,12 @@ export function WeeklyPage() {
                   <div className="weekly-line__head">
                     <span className="weekly-line__title">✓ {t.title}</span>
                     <span className="weekly-line__meta">
-                      {p ? (
-                        <Link to={`/espaces/${space.id}/projets/${p.id}`}>{p.title}</Link>
-                      ) : (
-                        'Suivi général'
+                      {p && (
+                        <>
+                          <Link to={`/espaces/${space.id}/projets/${p.id}`}>{p.title}</Link>
+                          {' · '}
+                        </>
                       )}
-                      {' · '}
                       {formatDay(t.due_date)}
                       {t.assignee.name && ` · ${t.assignee.name}`}
                     </span>

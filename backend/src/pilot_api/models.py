@@ -277,7 +277,7 @@ class Project(Base):
 
     # Responsable du suivi : un membre de l'espace ou un simple nom (sans compte ni droit).
     owner_member_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("memberships.id", ondelete="SET NULL")
+        ForeignKey("memberships.id", ondelete="SET NULL"), index=True
     )
     owner_label: Mapped[str | None] = mapped_column(String(120))
 
@@ -370,7 +370,7 @@ class ProjectContributor(Base):
         ForeignKey("projects.id", ondelete="CASCADE"), index=True
     )
     member_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("memberships.id", ondelete="SET NULL")
+        ForeignKey("memberships.id", ondelete="SET NULL"), index=True
     )
     label: Mapped[str | None] = mapped_column(String(120))
     position: Mapped[int] = mapped_column(Integer, default=0)
@@ -432,16 +432,16 @@ class Task(Base):
     space_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("spaces.id", ondelete="CASCADE"), index=True
     )
-    # Toujours renseigné depuis le 9 nov. 2026 (les anciennes tâches sans projet ont été rangées
-    # dans un projet « Suivi général ») ; la colonne reste facultative pour les anciens exports.
-    project_id: Mapped[uuid.UUID | None] = mapped_column(
+    # Obligatoire depuis le 9 nov. 2026 : les anciennes tâches sans projet ont été rangées dans un
+    # projet « Suivi général » (de même pour un ancien export, à l'import).
+    project_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("projects.id", ondelete="CASCADE"), index=True
     )
     title: Mapped[str] = mapped_column(String(200))
     deliverable: Mapped[str | None] = mapped_column(String(300))
     status: Mapped[TaskStatus] = mapped_column(_enum(TaskStatus, "task_status"))
     assignee_member_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("memberships.id", ondelete="SET NULL")
+        ForeignKey("memberships.id", ondelete="SET NULL"), index=True
     )
     assignee_label: Mapped[str | None] = mapped_column(String(120))
     due_date: Mapped[date | None] = mapped_column(Date)
@@ -592,7 +592,7 @@ class Alert(Base):
     target_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
     # Vide pour une proposition dont le projet reste à préciser.
     project_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("projects.id", ondelete="CASCADE")
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
     )
     # Jour de l'alerte dans le fuseau de l'espace.
     alert_date: Mapped[date] = mapped_column(Date)

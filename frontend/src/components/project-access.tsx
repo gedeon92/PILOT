@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import { useModalPanel } from '../drawer'
 import { errorMessage, ROLE_LABELS, type Member, type ProjectAccess } from '../api/client'
 import { useMembers, useProjectAccess, useSetProjectAccess } from '../api/queries'
 import { Avatar } from './avatar'
@@ -35,16 +36,11 @@ export function ProjectAccessDrawer({
 }) {
   const access = useProjectAccess(spaceId, projectId)
   const members = useMembers(spaceId)
+  // Gardé ici : l'éditeur se recrée après chaque enregistrement (nouvelles données du serveur).
+  const [saved, setSaved] = useState(false)
   const panel = useRef<HTMLElement>(null)
 
-  useEffect(() => {
-    panel.current?.focus()
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previous
-    }
-  }, [])
+  useModalPanel(panel)
 
   return (
     <div
@@ -81,6 +77,8 @@ export function ProjectAccessDrawer({
             access={access.data}
             members={members.data}
             isOwner={isOwner}
+            saved={saved}
+            onSaved={setSaved}
           />
         )}
       </aside>
@@ -94,15 +92,23 @@ function AccessEditor({
   access,
   members,
   isOwner,
+  saved,
+  onSaved,
 }: {
   spaceId: string
   projectId: string
   access: ProjectAccess
   members: Member[]
   isOwner: boolean
+  saved: boolean
+  onSaved: (saved: boolean) => void
 }) {
   const save = useSetProjectAccess(spaceId, projectId)
-  const [draft, setDraft] = useState<Draft>(() => toDraft(access))
+  const [draft, setDraftState] = useState<Draft>(() => toDraft(access))
+  const setDraft = (next: Draft) => {
+    onSaved(false)
+    setDraftState(next)
+  }
   const [adding, setAdding] = useState('')
   const byId = new Map(members.map((m) => [m.id, m]))
   const owners = members.filter((m) => m.role === 'owner')
@@ -262,11 +268,15 @@ function AccessEditor({
             type="button"
             className="button button--primary"
             disabled={!changed || save.isPending}
-            onClick={() => save.mutate(draft)}
+            onClick={() => save.mutate(draft, { onSuccess: () => onSaved(true) })}
           >
             {save.isPending ? 'Enregistrement…' : 'Enregistrer les accès'}
           </button>
-          {save.isSuccess && !changed && <span className="task-drawer__hint">Enregistré.</span>}
+          {saved && !changed && (
+            <span className="task-drawer__hint" role="status">
+              ✓ Accès enregistrés.
+            </span>
+          )}
         </div>
       ) : (
         <p className="task-drawer__hint">

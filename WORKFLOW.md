@@ -318,6 +318,41 @@ Ce qui manque à PILOT par rapport à Asana pour le travail d'équipe au quotidi
 
 **Hors de ces lots** (à décider plus tard) : sections dans un projet, une même tâche dans plusieurs projets, champs personnalisés, règles automatiques.
 
+## Audit complet (9 nov. 2026)
+
+Audit technique et fonctionnel de tout l'existant (serveur, base de données, écran), puis correction de **tous** les points relevés, avec l'accord de la propriétaire du produit.
+
+État général : bon. Architecture saine, tests verts, base et code identiques, rien de sensible dans le dépôt public, pas d'erreur critique.
+
+**Priorité élevée**
+- [x] E1 — Partager un fichier de la boîte de mise à jour vers un projet exige le droit d'écriture sur ce projet.
+- [x] E2 — Tableau : une carte déplacée vite ne reste plus bloquée ; une carte en cours d'enregistrement ne peut pas être redéplacée.
+
+**Priorité moyenne**
+- [x] M1 — L'e-mail d'aperçu filtre les projets invisibles, comme le récapitulatif (filtre commun dans `todays_alerts`).
+- [x] M2 — Un projet invisible n'est plus nommé dans l'historique d'un projet lié, dans l'alerte « … est terminée » ni dans les notes de la boîte de mise à jour.
+- [x] M3 — Modifications simultanées : la ligne est verrouillée pendant l'enregistrement. La seconde reçoit « modifié entre-temps » au lieu d'écraser la première.
+- [x] M4 — Envoi de fichiers et import traités hors de la boucle principale : un gros fichier ne ralentit plus les autres.
+- [x] M5 — Page Documents : l'envoi n'est proposé que vers les projets où l'on peut écrire.
+- [x] M6 — Plus de « + Sous-tâche » dans un projet terminé ou annulé.
+- [x] M7 — Retirer un membre efface ses abonnements, alertes et préférences dans l'espace.
+- [x] M8 — Code devenu inutile depuis la suppression de la page Tâches retiré.
+- [x] M9 — Panneaux (tâche, Historique, Accès) : focus gardé dans le panneau, rendu au bouton d'origine à la fermeture.
+
+**Priorité faible**
+- [x] F1 — Message et bouton « Réessayer » si les tâches d'un projet ne se chargent pas.
+- [x] F2 — Confirmation « ✓ Accès enregistrés. »
+- [x] F3 — Le compteur d'alertes se met à jour tout de suite après une action sur une tâche.
+- [x] F4 — La recherche ne propose plus « Nouveau projet » ni « Mises à jour » aux lecteurs et invités.
+- [x] F5 — « Écarter » et « Recalculer » une proposition exigent le droit d'écriture.
+- [x] F6 — Doublon dû à deux actions simultanées : message clair (409) au lieu d'une erreur serveur.
+- [x] F7 — L'import refuse les dépendances en boucle d'un fichier modifié, et nettoie les noms de fichiers.
+- [x] F8 — L'import réutilise un portefeuille « Suivi général » existant (même archivé).
+- [x] F9 — Documentation de l'API fermée en production (ouverte en test).
+- [x] F10 — Index ajoutés (responsable de tâche, responsable de projet, contributeurs, alertes). Le projet devient obligatoire pour une tâche jusque dans la base (migration `f1f4e5967a9d`, avec garde-fou).
+- [x] F11 — Le retour arrière du lot C refuse de s'exécuter s'il existe des projets privés.
+- Adresse de retour après connexion durcie (`/\…` refusé).
+
 ## Phase 10 — Mise en production
 
 - [ ] Changer le mot de passe de la base Neon (il a circulé pendant la mise en place)

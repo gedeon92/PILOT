@@ -200,3 +200,35 @@ def test_subtasks_comments_and_dependencies_survive_export_and_import(make_clien
     assert [d["title"] for d in detail["depends_on"]] == ["Logistique"]
     comment = owner.get(f"{new}/tasks/{tasks['Logistique']['id']}").json()["comments"][0]
     assert comment["author_name"] == "Aïcha Ndiaye" and comment["body"] == "Devis à comparer"
+
+
+def test_import_refuses_a_dependency_loop_hidden_in_a_tampered_export(make_client):
+    """Audit F7 : un fichier modifié ne peut pas introduire A → B → C → A."""
+    import io
+    import json
+    import zipfile
+
+    from pilot_api.portability import DATA_NAME
+
+    owner, _, base, project = _setup(make_client)
+    a = _task(owner, base, project, "A")
+    b = _task(owner, base, project, "B")
+    c = _task(owner, base, project, "C")
+    owner.post(f"{base}/tasks/{a['id']}/dependencies", json={"depends_on_id": b["id"]})
+    owner.post(f"{base}/tasks/{b['id']}/dependencies", json={"depends_on_id": c["id"]})
+    archive = zipfile.ZipFile(io.BytesIO(owner.get(f"{base}/export").content))
+    data = json.loads(archive.read(DATA_NAME))
+    data["task_dependencies"].append(
+        {**data["task_dependencies"][0], "task_id": c["id"], "depends_on_id": a["id"]}
+    )
+    rebuilt = io.BytesIO()
+    with zipfile.ZipFile(rebuilt, "w") as out:
+        for name in archive.namelist():
+            out.writestr(name, archive.read(name) if name != DATA_NAME else json.dumps(data))
+
+    report = owner.post(
+        "/api/space-imports", files={"file": ("e.zip", rebuilt.getvalue(), "application/zip")}
+    ).json()
+    tasks = {t["title"]: t for t in owner.get(f"/api/spaces/{report['space_id']}/tasks").json()}
+    assert tasks["C"]["waiting_on"] == 0  # la boucle C → A a été écartée
+    assert tasks["A"]["waiting_on"] == 1 and tasks["B"]["waiting_on"] == 1

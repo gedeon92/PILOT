@@ -54,9 +54,9 @@ def export_space(
 
 
 @router.post("/api/space-imports", status_code=201)
-async def import_export(file: UploadFile, user: CurrentUser, db: DbSession) -> ImportResult:
+def import_export(file: UploadFile, user: CurrentUser, db: DbSession) -> ImportResult:
     """Recrée un espace à partir d'un export, dans un nouvel espace dont on devient propriétaire."""
-    raw = await _read_limited(file, MAX_IMPORT_BYTES)
+    raw = _read_limited(file, MAX_IMPORT_BYTES)
     if not raw:
         raise HTTPException(422, "Le fichier est vide.")
     try:

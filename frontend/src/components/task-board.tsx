@@ -25,17 +25,17 @@ export function TaskBoard({
   tasks,
   spaceId,
   canWrite,
-  projectTitle,
 }: {
   tasks: Task[]
   spaceId: string
   canWrite: boolean
-  projectTitle: (task: Task) => string
 }) {
   const update = useUpdateTask(spaceId)
   // Déplacements affichés tout de suite, en attendant que la liste rechargée les confirme
-  // (la version renvoyée par le serveur dit quand la liste est à jour).
+  // (la version renvoyée par le serveur dit quand la liste est à jour). Une carte en cours
+  // d'enregistrement n'a pas encore de version : elle ne peut pas être redéplacée.
   const [moves, setMoves] = useState<Record<string, { status: TaskStatus; version?: number }>>({})
+  const [error, setError] = useState<unknown>(null)
   const [dragging, setDragging] = useState<string | null>(null)
   const [over, setOver] = useState<TaskStatus | null>(null)
 
@@ -53,15 +53,19 @@ export function TaskBoard({
     })
   }
 
+  const pending = (t: Task) => moves[t.id] !== undefined && moves[t.id].version === undefined
+
   function move(task: Task, status: TaskStatus) {
-    if (statusOf(task) === status) return
+    if (statusOf(task) === status || pending(task)) return
+    setError(null)
     setMoves((m) => ({ ...m, [task.id]: { status } }))
-    update.mutate(
-      { task, changes: { status } },
-      {
-        onSuccess: (saved) =>
-          setMoves((m) => ({ ...m, [task.id]: { status, version: saved.version } })),
-        onError: () => forget(task.id),
+    // La promesse de chaque appel aboutit toujours, même si d'autres cartes sont déplacées
+    // entre-temps (contrairement aux rappels de `mutate`, qui ne suivent que le dernier appel).
+    update.mutateAsync({ task, changes: { status } }).then(
+      (saved) => setMoves((m) => ({ ...m, [task.id]: { status, version: saved.version } })),
+      (err: unknown) => {
+        forget(task.id)
+        setError(err)
       },
     )
   }
@@ -75,7 +79,7 @@ export function TaskBoard({
 
   return (
     <>
-      {update.isError && <Alert>{errorMessage(update.error)}</Alert>}
+      {error !== null && <Alert>{errorMessage(error)}</Alert>}
       <div className="board" aria-label="Tableau des tâches">
         {COLUMNS.map((column) => {
           let cards = tasks.filter((t) => column.statuses.includes(statusOf(t)))
@@ -117,8 +121,8 @@ export function TaskBoard({
                     key={task.id}
                     task={task}
                     status={statusOf(task)}
-                    project={projectTitle(task)}
                     canWrite={canWrite}
+                    saving={pending(task)}
                     dragging={dragging === task.id}
                     onDragStart={() => setDragging(task.id)}
                     onDragEnd={() => {
@@ -150,8 +154,8 @@ export function TaskBoard({
 function BoardCard({
   task,
   status,
-  project,
   canWrite,
+  saving,
   dragging,
   onDragStart,
   onDragEnd,
@@ -159,8 +163,8 @@ function BoardCard({
 }: {
   task: Task
   status: TaskStatus
-  project: string
   canWrite: boolean
+  saving: boolean
   dragging: boolean
   onDragStart: () => void
   onDragEnd: () => void
@@ -182,7 +186,8 @@ function BoardCard({
       ]
         .filter(Boolean)
         .join(' ')}
-      draggable={canWrite}
+      draggable={canWrite && !saving}
+      aria-busy={saving || undefined}
       onDragStart={(e) => {
         e.dataTransfer.setData('text/plain', task.id)
         e.dataTransfer.effectAllowed = 'move'
@@ -193,7 +198,6 @@ function BoardCard({
       <button type="button" className="board-card__title" onClick={() => openTask(task.id)}>
         {task.title}
       </button>
-      {project && <span className="board-card__project">{project}</span>}
       {(waiting || subtasks > 0 || comments > 0 || status === 'cancelled') && (
         <span className="task-row__badges">
           {status === 'cancelled' && <span className="task-badge">Annulée</span>}
@@ -228,6 +232,7 @@ function BoardCard({
           <select
             aria-label={`Colonne de « ${task.title} »`}
             value={status}
+            disabled={saving}
             onChange={(e) => onMove(e.target.value as TaskStatus)}
           >
             {(Object.keys(TASK_STATUS) as TaskStatus[]).map((s) => (

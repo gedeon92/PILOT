@@ -52,6 +52,7 @@ from pilot_api.models import (
     User,
     utcnow,
 )
+from pilot_api.routers.documents import clean_filename
 from pilot_api.schemas import Color, DecisionOption
 from pilot_api.storage import get_storage
 
@@ -299,6 +300,11 @@ def _general_project(db: Session, space: Space, user: User) -> uuid.UUID:
         .where(Portfolio.space_id == space.id, Portfolio.archived_at.is_(None))
         .order_by(Portfolio.created_at)
         .limit(1)
+    ) or db.scalar(
+        # Un portefeuille archivé du même nom existe déjà : on le réutilise (nom unique).
+        select(Portfolio.id).where(
+            Portfolio.space_id == space.id, Portfolio.name == "Suivi général"
+        )
     )
     if portfolio_id is None:
         portfolio = Portfolio(space_id=space.id, name="Suivi général", color="gray")
@@ -506,15 +512,30 @@ def import_space(
                 **{k: v for k, v in values.items() if k == "created_at"},
             )
         )
-    pairs = set()
+    pairs: set[tuple[uuid.UUID, uuid.UUID]] = set()
+    waits: dict[uuid.UUID, set[uuid.UUID]] = {}
+
+    def reaches(start: uuid.UUID, goal: uuid.UUID) -> bool:
+        """Vrai si `start` attend déjà (directement ou non) `goal` : la boucle est refusée."""
+        seen, todo = set(), [start]
+        while todo:
+            current = todo.pop()
+            if current == goal:
+                return True
+            if current not in seen:
+                seen.add(current)
+                todo.extend(waits.get(current, ()))
+        return False
+
     for item in data.get("task_dependencies", []):
         task = task_ids.get(str(item.get("task_id")))
         other = task_ids.get(str(item.get("depends_on_id")))
         if task is None or other is None or task is other or (task.id, other.id) in pairs:
             continue
-        if (other.id, task.id) in pairs:
-            continue  # attente réciproque : écartée
+        if reaches(other.id, task.id):
+            continue  # attente en boucle (fichier modifié) : écartée
         pairs.add((task.id, other.id))
+        waits.setdefault(task.id, set()).add(other.id)
         db.add(TaskDependency(space_id=space.id, task_id=task.id, depends_on_id=other.id))
 
     for item in data.get("contributors", []):
@@ -572,6 +593,9 @@ def import_space(
         values = _load(
             Document, item, {"project_id", "storage_key", "size_bytes", "sha256", "previous_id"}
         )
+        # Nom et type venus du fichier : nettoyés comme lors d'un envoi normal.
+        values["filename"] = clean_filename(values.get("filename"))
+        values["content_type"] = str(values.get("content_type") or "application/octet-stream")[:120]
         document = Document(
             space_id=space.id,
             project_id=project_id,

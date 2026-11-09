@@ -2,7 +2,7 @@ import uuid
 from datetime import timedelta
 
 from fastapi import APIRouter, HTTPException, Response
-from sqlalchemy import case, select
+from sqlalchemy import case, delete, select
 from sqlalchemy.orm import Session, selectinload
 
 from pilot_api.alerts import is_test_address
@@ -13,11 +13,15 @@ from pilot_api.email_theme import render_email
 from pilot_api.mailer import MailError, mail_configured, send_email
 from pilot_api.models import (
     DEFAULT_PROJECT_TYPES,
+    Alert,
+    AlertPreference,
     Membership,
     MembershipStatus,
     ProjectType,
     Role,
     Space,
+    Task,
+    TaskFollower,
     User,
     utcnow,
 )
@@ -112,6 +116,8 @@ def get_space(membership: CurrentMembership) -> SpaceOut:
 @router.patch("/{space_id}")
 def update_space(body: SpaceUpdate, membership: OwnerMembership, db: DbSession) -> SpaceOut:
     space = membership.space
+    # Verrou : deux enregistrements simultanés ne peuvent pas s'écraser sans conflit signalé.
+    db.refresh(space, with_for_update=True)
     _check_version(space.version, body.version)
     before = {"name": space.name, "timezone": space.timezone}
     if body.name is not None:
@@ -279,6 +285,7 @@ def update_member(
     member = _get_member(db, membership.space_id, member_id)
     if member.role == Role.OWNER:
         raise HTTPException(400, "Le rôle Propriétaire ne peut pas être modifié.")
+    db.refresh(member, with_for_update=True)  # pas d'écrasement silencieux
     _check_version(member.version, body.version)
     if member.role != body.role:
         before = {"role": member.role.value}
@@ -317,6 +324,26 @@ def remove_member(member_id: uuid.UUID, membership: OwnerMembership, db: DbSessi
         target_id=member.id,
         before={"email": member.email, "role": member.role.value, "status": member.status.value},
     )
+    if member.user_id is not None:
+        # Plus rien ne le relie à cet espace : abonnements, alertes et préférences d'alertes
+        # (sinon il resterait listé comme abonné, et ses anciennes alertes reviendraient).
+        task_ids = select(Task.id).where(Task.space_id == membership.space_id)
+        db.execute(
+            delete(TaskFollower).where(
+                TaskFollower.user_id == member.user_id, TaskFollower.task_id.in_(task_ids)
+            )
+        )
+        db.execute(
+            delete(Alert).where(
+                Alert.user_id == member.user_id, Alert.space_id == membership.space_id
+            )
+        )
+        db.execute(
+            delete(AlertPreference).where(
+                AlertPreference.user_id == member.user_id,
+                AlertPreference.space_id == membership.space_id,
+            )
+        )
     db.delete(member)
     db.commit()
     return Response(status_code=204)

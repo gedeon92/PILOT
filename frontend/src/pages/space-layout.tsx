@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router'
-import { ROLE_LABELS, type Me, type Space } from '../api/client'
+import { canWriteSpace, ROLE_LABELS, type Me, type Space } from '../api/client'
 import { useAlerts, useCatalog, useLogout, useMembers, useSpace } from '../api/queries'
 import {
   BellIcon,
@@ -242,7 +242,12 @@ export function SpaceLayout({ me }: { me: Me }) {
       <main className="app__main" id="contenu" tabIndex={-1}>
         <Outlet context={context} />
       </main>
-      <CommandPalette spaceId={space.data.id} open={searching} setOpen={setSearching} />
+      <CommandPalette
+        spaceId={space.data.id}
+        canWrite={canWriteSpace(space.data.role)}
+        open={searching}
+        setOpen={setSearching}
+      />
       <TaskDialogHost spaceId={space.data.id} canWrite={space.data.role !== 'reader'} />
     </div>
   )

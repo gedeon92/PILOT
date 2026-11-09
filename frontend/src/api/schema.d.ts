@@ -2343,6 +2343,11 @@ export interface components {
              * @default true
              */
             can_write: boolean;
+            /**
+             * Project Closed
+             * @default false
+             */
+            project_closed: boolean;
         };
         /** TaskOut */
         TaskOut: {

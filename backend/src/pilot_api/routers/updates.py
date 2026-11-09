@@ -21,7 +21,6 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from pilot_api.access import (
-    ensure_visible,
     ensure_writer,
     visible_project_ids,
     visible_projects,
@@ -56,6 +55,7 @@ from pilot_api.routers.documents import (
 from pilot_api.routers.projects import (
     _check_dates,
     _diff,
+    _hidden_titles,
     _load_project,
     _project_snapshot,
     _resolve_person,
@@ -278,6 +278,7 @@ def _requests_out(
     projects = {
         pid: p for pid, p in _projects_by_id(db, ids).items() if visible is None or pid in visible
     }
+    hidden_titles = _hidden_titles(db, membership)[1]
     return [
         UpdateRequestOut(
             id=r.id,
@@ -302,7 +303,8 @@ def _requests_out(
                 for p in r.proposals
                 if p.project_id is None or p.project_id in projects
             ],
-            notes=r.notes,
+            # Une note qui cite un projet invisible pour cette personne n'est pas montrée.
+            notes=[n for n in r.notes if not any(f"« {t} »" in n for t in hidden_titles)],
         )
         for r in requests
     ]
@@ -380,7 +382,7 @@ def _target(proposal: Proposal, project: Project) -> None:
 
 
 @router.post("/updates", status_code=201)
-async def create_update(
+def create_update(
     membership: WriterMembership,
     db: DbSession,
     message: Annotated[str, Form(max_length=MAX_MESSAGE)] = "",
@@ -422,7 +424,7 @@ async def create_update(
     limit = int(get_settings().max_upload_mb * 1024 * 1024)
     storage = get_storage(db)
     for position, upload in enumerate(files):
-        data = await _read_limited(upload, limit)
+        data = _read_limited(upload, limit)
         filename = clean_filename(upload.filename)
         if not data:
             raise HTTPException(422, f"Le fichier « {filename} » est vide.")
@@ -553,7 +555,7 @@ def refresh_proposal(
     project = _projects_by_id(db, {proposal.project_id}).get(proposal.project_id)
     if project is None:
         raise HTTPException(404, "Projet introuvable.")
-    ensure_visible(db, membership, project)
+    ensure_writer(db, membership, project)
     _target(proposal, project)
     db.commit()
     return _proposal_response(db, membership, proposal)
@@ -673,7 +675,8 @@ def discard_proposal(
 ) -> ProposalOut:
     proposal = _load_proposal(db, membership, proposal_id, lock=True)
     if proposal.project_id is not None:
-        ensure_visible(db, membership, db.get(Project, proposal.project_id))
+        # Écarter une proposition est une décision sur le projet : droit d'écriture requis.
+        ensure_writer(db, membership, db.get(Project, proposal.project_id))
     if proposal.state == ProposalState.APPLIED:
         raise HTTPException(409, "Cette proposition est déjà appliquée.")
     if proposal.state != ProposalState.DISCARDED:
@@ -745,6 +748,10 @@ def share_source(
     )
     if project is None:
         raise HTTPException(404, "Projet introuvable.")
+    # Ajouter une pièce au dossier d'un projet exige le droit de modifier ce projet (lot C).
+    ensure_writer(db, membership, project)
+    if project.status in CLOSED_PROJECT_STATUSES:
+        raise HTTPException(400, "Ce projet est clôturé : rouvrez-le pour y ajouter une pièce.")
     storage = get_storage(db)
     data = storage.get(source.storage_key)
     if data is None:

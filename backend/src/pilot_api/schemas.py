@@ -488,6 +488,8 @@ class TaskDetail(BaseModel):
     following: bool
     # Lot C : la personne connectée peut-elle modifier cette tâche (rôle sur son projet) ?
     can_write: bool = True
+    # Projet terminé ou annulé : plus de sous-tâche ni de nouvelle tâche (audit M6).
+    project_closed: bool = False
 
 
 class ProjectLinkCreate(BaseModel):

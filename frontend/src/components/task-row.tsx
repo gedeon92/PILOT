@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { errorMessage, type Task } from '../api/client'
-import { useCreateSpaceTask, useCreateTask, useMembers, useUpdateTask } from '../api/queries'
+import { useCreateTask, useMembers, useUpdateTask } from '../api/queries'
 import { CERTAINTY, formatDay, TASK_STATUS, type TaskStatus } from '../labels'
 import { personPayload } from '../person'
 import { PersonField, type PersonValue } from './person-field'
@@ -8,21 +8,18 @@ import { Avatar } from './avatar'
 import { Alert, StatusPill } from './ui'
 import { useOpenTask } from './task-dialog'
 
-/** Une tâche : case « terminée », responsable, échéance et statut. `project` ajoute le lien
- * vers la fiche (page Tâches, où les tâches de tous les projets sont mélangées). */
+/** Une tâche : case « terminée », responsable, échéance et statut. */
 export function TaskRow({
   task,
   spaceId,
   canWrite,
-  project,
-  parentTitle,
+  projectClosed = false,
 }: {
   task: Task
   spaceId: string
   canWrite: boolean
-  project?: { id: string; title: string } | 'general'
-  /** Sous-tâche affichée dans une liste générale : nom de sa tâche (vide si inconnue). */
-  parentTitle?: string
+  /** Projet terminé ou annulé : plus de sous-tâche possible. */
+  projectClosed?: boolean
 }) {
   const update = useUpdateTask(spaceId)
   const openTask = useOpenTask()
@@ -57,13 +54,8 @@ export function TaskRow({
         >
           {task.title}
         </button>
-        {(parentTitle !== undefined || subtasks > 0 || comments > 0 || (waiting && !closed)) && (
+        {(subtasks > 0 || comments > 0 || (waiting && !closed)) && (
           <span className="task-row__badges">
-            {parentTitle !== undefined && (
-              <span className="task-badge">
-                Sous-tâche{parentTitle ? ` de « ${parentTitle} »` : ''}
-              </span>
-            )}
             {waiting && !closed && (
               <span className="task-badge task-badge--waiting">En attente</span>
             )}
@@ -81,11 +73,6 @@ export function TaskRow({
               </span>
             )}
           </span>
-        )}
-        {project === 'general' ? (
-          <span className="task-row__general">Suivi général</span>
-        ) : (
-          project && <span className="task-row__project">Projet : {project.title}</span>
         )}
         {task.deliverable && <span className="task-row__meta">Livrable : {task.deliverable}</span>}
       </span>
@@ -135,7 +122,7 @@ export function TaskRow({
       ) : (
         <StatusPill tone={status.tone}>{status.label}</StatusPill>
       )}
-      {canWrite && !closed && !task.parent_id ? (
+      {canWrite && !closed && !projectClosed && !task.parent_id ? (
         <button
           type="button"
           className="button button--small task-row__details"
@@ -159,27 +146,18 @@ export function TaskRow({
   )
 }
 
-/** Nouvelle tâche. Dans une fiche, le projet est fixé ; sur la page Tâches (`projects`
- * fourni), on choisit un projet ou « Suivi général » (aucun projet). */
+/** Nouvelle tâche, dans le projet de la fiche (une tâche appartient toujours à un projet). */
 export function TaskAddForm({
   spaceId,
   projectId,
-  projects,
-  defaultProjectId = '',
   onDone,
 }: {
   spaceId: string
-  projectId?: string
-  projects?: { id: string; title: string }[]
-  /** Projet choisi d'avance (page Tâches filtrée sur un projet). */
-  defaultProjectId?: string
+  projectId: string
   onDone: () => void
 }) {
-  const inProject = useCreateTask(spaceId, projectId ?? '')
-  const inSpace = useCreateSpaceTask(spaceId)
-  const create = projectId ? inProject : inSpace
+  const create = useCreateTask(spaceId, projectId)
   const members = useMembers(spaceId)
-  const [target, setTarget] = useState(defaultProjectId)
   const [title, setTitle] = useState('')
   const [deliverable, setDeliverable] = useState('')
   const [due, setDue] = useState('')
@@ -195,7 +173,6 @@ export function TaskAddForm({
         due_date: due || null,
         due_certainty: due && certainty ? certainty : null,
         ...personPayload(assignee, 'assignee'),
-        ...(projectId ? {} : { project_id: target || null }),
       },
       { onSuccess: onDone },
     )
@@ -213,19 +190,6 @@ export function TaskAddForm({
           onChange={(e) => setTitle(e.target.value)}
         />
       </div>
-      {projects && (
-        <div className="field">
-          <label htmlFor="task-project">Projet</label>
-          <select id="task-project" value={target} onChange={(e) => setTarget(e.target.value)}>
-            <option value="">Suivi général (aucun projet)</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
       <div className="field">
         <label htmlFor="task-deliverable">Livrable</label>
         <input

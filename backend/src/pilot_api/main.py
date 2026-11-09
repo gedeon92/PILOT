@@ -1,7 +1,9 @@
 from typing import Literal
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from sqlalchemy.exc import IntegrityError
 
 from pilot_api import __version__
 from pilot_api.config import get_settings
@@ -21,11 +23,14 @@ from pilot_api.routers import (
     updates,
 )
 
+# La documentation interactive de l'API reste ouverte en test, fermée en production.
+_PUBLIC_DOCS = get_settings().environment != "production"
+
 app = FastAPI(
     title="PILOT API",
     version=__version__,
-    openapi_url="/api/openapi.json",
-    docs_url="/api/docs",
+    openapi_url="/api/openapi.json" if _PUBLIC_DOCS else None,
+    docs_url="/api/docs" if _PUBLIC_DOCS else None,
     redoc_url=None,
     dependencies=[Depends(require_csrf_header)],
 )
@@ -44,6 +49,16 @@ app.include_router(updates.router)
 app.include_router(portability.router)
 app.include_router(alerts.router)
 app.include_router(alerts.cron_router)
+
+
+@app.exception_handler(IntegrityError)
+def integrity_conflict(_: Request, __: IntegrityError) -> JSONResponse:
+    """Deux actions simultanées sur le même élément (doublon refusé par la base) : un message
+    clair plutôt qu'une erreur serveur. La transaction est annulée à la fermeture de la session."""
+    return JSONResponse(
+        status_code=409,
+        content={"detail": "Cet élément vient d'être modifié ou existe déjà. Rechargez la page."},
+    )
 
 
 class Health(BaseModel):

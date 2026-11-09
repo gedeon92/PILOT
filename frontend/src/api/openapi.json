@@ -8316,6 +8316,11 @@
             "type": "boolean",
             "title": "Can Write",
             "default": true
+          },
+          "project_closed": {
+            "type": "boolean",
+            "title": "Project Closed",
+            "default": false
           }
         },
         "type": "object",

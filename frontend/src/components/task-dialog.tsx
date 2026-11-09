@@ -1,3 +1,4 @@
+import { useModalPanel } from '../drawer'
 import {
   useEffect,
   useLayoutEffect,
@@ -87,14 +88,7 @@ export function TaskDialog({
   const detail = useTaskDetail(spaceId, taskId)
   const panel = useRef<HTMLElement>(null)
 
-  useEffect(() => {
-    panel.current?.focus()
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previous
-    }
-  }, [])
+  useModalPanel(panel)
 
   function onKeyDown(e: KeyboardEvent) {
     if (e.key === 'Escape' && !e.defaultPrevented) onClose()
@@ -170,10 +164,8 @@ function TaskContent({
                 {detail.parent.title}
               </button>
             </>
-          ) : task.project_id ? (
-            <span>Projet : {detail.project_title}</span>
           ) : (
-            'Suivi général'
+            <span>Projet : {detail.project_title}</span>
           )}
         </p>
         <h2 id="task-drawer-title" className="task-drawer__title">
@@ -440,7 +432,7 @@ function Subtasks({
   const subtasks = detail.subtasks
   const counted = subtasks.filter((t) => t.status !== 'cancelled')
   const done = counted.filter((t) => t.status === 'done').length
-  const canAdd = canWrite && !isClosed(detail.task.status)
+  const canAdd = canWrite && !isClosed(detail.task.status) && !detail.project_closed
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -541,7 +533,7 @@ function RefItem({
       <button type="button" className="link-button dep__title" onClick={() => openTask(item.id)}>
         {item.title}
       </button>
-      <span className="dep__project">{item.project_title ?? 'Suivi général'}</span>
+      {item.project_title && <span className="dep__project">{item.project_title}</span>}
       <StatusPill tone={status.tone}>{status.label}</StatusPill>
       {onRemove && (
         <button type="button" className="icon-button" aria-label={removeLabel} onClick={onRemove}>
@@ -616,8 +608,7 @@ function Dependencies({
               <option value="">Choisir une tâche ouverte…</option>
               {options.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.title} ·{' '}
-                  {t.project_id ? (titles.get(t.project_id) ?? 'Projet') : 'Suivi général'}
+                  {t.title} · {(t.project_id && titles.get(t.project_id)) ?? 'Projet'}
                 </option>
               ))}
             </select>

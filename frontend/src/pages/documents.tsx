@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useOutletContext } from 'react-router'
-import { errorMessage } from '../api/client'
+import { errorMessage, canWriteSpace } from '../api/client'
 import { downloadUrl, useProjects, useSpaceDocuments } from '../api/queries'
 import { FileBadge, UPLOAD_HELP, UploadStatus, useUploader } from '../components/documents'
 import { DocumentIcon } from '../components/icons'
@@ -14,13 +14,17 @@ const PAGE = 50
 const MAX = 450
 
 /** Ajout direct depuis la page Documents : on choisit le projet, puis les fichiers. */
-function AddDocuments({ spaceId }: { spaceId: string }) {
+function AddDocuments({ spaceId, spaceWriter }: { spaceId: string; spaceWriter: boolean }) {
   const projects = useProjects(spaceId)
   const [chosen, setChosen] = useState('')
-  const list = projects.data ?? []
+  // Seulement les projets où l'on peut ajouter une pièce : le rôle sur le projet compte (lot C).
+  const list = (projects.data ?? []).filter((p) =>
+    p.my_role ? p.my_role !== 'reader' : spaceWriter,
+  )
   const projectId = chosen || list[0]?.id || ''
   const { input, uploads, busy, send } = useUploader(spaceId, projectId)
 
+  if (projects.isSuccess && list.length === 0 && !spaceWriter) return null
   return (
     <section className="card-panel add-docs" aria-labelledby="add-docs-title">
       <h2 id="add-docs-title">Ajouter des documents</h2>
@@ -73,7 +77,7 @@ export function DocumentsPage() {
   const [limit, setLimit] = useState(PAGE)
   const documents = useSpaceDocuments(space.id, q, limit)
   const items = documents.data?.items
-  const canWrite = space.role !== 'reader'
+  const spaceWriter = canWriteSpace(space.role)
 
   return (
     <div className="page-content">
@@ -81,7 +85,7 @@ export function DocumentsPage() {
         title="Documents"
         subtitle="Toutes les pièces des projets de l’espace : PDF, Word, Excel, images…"
       />
-      {canWrite && <AddDocuments spaceId={space.id} />}
+      <AddDocuments spaceId={space.id} spaceWriter={spaceWriter} />
       <div className="filters" role="search">
         <label className="filters__search">
           <span className="visually-hidden">Rechercher un document</span>

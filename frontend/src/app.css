@@ -3369,17 +3369,7 @@ kbd {
   color: var(--tone-danger-fg);
   font-weight: 700;
 }
-.task-row__project {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-muted);
-}
 
-.task-row__general {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-muted);
-}
 .portfolio-emoji {
   display: inline-block;
   width: 18px;
@@ -5716,11 +5706,6 @@ a {
 .board-card__title:hover {
   color: var(--color-action);
   text-decoration: underline;
-}
-.board-card__project {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-muted);
 }
 .board-card {
   min-width: 0;

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useModalPanel } from '../drawer'
 import { Link, useOutletContext, useParams } from 'react-router'
 import { ApiError, errorMessage, type HistoryEntry, type Project } from '../api/client'
 import {
@@ -535,16 +536,28 @@ function TasksSection({
         <TaskAddForm spaceId={spaceId} projectId={project.id} onDone={() => setAdding(false)} />
       )}
       {tasks.isPending && <p className="muted">Chargement…</p>}
+      {tasks.isError && (
+        <Alert>
+          Les tâches n’ont pas pu être chargées : {errorMessage(tasks.error)}{' '}
+          <button type="button" className="link-button" onClick={() => tasks.refetch()}>
+            Réessayer
+          </button>
+        </Alert>
+      )}
       {tasks.data && main.length === 0 && !adding && (
         <p className="muted">Aucune tâche. Déclinez la prochaine étape en actions concrètes.</p>
       )}
-      {board && main.length > 0 && (
-        <TaskBoard tasks={main} spaceId={spaceId} canWrite={canWrite} projectTitle={() => ''} />
-      )}
+      {board && main.length > 0 && <TaskBoard tasks={main} spaceId={spaceId} canWrite={canWrite} />}
       {!board && open.length > 0 && (
         <ul className="task-list">
           {open.map((task) => (
-            <TaskRow key={task.id} task={task} spaceId={spaceId} canWrite={canWrite} />
+            <TaskRow
+              key={task.id}
+              task={task}
+              spaceId={spaceId}
+              canWrite={canWrite}
+              projectClosed={closed}
+            />
           ))}
         </ul>
       )}
@@ -553,7 +566,13 @@ function TasksSection({
           <summary>{done.length} tâche(s) clôturée(s)</summary>
           <ul className="task-list">
             {done.map((task) => (
-              <TaskRow key={task.id} task={task} spaceId={spaceId} canWrite={canWrite} />
+              <TaskRow
+                key={task.id}
+                task={task}
+                spaceId={spaceId}
+                canWrite={canWrite}
+                projectClosed={closed}
+              />
             ))}
           </ul>
         </details>
@@ -683,14 +702,7 @@ function HistoryDrawer({
   const history = useHistory(spaceId, projectId)
   const panel = useRef<HTMLElement>(null)
 
-  useEffect(() => {
-    panel.current?.focus()
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previous
-    }
-  }, [])
+  useModalPanel(panel)
 
   return (
     <div

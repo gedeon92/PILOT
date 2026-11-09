@@ -315,6 +315,9 @@ def load_project(
     project = _load_project(db, membership.space_id, project_id)
     if write:
         ensure_writer(db, membership, project)
+        # Verrou jusqu'à la fin de l'enregistrement, puis relecture : deux modifications
+        # simultanées donnent un conflit (409) au lieu d'un écrasement silencieux.
+        db.refresh(project, with_for_update={"of": Project})
     else:
         ensure_visible(db, membership, project)
     return project
@@ -450,6 +453,7 @@ def load_task(db: Session, membership: Membership, task_id: uuid.UUID, write: bo
     if project is not None:
         if write:
             ensure_writer(db, membership, project)
+            db.refresh(task, with_for_update={"of": Task})
         else:
             ensure_visible(db, membership, project)
     elif membership.role == Role.GUEST or (write and membership.role == Role.READER):
@@ -739,6 +743,7 @@ def project_history(
         .order_by(AuditLog.created_at.desc())
         .limit(100)
     ).all()
+    hide = _hidden_titles(db, membership)
     return [
         HistoryEntry(
             id=entry.id,
@@ -746,11 +751,45 @@ def project_history(
             target_type=entry.target_type,
             actor_name=actor_name,
             created_at=entry.created_at,
-            before=entry.before,
-            after=entry.after,
+            before=_redact(entry.before, hide),
+            after=_redact(entry.after, hide),
         )
         for entry, actor_name in rows
     ]
+
+
+HIDDEN = "un projet auquel vous n'avez pas accès"
+
+
+def _hidden_titles(db: Session, membership: Membership) -> tuple[set[str], set[str]]:
+    """Projets que cette personne ne voit pas : identifiants et titres (lot C), pour ne pas
+    les révéler par l'historique d'un projet visible (lien, dépendance)."""
+    if membership.role == Role.OWNER:
+        return set(), set()
+    rows = db.execute(
+        select(Project.id, Project.title).where(
+            Project.space_id == membership.space_id, ~visible_projects(membership)
+        )
+    ).all()
+    return {str(pid) for pid, _ in rows}, {title for _, title in rows}
+
+
+def _redact(data: dict | None, hide: tuple[set[str], set[str]]) -> dict | None:
+    ids, titles = hide
+    if not data or not ids:
+        return data
+    data = dict(data)
+    if "linked_project" in data and (
+        data.get("linked_project_id") in ids
+        or ("linked_project_id" not in data and data["linked_project"] in titles)
+    ):
+        data["linked_project"] = HIDDEN
+        data.pop("note", None)
+    if data.get("waits_for_project_id") in ids:
+        data["waits_for"] = "une tâche d'un projet auquel vous n'avez pas accès"
+    data.pop("linked_project_id", None)
+    data.pop("waits_for_project_id", None)
+    return data
 
 
 # ---------- Tâches ----------
@@ -984,6 +1023,18 @@ def _notify_unblocked(db: Session, membership: Membership, blocker: Task) -> Non
         if task.status in CLOSED_TASK_STATUSES or extras.get(task.id, {}).get("waiting_on"):
             continue
         users = followers_of(db, task.id) - {membership.user_id}
+        # Le titre de la tâche terminée n'est donné qu'à ceux qui voient son projet (lot C).
+        blocker_project = db.get(Project, blocker.project_id) if blocker.project_id else None
+        knowing = users_who_can_see(db, blocker_project, users) if blocker_project else users
+        notify(
+            db,
+            membership.space,
+            users - knowing,
+            AlertRule.TASK_ACTIVITY,
+            task,
+            "La tâche attendue est terminée : cette tâche peut avancer",
+        )
+        users = knowing
         notify(
             db,
             membership.space,
@@ -1046,7 +1097,11 @@ def _record_link(db, membership, action, project, other, note=None):
             space_id=membership.space_id,
             target_type="project",
             target_id=a.id,
-            after={"linked_project": b.title, **({"note": note} if note else {})},
+            after={
+                "linked_project": b.title,
+                "linked_project_id": str(b.id),
+                **({"note": note} if note else {}),
+            },
         )
 
 

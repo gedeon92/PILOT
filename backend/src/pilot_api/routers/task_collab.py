@@ -17,6 +17,7 @@ from pilot_api.alerts import notify
 from pilot_api.audit import record
 from pilot_api.deps import CurrentMembership, DbSession
 from pilot_api.models import (
+    CLOSED_PROJECT_STATUSES,
     CLOSED_TASK_STATUSES,
     AlertRule,
     Membership,
@@ -150,6 +151,7 @@ def task_detail(task_id: uuid.UUID, membership: CurrentMembership, db: DbSession
         followers=[FollowerOut(user_id=uid, name=name) for uid, name in followers],
         following=any(uid == membership.user_id for uid, _ in followers),
         can_write=_can_write(db, membership, project),
+        project_closed=project is not None and project.status in CLOSED_PROJECT_STATUSES,
     )
 
 
@@ -344,7 +346,11 @@ def add_dependency(
         space_id=membership.space_id,
         target_type="task",
         target_id=task.id,
-        after={"task": task.title, "waits_for": other.title},
+        after={
+            "task": task.title,
+            "waits_for": other.title,
+            "waits_for_project_id": str(other.project_id) if other.project_id else None,
+        },
     )
     db.commit()
     return task_detail(task_id, membership, db)
@@ -372,7 +378,11 @@ def remove_dependency(
         space_id=membership.space_id,
         target_type="task",
         target_id=task.id,
-        before={"task": task.title, "waits_for": other.title if other else None},
+        before={
+            "task": task.title,
+            "waits_for": other.title if other else None,
+            "waits_for_project_id": str(other.project_id) if other and other.project_id else None,
+        },
     )
     db.commit()
     return task_detail(task_id, membership, db)

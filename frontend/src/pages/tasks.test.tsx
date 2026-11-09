@@ -250,3 +250,62 @@ describe('accès au projet (lot C)', () => {
     expect(screen.getByRole('button', { name: '🔒 Accès' })).toBeInTheDocument()
   })
 })
+
+describe('corrections de l’audit (écran)', () => {
+  it('E2 : deux cartes déplacées très vite restent toutes deux à leur place', async () => {
+    const calls = mockApi(
+      routes('owner', TASKS, {
+        [`PATCH ${base}/tasks/t1`]: () => ({
+          status: 200,
+          json: task('t1', 'Signer le traiteur', { status: 'in_progress', version: 2 }),
+        }),
+        [`PATCH ${base}/tasks/t2`]: () => ({
+          status: 200,
+          json: task('t2', 'Réserver la salle', { status: 'done', version: 2 }),
+        }),
+      }),
+    )
+    renderApp(page)
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: '▦ Tableau' }))
+
+    const first = screen.getByRole('combobox', { name: 'Colonne de « Signer le traiteur »' })
+    const second = screen.getByRole('combobox', { name: 'Colonne de « Réserver la salle »' })
+    await user.selectOptions(first, 'in_progress')
+    await user.selectOptions(second, 'done')
+
+    await waitFor(() =>
+      expect(calls.filter((c) => c.key.startsWith(`PATCH ${base}/tasks/`))).toHaveLength(2),
+    )
+    const doing = screen.getByRole('region', { name: /^En cours/ })
+    const done = screen.getByRole('region', { name: /^Terminé/ })
+    expect(within(doing).getByText('Signer le traiteur')).toBeInTheDocument()
+    expect(within(done).getByText('Réserver la salle')).toBeInTheDocument()
+  })
+
+  it('M6 : pas de « + Sous-tâche » dans un projet terminé', async () => {
+    mockApi({
+      ...routes('owner', TASKS),
+      [`GET ${base}/projects/pr1`]: () => ({
+        status: 200,
+        json: projectFixture({ status: 'done', outcome: 'Bilan positif' }),
+      }),
+    })
+    renderApp(page)
+    expect(await screen.findByText('Signer le traiteur')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Ajouter une sous-tâche/ })).not.toBeInTheDocument()
+  })
+
+  it('M9 : le panneau Historique rend le focus au bouton qui l’a ouvert', async () => {
+    mockApi(routes('owner', []))
+    renderApp(page)
+    const user = userEvent.setup()
+    const opener = await screen.findByRole('button', { name: 'Historique' })
+    await user.click(opener)
+    const drawer = await screen.findByRole('dialog', { name: 'Historique' })
+    expect(drawer).toHaveFocus()
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(opener).toHaveFocus()
+  })
+})

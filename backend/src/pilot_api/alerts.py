@@ -355,11 +355,24 @@ def preference_for(db: Session, user_id: uuid.UUID, space_id: uuid.UUID) -> Aler
         )
     )
     if pref is None:
-        pref = AlertPreference(
-            user_id=user_id, space_id=space_id, disabled_rules=[], email_digest=True, digest_hour=7
+        # Deux premières ouvertures simultanées ne créent pas de doublon (ni d'erreur).
+        db.execute(
+            insert(AlertPreference)
+            .values(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                space_id=space_id,
+                disabled_rules=[],
+                email_digest=True,
+                digest_hour=7,
+            )
+            .on_conflict_do_nothing(constraint="uq_alert_preferences")
         )
-        db.add(pref)
-        db.flush()
+        pref = db.scalar(
+            select(AlertPreference).where(
+                AlertPreference.user_id == user_id, AlertPreference.space_id == space_id
+            )
+        )
     return pref
 
 
@@ -372,6 +385,20 @@ def todays_alerts(
         )
     ).all()
     alerts = [a for a in alerts if a.rule.value not in (pref.disabled_rules or [])]
+    # Lot C : rien sur un projet que cette personne ne voit pas (ou plus). Appliqué ici pour
+    # tous les envois : récapitulatif quotidien et aperçu.
+    membership = db.scalar(
+        select(Membership).where(
+            Membership.space_id == space.id,
+            Membership.user_id == user_id,
+            Membership.status == MembershipStatus.ACTIVE,
+        )
+    )
+    if membership is None:
+        return []
+    projects = visible_project_ids(db, membership)
+    if projects is not None:
+        alerts = [a for a in alerts if a.project_id is None or a.project_id in projects]
     return sorted(alerts, key=lambda a: (RULE_ORDER.index(a.rule), a.title))
 
 
@@ -477,7 +504,7 @@ def run_daily(db: Session, send=send_email) -> dict:
             .join(User, User.id == Membership.user_id)
             .where(Membership.space_id == space.id, Membership.status == MembershipStatus.ACTIVE)
         ).all()
-        for member, user in members:
+        for _, user in members:
             pref = preference_for(db, user.id, space.id)
             if not (can_mail and pref.email_digest) or now.hour < pref.digest_hour:
                 continue
@@ -486,10 +513,6 @@ def run_daily(db: Session, send=send_email) -> dict:
             if pref.last_digest_date == today:
                 continue
             alerts = todays_alerts(db, user.id, space, today, pref)
-            # Lot C : rien sur un projet que cette personne ne voit plus.
-            projects = visible_project_ids(db, member)
-            if projects is not None:
-                alerts = [a for a in alerts if a.project_id is None or a.project_id in projects]
             pref.last_digest_date = today
             if not alerts:
                 continue  # pas d'e-mail vide

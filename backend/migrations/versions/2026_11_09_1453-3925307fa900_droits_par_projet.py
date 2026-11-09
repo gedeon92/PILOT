@@ -40,6 +40,15 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
+    # Garde-fou : revenir en arrière rendrait visibles à tout l'espace les projets privés.
+    private = op.get_bind().execute(
+        sa.text("SELECT count(*) FROM projects WHERE private")
+    ).scalar()
+    if private:
+        raise RuntimeError(
+            f"{private} projet(s) privé(s) : les rendre d'abord ouverts (bouton « Accès ») avant "
+            "tout retour arrière, sinon ils deviendraient visibles par tout l'espace."
+        )
     # Les invités n'existaient pas avant : leurs accès sont retirés au retour arrière.
     op.execute("DELETE FROM memberships WHERE role = 'guest'")
     op.drop_column('projects', 'private')

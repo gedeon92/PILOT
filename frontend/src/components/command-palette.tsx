@@ -10,11 +10,11 @@ const PAGES = [
   { title: 'Vue d’ensemble', path: '' },
   { title: 'Point hebdo', path: '/point-hebdo' },
   { title: 'Projets', path: '/projets' },
-  { title: 'Nouveau projet', path: '/projets/nouveau' },
+  { title: 'Nouveau projet', path: '/projets/nouveau', writers: true },
   { title: 'Événements', path: '/evenements' },
   { title: 'Timeline', path: '/timeline' },
   { title: 'Documents', path: '/documents' },
-  { title: 'Mises à jour', path: '/mises-a-jour' },
+  { title: 'Mises à jour', path: '/mises-a-jour', writers: true },
   { title: 'Alertes', path: '/alertes' },
   { title: 'Mon compte', path: '/compte' },
   { title: 'Accès et membres', path: '/membres' },
@@ -33,7 +33,15 @@ function isPaletteShortcut(e: { key: string; metaKey: boolean; ctrlKey: boolean 
   return (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'
 }
 
-function Palette({ spaceId, onClose }: { spaceId: string; onClose: () => void }) {
+function Palette({
+  spaceId,
+  canWrite,
+  onClose,
+}: {
+  spaceId: string
+  canWrite: boolean
+  onClose: () => void
+}) {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [index, setIndex] = useState(0)
@@ -76,8 +84,9 @@ function Palette({ spaceId, onClose }: { spaceId: string; onClose: () => void })
             to: `${base}/projets/${d.project_id}`,
           }))
         : []
+    // Pages réservées aux contributeurs et propriétaires : pas proposées aux autres rôles.
     const pageResults: Result[] = PAGES.filter(
-      (page) => !q || normalize(page.title).includes(q),
+      (page) => (!('writers' in page) || canWrite) && (!q || normalize(page.title).includes(q)),
     ).map((page) => ({
       id: `n-${page.path}`,
       group: 'Aller à',
@@ -174,10 +183,13 @@ function Palette({ spaceId, onClose }: { spaceId: string; onClose: () => void })
 /** Recherche globale : ⌘K (Mac) ou Ctrl+K (PC), ou le bouton « Rechercher » du menu. */
 export function CommandPalette({
   spaceId,
+  canWrite,
   open,
   setOpen,
 }: {
   spaceId: string
+  /** Contributeur ou propriétaire de l'espace. */
+  canWrite: boolean
   open: boolean
   setOpen: (v: boolean) => void
 }) {
@@ -193,5 +205,8 @@ export function CommandPalette({
   }, [open, setOpen])
 
   if (!open) return null
-  return createPortal(<Palette spaceId={spaceId} onClose={() => setOpen(false)} />, document.body)
+  return createPortal(
+    <Palette spaceId={spaceId} canWrite={canWrite} onClose={() => setOpen(false)} />,
+    document.body,
+  )
 }

@@ -311,7 +311,12 @@ export function useHistory(spaceId: string, projectId: string) {
 /** Toute écriture sur un projet rafraîchit la liste, la fiche, les tâches et l'historique. */
 function useRefreshProjects(spaceId: string) {
   const queryClient = useQueryClient()
-  return () => queryClient.invalidateQueries({ queryKey: projectKeys.all(spaceId) })
+  // Les alertes aussi : terminer une tâche en retard doit mettre le compteur à jour tout de suite.
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: projectKeys.all(spaceId) }),
+      queryClient.invalidateQueries({ queryKey: ['space', spaceId, 'alerts'] }),
+    ])
 }
 
 export function useCreateProject(spaceId: string) {
@@ -346,16 +351,6 @@ export function useCreateTask(spaceId: string, projectId: string) {
   return useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       api<Task>(`/spaces/${spaceId}/projects/${projectId}/tasks`, { method: 'POST', body }),
-    onSuccess: refresh,
-  })
-}
-
-/** Tâche créée depuis la page Tâches : dans un projet, ou sans projet (suivi général). */
-export function useCreateSpaceTask(spaceId: string) {
-  const refresh = useRefreshProjects(spaceId)
-  return useMutation({
-    mutationFn: (body: Record<string, unknown>) =>
-      api<Task>(`/spaces/${spaceId}/tasks`, { method: 'POST', body }),
     onSuccess: refresh,
   })
 }

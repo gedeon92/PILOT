@@ -78,11 +78,13 @@ def _get_document(db: Session, space_id: uuid.UUID, document_id: uuid.UUID) -> D
     return document
 
 
-async def _read_limited(upload: UploadFile, limit: int) -> bytes:
-    """Lit le fichier par morceaux et s'arrête dès que la limite est dépassée."""
+def _read_limited(upload: UploadFile, limit: int) -> bytes:
+    """Lit le fichier par morceaux et s'arrête dès que la limite est dépassée.
+    Lecture synchrone : les routes d'envoi sont des fonctions ordinaires, exécutées par FastAPI
+    hors de la boucle principale, pour qu'un gros fichier ne ralentisse pas les autres."""
     parts: list[bytes] = []
     total = 0
-    while chunk := await upload.read(CHUNK):
+    while chunk := upload.file.read(CHUNK):
         total += len(chunk)
         if total > limit:
             raise HTTPException(
@@ -140,7 +142,7 @@ def list_space_documents(
     return [_document_out(document, title) for document, title in rows]
 
 
-async def _store(
+def _store(
     file: UploadFile,
     project: Project,
     user_id: uuid.UUID,
@@ -149,7 +151,7 @@ async def _store(
 ) -> Document:
     """Lit, vérifie et enregistre un fichier comme nouvelle fiche du projet."""
     limit = int(get_settings().max_upload_mb * 1024 * 1024)
-    data = await _read_limited(file, limit)
+    data = _read_limited(file, limit)
     if not data:
         raise HTTPException(422, "Le fichier est vide.")
 
@@ -179,12 +181,12 @@ async def _store(
 
 
 @router.post("/projects/{project_id}/documents", status_code=201)
-async def upload_document(
+def upload_document(
     project_id: uuid.UUID, file: UploadFile, membership: CurrentMembership, db: DbSession
 ) -> DocumentOut:
     project = _get_project(db, membership.space_id, project_id)
     ensure_writer(db, membership, project)
-    document = await _store(file, project, membership.user_id, db)
+    document = _store(file, project, membership.user_id, db)
     record(
         db,
         action="document.uploaded",
@@ -203,7 +205,7 @@ async def upload_document(
 
 
 @router.post("/documents/{document_id}/replace", status_code=201)
-async def replace_document(
+def replace_document(
     document_id: uuid.UUID, file: UploadFile, membership: CurrentMembership, db: DbSession
 ) -> DocumentOut:
     """Dépose une nouvelle version : l'ancienne est gardée et reste téléchargeable."""
@@ -223,7 +225,7 @@ async def replace_document(
             409, "Ce document a déjà été remplacé par une version plus récente. Rechargez la page."
         )
     project = db.get(Project, current.project_id)
-    document = await _store(file, project, membership.user_id, db, previous=current)
+    document = _store(file, project, membership.user_id, db, previous=current)
     current.replaced_at = utcnow()
     record(
         db,

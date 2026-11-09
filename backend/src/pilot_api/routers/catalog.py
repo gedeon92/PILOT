@@ -118,6 +118,7 @@ def catalog_router(
         db: DbSession,
     ):
         item = get_item(db, membership.space_id, item_id)
+        db.refresh(item, with_for_update=True)  # pas d'écrasement silencieux
         if item.version != body.version:
             raise HTTPException(
                 409, "Cet élément a été modifié entre-temps. Rechargez la page avant de réessayer."
