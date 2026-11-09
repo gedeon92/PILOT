@@ -5787,6 +5787,192 @@ a {
   font-size: 0.9em;
 }
 
+/* ---------- Application vivante (10 nov. 2026) : elle réagit à chaque action ----------
+   Seulement des animations déclenchées par une action, courtes, en déplacement et en
+   transparence (légères pour l'ordinateur). Rien ne tourne en continu. */
+
+/* Confirmations animées (« ✓ Tâche terminée »…) */
+.toaster {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px 11px 12px;
+  border-radius: 14px;
+  border: 1px solid rgb(34 197 94 / 0.45);
+  background: var(--color-panel);
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow:
+    0 12px 32px rgb(0 0 0 / 0.35),
+    0 0 24px rgb(34 197 94 / 0.18);
+  animation: toast-in 2.6s var(--ease-out) both;
+}
+.toast__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #22c55e, #22d3ee);
+  color: #04130a;
+  font-weight: 800;
+  animation: check-pop 0.45s 0.1s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+@keyframes toast-in {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  8%,
+  88% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes check-pop {
+  0% {
+    transform: scale(0.3);
+  }
+  60% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Une tâche cochée : la case « saute », la ligne s'illumine brièvement en vert. */
+.task-row__check:checked,
+.subtask input[type='checkbox']:checked {
+  animation: check-pop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.task-row--closed,
+.subtask--closed {
+  animation: done-flash 0.9s ease-out;
+}
+@keyframes done-flash {
+  0% {
+    background-color: rgb(34 197 94 / 0.22);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+.task-row__title,
+.subtask__title {
+  transition:
+    color 0.3s,
+    text-decoration-color 0.3s;
+}
+
+/* Les nouveaux éléments glissent en place au lieu d'apparaître d'un coup. */
+.task-row,
+.subtask,
+.comment,
+.dep,
+.access__row,
+.alert-row,
+.doc-row {
+  animation: item-in 0.28s var(--ease-out) both;
+}
+@keyframes item-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Tableau : la carte « atterrit » dans sa colonne avec un petit rebond. */
+.board-card {
+  animation: card-land 0.34s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+@keyframes card-land {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Boutons : ils répondent au survol et au clic. */
+.button {
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    box-shadow 0.25s,
+    transform 0.15s var(--ease-out);
+}
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.button:active:not(:disabled) {
+  transform: translateY(0) scale(0.96);
+}
+
+/* Compteurs (alertes, membres en attente) : petit saut quand le nombre change. */
+.badge--count {
+  animation: check-pop 0.4s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+/* Chargements vivants : barres qui scintillent. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 0;
+}
+.skeleton__bar {
+  position: relative;
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: rgb(var(--fx) / 0.07);
+  overflow: hidden;
+}
+.skeleton__bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgb(var(--fx) / 0.1), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+@media (max-width: 600px) {
+  .toaster {
+    left: 16px;
+    right: 16px;
+    align-items: stretch;
+  }
+}
+
 /* ---------- Mode clair : mêmes formes, fond blanc et texte noir ---------- */
 :root[data-theme='light'] {
   --shadow-soft: 0 1px 2px rgb(15 18 32 / 0.06), 0 8px 24px rgb(15 18 32 / 0.06);

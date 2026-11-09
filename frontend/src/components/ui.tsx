@@ -103,3 +103,15 @@ export function AuthCard({
     </main>
   )
 }
+
+/** Chargement « vivant » : quelques barres qui scintillent à la place d'un simple texte. */
+export function Skeleton({ lines = 3 }: { lines?: number }) {
+  return (
+    <div className="skeleton" aria-busy="true">
+      <span className="visually-hidden">Chargement…</span>
+      {Array.from({ length: lines }, (_, i) => (
+        <span key={i} className="skeleton__bar" style={{ width: `${92 - i * 17}%` }} />
+      ))}
+    </div>
+  )
+}

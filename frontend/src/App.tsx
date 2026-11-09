@@ -2,6 +2,7 @@ import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import type { Me } from './api/client'
 import { useMe } from './api/queries'
 import { Alert, AuthCard, FullPageLoader } from './components/ui'
+import { Toaster } from './components/toaster'
 import { ForgotPasswordPage, LoginPage, RegisterPage, ResetPasswordPage } from './pages/auth'
 import { ConfirmEmailPage } from './pages/account'
 import { CreateSpacePage } from './pages/create-space'
@@ -62,45 +63,48 @@ function Home({ me }: { me: Me }) {
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<GuestOnly />}>
-        <Route path="/connexion" element={<LoginPage />} />
-        <Route path="/inscription" element={<RegisterPage />} />
-        <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
-      </Route>
-      <Route path="/mot-de-passe/nouveau" element={<ResetPasswordPage />} />
-      <Route path="/invitation/:token" element={<InvitationPage />} />
-      <Route path="/etat" element={<StatusPage />} />
-      <Route
-        path="/compte/confirmer-email"
-        element={<RequireAuth>{() => <ConfirmEmailPage />}</RequireAuth>}
-      />
+    <>
+      <Routes>
+        <Route element={<GuestOnly />}>
+          <Route path="/connexion" element={<LoginPage />} />
+          <Route path="/inscription" element={<RegisterPage />} />
+          <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
+        </Route>
+        <Route path="/mot-de-passe/nouveau" element={<ResetPasswordPage />} />
+        <Route path="/invitation/:token" element={<InvitationPage />} />
+        <Route path="/etat" element={<StatusPage />} />
+        <Route
+          path="/compte/confirmer-email"
+          element={<RequireAuth>{() => <ConfirmEmailPage />}</RequireAuth>}
+        />
 
-      <Route path="/" element={<RequireAuth>{(me) => <Home me={me} />}</RequireAuth>} />
-      <Route
-        path="/espaces/nouveau"
-        element={<RequireAuth>{() => <CreateSpacePage />}</RequireAuth>}
-      />
-      <Route
-        path="/espaces/:spaceId"
-        element={<RequireAuth>{(me) => <SpaceLayout me={me} />}</RequireAuth>}
-      >
-        <Route index element={<DashboardPage />} />
-        <Route path="projets" element={<ProjectsPage />} />
-        <Route path="evenements" element={<EventsPage />} />
-        <Route path="point-hebdo" element={<WeeklyPage />} />
-        <Route path="timeline" element={<TimelinePage />} />
-        <Route path="documents" element={<DocumentsPage />} />
-        <Route path="mises-a-jour" element={<UpdatesPage />} />
-        <Route path="alertes" element={<AlertsPage />} />
-        <Route path="compte" element={<AccountPage />} />
-        <Route path="projets/nouveau" element={<NewProjectPage />} />
-        <Route path="projets/:projectId" element={<ProjectDetailPage />} />
-        <Route path="membres" element={<MembersPage />} />
-        <Route path="parametres" element={<SettingsPage />} />
-      </Route>
+        <Route path="/" element={<RequireAuth>{(me) => <Home me={me} />}</RequireAuth>} />
+        <Route
+          path="/espaces/nouveau"
+          element={<RequireAuth>{() => <CreateSpacePage />}</RequireAuth>}
+        />
+        <Route
+          path="/espaces/:spaceId"
+          element={<RequireAuth>{(me) => <SpaceLayout me={me} />}</RequireAuth>}
+        >
+          <Route index element={<DashboardPage />} />
+          <Route path="projets" element={<ProjectsPage />} />
+          <Route path="evenements" element={<EventsPage />} />
+          <Route path="point-hebdo" element={<WeeklyPage />} />
+          <Route path="timeline" element={<TimelinePage />} />
+          <Route path="documents" element={<DocumentsPage />} />
+          <Route path="mises-a-jour" element={<UpdatesPage />} />
+          <Route path="alertes" element={<AlertsPage />} />
+          <Route path="compte" element={<AccountPage />} />
+          <Route path="projets/nouveau" element={<NewProjectPage />} />
+          <Route path="projets/:projectId" element={<ProjectDetailPage />} />
+          <Route path="membres" element={<MembersPage />} />
+          <Route path="parametres" element={<SettingsPage />} />
+        </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <Toaster />
+    </>
   )
 }

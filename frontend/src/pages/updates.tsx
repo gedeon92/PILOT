@@ -22,7 +22,7 @@ import {
 } from '../api/queries'
 import { FileBadge } from '../components/documents'
 import { InboxIcon } from '../components/icons'
-import { Alert, PageHeader, StatusPill, type Tone } from '../components/ui'
+import { Alert, PageHeader, StatusPill, type Tone, Skeleton } from '../components/ui'
 import { formatSize, MAX_FILES_PER_UPLOAD, MAX_UPLOAD_BYTES } from '../files'
 import { formatMoment } from '../labels'
 import type { SpaceContext } from './space-layout'
@@ -764,7 +764,7 @@ export function UpdatesPage() {
         </div>
       </div>
 
-      {updates.isPending && <p className="muted">Chargement…</p>}
+      {updates.isPending && <Skeleton />}
       {updates.isError && <Alert>{errorMessage(updates.error)}</Alert>}
       {!updates.isPending && shown.length === 0 && (
         <div className="card-panel">

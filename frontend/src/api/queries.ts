@@ -127,6 +127,7 @@ function useRefreshMembers(spaceId: string) {
 export function useInvite(spaceId: string) {
   const refresh = useRefreshMembers(spaceId)
   return useMutation({
+    meta: { success: 'Invitation créée' },
     mutationFn: (body: { email: string; role: Exclude<Role, 'owner'> }) =>
       api<InvitationLink>(`/spaces/${spaceId}/invitations`, { method: 'POST', body }),
     onSuccess: refresh,
@@ -147,6 +148,7 @@ export function useRenewInvitation(spaceId: string) {
 export function useChangeRole(spaceId: string) {
   const refresh = useRefreshMembers(spaceId)
   return useMutation({
+    meta: { success: 'Rôle modifié' },
     mutationFn: ({ member, role }: { member: Member; role: Exclude<Role, 'owner'> }) =>
       api<Member>(`/spaces/${spaceId}/members/${member.id}`, {
         method: 'PATCH',
@@ -160,6 +162,7 @@ export function useChangeRole(spaceId: string) {
 export function useRemoveMember(spaceId: string) {
   const refresh = useRefreshMembers(spaceId)
   return useMutation({
+    meta: { success: 'Membre retiré' },
     mutationFn: (memberId: string) =>
       api<void>(`/spaces/${spaceId}/members/${memberId}`, { method: 'DELETE' }),
     onSettled: refresh,
@@ -218,6 +221,7 @@ function useRefreshCatalog(spaceId: string, resource: CatalogResource) {
 export function useCreateCatalogItem(spaceId: string, resource: CatalogResource) {
   const refresh = useRefreshCatalog(spaceId, resource)
   return useMutation({
+    meta: { success: 'Ajouté' },
     mutationFn: (body: Record<string, string | null>) =>
       api<CatalogItem>(`/spaces/${spaceId}/${resource}`, { method: 'POST', body }),
     onSuccess: refresh,
@@ -227,6 +231,7 @@ export function useCreateCatalogItem(spaceId: string, resource: CatalogResource)
 export function useUpdateCatalogItem(spaceId: string, resource: CatalogResource) {
   const refresh = useRefreshCatalog(spaceId, resource)
   return useMutation({
+    meta: { success: 'Modification enregistrée' },
     mutationFn: ({ item, changes }: { item: CatalogItem; changes: Record<string, unknown> }) =>
       api<CatalogItem>(`/spaces/${spaceId}/${resource}/${item.id}`, {
         method: 'PATCH',
@@ -239,6 +244,7 @@ export function useUpdateCatalogItem(spaceId: string, resource: CatalogResource)
 export function useUpdateSpace(spaceId: string) {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: { success: 'Espace enregistré' },
     mutationFn: (body: { name: string; timezone: string; version: number }) =>
       api<Space>(`/spaces/${spaceId}`, { method: 'PATCH', body }),
     onSettled: () => {
@@ -322,6 +328,7 @@ function useRefreshProjects(spaceId: string) {
 export function useCreateProject(spaceId: string) {
   const refresh = useRefreshProjects(spaceId)
   return useMutation({
+    meta: { success: 'Projet créé' },
     mutationFn: (body: Record<string, unknown>) =>
       api<Project>(`/spaces/${spaceId}/projects`, { method: 'POST', body }),
     onSuccess: refresh,
@@ -331,6 +338,7 @@ export function useCreateProject(spaceId: string) {
 export function useUpdateProject(spaceId: string, projectId: string) {
   const refresh = useRefreshProjects(spaceId)
   return useMutation({
+    meta: { success: 'Fiche enregistrée' },
     mutationFn: (body: Record<string, unknown> & { version: number }) =>
       api<Project>(`/spaces/${spaceId}/projects/${projectId}`, { method: 'PATCH', body }),
     onSuccess: refresh,
@@ -340,6 +348,7 @@ export function useUpdateProject(spaceId: string, projectId: string) {
 export function useChangeProjectStatus(spaceId: string, projectId: string) {
   const refresh = useRefreshProjects(spaceId)
   return useMutation({
+    meta: { success: 'Statut du projet mis à jour' },
     mutationFn: (body: { version: number; status: string; outcome?: string; reason?: string }) =>
       api<Project>(`/spaces/${spaceId}/projects/${projectId}/status`, { method: 'POST', body }),
     onSuccess: refresh,
@@ -349,6 +358,7 @@ export function useChangeProjectStatus(spaceId: string, projectId: string) {
 export function useCreateTask(spaceId: string, projectId: string) {
   const refresh = useRefreshProjects(spaceId)
   return useMutation({
+    meta: { success: 'Tâche ajoutée' },
     mutationFn: (body: Record<string, unknown>) =>
       api<Task>(`/spaces/${spaceId}/projects/${projectId}/tasks`, { method: 'POST', body }),
     onSuccess: refresh,
@@ -357,14 +367,51 @@ export function useCreateTask(spaceId: string, projectId: string) {
 
 export function useUpdateTask(spaceId: string) {
   const refresh = useRefreshProjects(spaceId)
+  const queryClient = useQueryClient()
   return useMutation({
+    meta: {
+      success: (variables) => {
+        const status = (variables as { changes: { status?: string } }).changes.status
+        if (status === 'done') return 'Tâche terminée'
+        if (status === 'in_progress') return 'Tâche passée en cours'
+        if (status === 'todo') return 'Tâche à faire'
+        if (status === 'cancelled') return 'Tâche annulée'
+        return 'Tâche enregistrée'
+      },
+    },
     mutationFn: ({ task, changes }: { task: Task; changes: Record<string, unknown> }) =>
       api<Task>(`/spaces/${spaceId}/tasks/${task.id}`, {
         method: 'PATCH',
         body: { ...changes, version: task.version },
       }),
+    // Réaction immédiate : la case se coche (ou le statut change) tout de suite à l'écran ;
+    // la liste rechargée ensuite confirme, ou corrige en cas d'échec.
+    onMutate: async ({ task, changes }) => {
+      const shown: Partial<Task> = {}
+      for (const key of ['status', 'title', 'due_date', 'deliverable'] as const) {
+        if (key in changes) (shown as Record<string, unknown>)[key] = changes[key]
+      }
+      if (Object.keys(shown).length === 0) return
+      await queryClient.cancelQueries({ queryKey: projectKeys.all(spaceId) })
+      const patch = (t: Task) => (t.id === task.id ? { ...t, ...shown } : t)
+      queryClient.setQueriesData({ queryKey: projectKeys.all(spaceId) }, (old: unknown) => {
+        if (Array.isArray(old)) return old.map((item) => (isTask(item) ? patch(item) : item))
+        if (isTaskDetail(old)) {
+          return { ...old, task: patch(old.task), subtasks: old.subtasks.map(patch) }
+        }
+        return old
+      })
+    },
     onSettled: refresh,
   })
+}
+
+function isTask(value: unknown): value is Task {
+  return typeof value === 'object' && value !== null && 'assignee' in value && 'status' in value
+}
+
+function isTaskDetail(value: unknown): value is TaskDetail {
+  return typeof value === 'object' && value !== null && 'task' in value && 'subtasks' in value
 }
 
 // ---------- Fiche d'une tâche : sous-tâches, commentaires, abonnés, dépendances ----------
@@ -381,9 +428,17 @@ export function useTaskDetail(spaceId: string, taskId: string | null) {
 function useTaskAction<V>(
   spaceId: string,
   request: (variables: V) => { path: string; method: 'POST' | 'DELETE'; body?: unknown },
+  success?: string | ((variables: V) => string),
 ) {
   const refresh = useRefreshProjects(spaceId)
   return useMutation({
+    meta: {
+      success: success
+        ? typeof success === 'function'
+          ? (variables: unknown) => success(variables as V)
+          : success
+        : undefined,
+    },
     mutationFn: (variables: V) => {
       const { path, method, body } = request(variables)
       return api<unknown>(`/spaces/${spaceId}/tasks/${path}`, { method, body })
@@ -393,19 +448,27 @@ function useTaskAction<V>(
 }
 
 export function useAddSubtask(spaceId: string, taskId: string) {
-  return useTaskAction(spaceId, (body: Record<string, unknown>) => ({
-    path: `${taskId}/subtasks`,
-    method: 'POST' as const,
-    body,
-  }))
+  return useTaskAction(
+    spaceId,
+    (body: Record<string, unknown>) => ({
+      path: `${taskId}/subtasks`,
+      method: 'POST' as const,
+      body,
+    }),
+    'Sous-tâche ajoutée',
+  )
 }
 
 export function useAddComment(spaceId: string, taskId: string) {
-  return useTaskAction(spaceId, (body: { body: string; mentions: string[] }) => ({
-    path: `${taskId}/comments`,
-    method: 'POST' as const,
-    body,
-  }))
+  return useTaskAction(
+    spaceId,
+    (body: { body: string; mentions: string[] }) => ({
+      path: `${taskId}/comments`,
+      method: 'POST' as const,
+      body,
+    }),
+    'Commentaire publié',
+  )
 }
 
 export function useDeleteComment(spaceId: string, taskId: string) {
@@ -416,18 +479,26 @@ export function useDeleteComment(spaceId: string, taskId: string) {
 }
 
 export function useFollowTask(spaceId: string, taskId: string) {
-  return useTaskAction(spaceId, (follow: boolean) => ({
-    path: `${taskId}/follow`,
-    method: follow ? ('POST' as const) : ('DELETE' as const),
-  }))
+  return useTaskAction(
+    spaceId,
+    (follow: boolean) => ({
+      path: `${taskId}/follow`,
+      method: follow ? ('POST' as const) : ('DELETE' as const),
+    }),
+    (follow) => (follow ? 'Vous suivez cette tâche' : 'Vous ne suivez plus cette tâche'),
+  )
 }
 
 export function useAddDependency(spaceId: string, taskId: string) {
-  return useTaskAction(spaceId, (dependsOnId: string) => ({
-    path: `${taskId}/dependencies`,
-    method: 'POST' as const,
-    body: { depends_on_id: dependsOnId },
-  }))
+  return useTaskAction(
+    spaceId,
+    (dependsOnId: string) => ({
+      path: `${taskId}/dependencies`,
+      method: 'POST' as const,
+      body: { depends_on_id: dependsOnId },
+    }),
+    'Dépendance ajoutée',
+  )
 }
 
 export function useRemoveDependency(spaceId: string, taskId: string) {
@@ -449,6 +520,7 @@ export function useProjectAccess(spaceId: string, projectId: string) {
 export function useSetProjectAccess(spaceId: string, projectId: string) {
   const refresh = useRefreshProjects(spaceId)
   return useMutation({
+    meta: { success: 'Accès enregistrés' },
     mutationFn: (body: {
       private: boolean
       members: { member_id: string; role: 'contributor' | 'reader' }[]
@@ -473,6 +545,7 @@ export function useProjectLinks(spaceId: string, projectId: string) {
 export function useAddProjectLink(spaceId: string, projectId: string) {
   const refresh = useRefreshProjects(spaceId)
   return useMutation({
+    meta: { success: 'Projet lié' },
     mutationFn: (body: { project_id: string; note: string | null }) =>
       api<ProjectLink>(`/spaces/${spaceId}/projects/${projectId}/links`, { method: 'POST', body }),
     onSettled: refresh,
@@ -482,6 +555,7 @@ export function useAddProjectLink(spaceId: string, projectId: string) {
 export function useRemoveProjectLink(spaceId: string, projectId: string) {
   const refresh = useRefreshProjects(spaceId)
   return useMutation({
+    meta: { success: 'Lien retiré' },
     mutationFn: (otherId: string) =>
       api<void>(`/spaces/${spaceId}/projects/${projectId}/links/${otherId}`, {
         method: 'DELETE',
@@ -516,6 +590,7 @@ export function useSpaceDocuments(spaceId: string, q: string, limit = 50) {
 export function useUploadDocument(spaceId: string, projectId: string) {
   const refresh = useRefreshProjects(spaceId)
   return useMutation({
+    meta: { success: 'Document ajouté' },
     mutationFn: (file: File) => {
       const body = new FormData()
       body.append('file', file)
@@ -531,6 +606,7 @@ export function useUploadDocument(spaceId: string, projectId: string) {
 export function useReplaceDocument(spaceId: string) {
   const refresh = useRefreshProjects(spaceId)
   return useMutation({
+    meta: { success: 'Nouvelle version ajoutée' },
     mutationFn: ({ documentId, file }: { documentId: string; file: File }) => {
       const body = new FormData()
       body.append('file', file)
@@ -554,6 +630,7 @@ export function useDocumentVersions(spaceId: string, documentId: string, enabled
 export function useArchiveDocument(spaceId: string) {
   const refresh = useRefreshProjects(spaceId)
   return useMutation({
+    meta: { success: 'Document retiré' },
     mutationFn: (documentId: string) =>
       api<DocumentItem>(`/spaces/${spaceId}/documents/${documentId}/archive`, { method: 'POST' }),
     onSettled: refresh,
@@ -606,6 +683,7 @@ export function useMarkAlertRead(spaceId: string) {
 export function useMarkAllAlertsRead(spaceId: string) {
   const refresh = useRefreshAlerts(spaceId)
   return useMutation({
+    meta: { success: 'Alertes marquées comme lues' },
     mutationFn: () => api<void>(`/spaces/${spaceId}/alerts/read-all`, { method: 'POST' }),
     onSettled: refresh,
   })
@@ -621,6 +699,7 @@ export function useAlertPreferences(spaceId: string) {
 export function useSaveAlertPreferences(spaceId: string) {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: { success: 'Préférences enregistrées' },
     mutationFn: (body: { disabled_rules: string[]; email_digest: boolean; digest_hour: number }) =>
       api<AlertPreferences>(`/spaces/${spaceId}/alert-preferences`, { method: 'PUT', body }),
     onSuccess: (data) => {
@@ -644,6 +723,7 @@ export function useSendTestEmail(spaceId: string) {
 export function useUpdateProfile() {
   const queryClient = useQueryClient()
   return useMutation({
+    meta: { success: 'Profil enregistré' },
     mutationFn: (body: { display_name: string }) => api<Me>('/auth/me', { method: 'PATCH', body }),
     onSuccess: (me) => queryClient.setQueryData(keys.me, me),
   })
@@ -651,6 +731,7 @@ export function useUpdateProfile() {
 
 export function useChangePassword() {
   return useMutation({
+    meta: { success: 'Mot de passe changé' },
     mutationFn: (body: { current_password: string; new_password: string }) =>
       api<void>('/auth/password', { method: 'POST', body }),
   })
@@ -740,6 +821,7 @@ export function useSetUpdateVisibility(spaceId: string) {
 export function useApplyProposal(spaceId: string) {
   const refresh = useRefreshAfterDecision(spaceId)
   return useMutation({
+    meta: { success: 'Mise à jour appliquée au projet' },
     mutationFn: ({
       id,
       fields,
@@ -760,6 +842,7 @@ export function useApplyProposal(spaceId: string) {
 export function useDiscardProposal(spaceId: string) {
   const refresh = useRefreshAfterDecision(spaceId)
   return useMutation({
+    meta: { success: 'Proposition écartée' },
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       api<Proposal>(`/spaces/${spaceId}/proposals/${id}/discard`, {
         method: 'POST',
@@ -793,6 +876,7 @@ export function useRefreshProposal(spaceId: string) {
 export function useShareSource(spaceId: string) {
   const refresh = useRefreshAfterDecision(spaceId)
   return useMutation({
+    meta: { success: 'Fichier ajouté au dossier du projet' },
     mutationFn: ({ sourceId, projectId }: { sourceId: string; projectId: string }) =>
       api<DocumentItem>(`/spaces/${spaceId}/update-sources/${sourceId}/share`, {
         method: 'POST',

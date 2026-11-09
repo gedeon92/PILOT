@@ -365,6 +365,12 @@ Mesure avant : une page mettait **0,9 s** à finir d'apparaître après un clic.
 - Le fond et les halos bougent sans flou calculé : seule la carte graphique travaille.
 - Chiffres du tableau de bord animés en 0,35 s (au lieu de 0,7 s).
 - Pages chargées à la demande puis préchargées en arrière-plan. Le programme téléchargé à l'ouverture passe d'environ 500 Ko à 317 Ko (−35 %).
+- **Application vivante** (demande du même jour : « elle doit agir ») : des animations qui répondent aux actions, et rien qui tourne en continu.
+  - Confirmations animées en bas à droite (« ✓ Tâche terminée », « ✓ Commentaire publié »…), une trentaine d'actions concernées.
+  - Réaction immédiate : une tâche cochée ou déplacée change tout de suite à l'écran (moins de 0,2 s), puis le serveur confirme.
+  - Tâche cochée qui « saute » et s'illumine ; nouveaux éléments qui glissent en place ; carte du tableau qui « atterrit » ; boutons qui répondent au survol et au clic ; compteur d'alertes qui saute quand il change.
+  - Chargements en barres scintillantes au lieu du texte « Chargement… ».
+  - Données rafraîchies seules toutes les 30 s quand l'onglet est visible.
 - Limite qui reste (hébergement gratuit) : après 15 minutes sans visite, le serveur s'endort ; le premier accès prend alors 30 à 60 s. Elle disparaît avec l'offre Render payante (décision reportée).
 
 ## Phase 10 — Mise en production

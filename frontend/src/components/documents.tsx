@@ -10,7 +10,7 @@ import {
 } from '../api/queries'
 import { extensionOf, formatSize, MAX_FILES_PER_UPLOAD, MAX_UPLOAD_BYTES } from '../files'
 import { formatMoment } from '../labels'
-import { Alert } from './ui'
+import { Alert, Skeleton } from './ui'
 
 type UploadState = { name: string; status: 'pending' | 'done' | 'error'; message?: string }
 
@@ -28,7 +28,7 @@ function Versions({ document, spaceId }: { document: DocumentItem; spaceId: stri
   const previous = (versions.data ?? []).slice(1)
   return (
     <div className="doc-versions">
-      {versions.isPending && <p className="muted">Chargement…</p>}
+      {versions.isPending && <Skeleton />}
       {versions.isError && <Alert>{errorMessage(versions.error)}</Alert>}
       {previous.length > 0 && (
         <ul aria-label={`Versions précédentes de ${document.filename}`}>
@@ -275,7 +275,7 @@ export function DocumentsSection({
       </div>
       {canWrite && <p className="card-panel__help">{UPLOAD_HELP}</p>}
       <UploadStatus uploads={uploads} />
-      {documents.isPending && <p className="muted">Chargement…</p>}
+      {documents.isPending && <Skeleton />}
       {documents.isError && <Alert>{errorMessage(documents.error)}</Alert>}
       {documents.data?.length === 0 && <p className="muted">Aucun document pour l’instant.</p>}
       {documents.data && documents.data.length > 0 && (

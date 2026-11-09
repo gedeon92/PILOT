@@ -84,7 +84,8 @@ describe('tâches dans la fiche projet', () => {
         status: 'done',
         version: 1,
       }),
-    )
+    ) // L'application réagit : une confirmation animée apparaît.
+    expect(await screen.findByText('Tâche terminée')).toBeInTheDocument()
   })
 
   it('vue Tableau : les cartes se déplacent en glissant ou avec le menu', async () => {

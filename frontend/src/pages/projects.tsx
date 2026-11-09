@@ -5,7 +5,7 @@ import { useCatalog, useCreateProject, useMembers, useProjects } from '../api/qu
 import { FolderIcon, PlusIcon } from '../components/icons'
 import { PersonField, type PersonValue } from '../components/person-field'
 import { ProjectTable } from '../components/project-table'
-import { Alert, PageHeader } from '../components/ui'
+import { Alert, PageHeader, Skeleton } from '../components/ui'
 import {
   CERTAINTY,
   OPEN_PROJECT_STATUSES,
@@ -179,7 +179,7 @@ export function ProjectsPage() {
       <section className="card-panel card-panel--flush" aria-label="Liste des projets">
         {projects.isError && <Alert>{errorMessage(projects.error)}</Alert>}
         {projects.isPending ? (
-          <p className="muted table-loading">Chargement…</p>
+          <Skeleton lines={5} />
         ) : (
           <ProjectTable
             projects={filtered}

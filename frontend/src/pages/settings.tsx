@@ -11,7 +11,7 @@ import {
 } from '../api/queries'
 import { BackupSection } from '../components/backup-section'
 import { PlusIcon } from '../components/icons'
-import { Alert, PageHeader, StatusPill } from '../components/ui'
+import { Alert, PageHeader, StatusPill, Skeleton } from '../components/ui'
 import { allTimezones } from '../timezones'
 import { COLORS, PORTFOLIO_EMOJIS } from '../colors'
 import type { SpaceContext } from './space-layout'
@@ -333,7 +333,7 @@ function CatalogSection({
         </div>
       )}
 
-      {items.isPending && <p className="muted">Chargement…</p>}
+      {items.isPending && <Skeleton />}
       {items.isError && <Alert>{errorMessage(items.error)}</Alert>}
       {items.data && items.data.length === 0 && (
         <p className="muted">{showArchived ? 'Aucun élément.' : config.emptyLabel}</p>

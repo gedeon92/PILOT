@@ -27,7 +27,7 @@ import {
   type DecisionOptionValue,
 } from '../components/decision-options-field'
 import { PersonField } from '../components/person-field'
-import { Alert, FullPageLoader, StatusPill } from '../components/ui'
+import { Alert, FullPageLoader, StatusPill, Skeleton } from '../components/ui'
 import {
   CERTAINTY,
   formatDay,
@@ -535,7 +535,7 @@ function TasksSection({
       {adding && (
         <TaskAddForm spaceId={spaceId} projectId={project.id} onDone={() => setAdding(false)} />
       )}
-      {tasks.isPending && <p className="muted">Chargement…</p>}
+      {tasks.isPending && <Skeleton />}
       {tasks.isError && (
         <Alert>
           Les tâches n’ont pas pu être chargées : {errorMessage(tasks.error)}{' '}
@@ -732,7 +732,7 @@ function HistoryDrawer({
         <p className="task-drawer__hint">
           Toutes les modifications du projet, les plus récentes en haut.
         </p>
-        {history.isPending && <p className="muted">Chargement…</p>}
+        {history.isPending && <Skeleton />}
         {history.data?.length === 0 && <p className="muted">Aucune modification pour l’instant.</p>}
         <ol className="history history--drawer">
           {history.data?.map((entry) => {

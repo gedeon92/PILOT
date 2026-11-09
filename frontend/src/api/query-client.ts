@@ -1,3 +1,4 @@
+import { toast } from '../toast'
 import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query'
 import { ApiError } from './client'
 
@@ -7,7 +8,15 @@ import { ApiError } from './client'
 export function createQueryClient({ retry = true }: { retry?: boolean } = {}) {
   const client: QueryClient = new QueryClient({
     queryCache: new QueryCache({ onError: (error) => onError(error) }),
-    mutationCache: new MutationCache({ onError: (error) => onError(error) }),
+    mutationCache: new MutationCache({
+      onError: (error) => onError(error),
+      // Confirmation animée déclarée par l'action : texte fixe, ou calculé d'après les données.
+      onSuccess: (data, variables, _context, mutation) => {
+        const success = mutation.meta?.success
+        const text = typeof success === 'function' ? success(variables, data) : success
+        if (typeof text === 'string' && text) toast(text)
+      },
+    }),
     defaultOptions: {
       queries: {
         // Une erreur 4xx est une réponse définitive : inutile de réessayer.
@@ -16,6 +25,10 @@ export function createQueryClient({ retry = true }: { retry?: boolean } = {}) {
               !(error instanceof ApiError && error.status >= 400 && error.status < 500) && count < 2
           : false,
         refetchOnWindowFocus: false,
+        // Application vivante : les données se rafraîchissent seules toutes les 30 s tant que
+        // l'onglet est ouvert et visible (ce qu'un collègue modifie apparaît sans recharger).
+        refetchInterval: 30_000,
+        refetchIntervalInBackground: false,
       },
     },
   })
@@ -25,4 +38,13 @@ export function createQueryClient({ retry = true }: { retry?: boolean } = {}) {
     }
   }
   return client
+}
+
+declare module '@tanstack/react-query' {
+  interface Register {
+    mutationMeta: {
+      /** Message de confirmation affiché après la réussite de l'action. */
+      success?: string | ((variables: unknown, data: unknown) => string | null)
+    }
+  }
 }

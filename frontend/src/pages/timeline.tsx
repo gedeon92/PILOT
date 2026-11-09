@@ -3,7 +3,7 @@ import { Link, useLocation, useOutletContext } from 'react-router'
 import { errorMessage, type Project } from '../api/client'
 import { useCatalog, useProjects, useSpaceTasks } from '../api/queries'
 import { ProjectTimeline } from '../components/timeline'
-import { Alert, PageHeader, StatusPill } from '../components/ui'
+import { Alert, PageHeader, StatusPill, Skeleton } from '../components/ui'
 import { isClosedProject, PROJECT_STATUS, todayIso } from '../labels'
 import { projectSpan } from '../timeline'
 import type { SpaceContext } from './space-layout'
@@ -133,7 +133,7 @@ export function TimelinePage() {
       {projects.isError && <Alert>{errorMessage(projects.error)}</Alert>}
       <section className="card-panel" aria-label="Timeline des projets">
         {projects.isPending ? (
-          <p className="muted">Chargement…</p>
+          <Skeleton />
         ) : (
           <ProjectTimeline
             projects={visible}

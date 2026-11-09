@@ -3,7 +3,7 @@ import { useModalPanel } from '../drawer'
 import { errorMessage, ROLE_LABELS, type Member, type ProjectAccess } from '../api/client'
 import { useMembers, useProjectAccess, useSetProjectAccess } from '../api/queries'
 import { Avatar } from './avatar'
-import { Alert } from './ui'
+import { Alert, Skeleton } from './ui'
 
 /** Panneau « Accès au projet » (lot C) : qui voit ce projet, avec quel rôle, et s'il est privé.
  * Les propriétaires de l'espace le modifient ; les autres le consultent. */
@@ -67,7 +67,7 @@ export function ProjectAccessDrawer({
         <h2 id="access-title" className="task-drawer__title">
           Accès au projet
         </h2>
-        {(access.isPending || members.isPending) && <p className="muted">Chargement…</p>}
+        {(access.isPending || members.isPending) && <Skeleton />}
         {access.isError && <Alert>{errorMessage(access.error)}</Alert>}
         {access.data && members.data && (
           <AccessEditor

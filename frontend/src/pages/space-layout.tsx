@@ -21,7 +21,7 @@ import {
   TimelineIcon,
 } from '../components/icons'
 import { CommandPalette } from '../components/command-palette'
-import { Alert, FullPageLoader } from '../components/ui'
+import { Alert, FullPageLoader, Skeleton } from '../components/ui'
 import { PortfolioMark } from '../components/portfolio-mark'
 import { Avatar } from '../components/avatar'
 import { ThemeToggle } from '../components/theme-toggle'
@@ -128,6 +128,7 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
             <span className="nav__label">Alertes</span>
             {(alerts.data?.unread ?? 0) > 0 && (
               <span
+                key={alerts.data?.unread /* nouveau nombre : le compteur « saute » */}
                 className="badge badge--count"
                 aria-label={`${alerts.data?.unread} alerte(s) non lue(s)`}
               >
@@ -243,7 +244,7 @@ export function SpaceLayout({ me }: { me: Me }) {
       <Sidebar {...context} onSearch={() => setSearching(true)} />
       <main className="app__main" id="contenu" tabIndex={-1}>
         {/* Page en cours de chargement (première visite seulement : elles sont préchargées). */}
-        <Suspense fallback={<p className="muted page-loading">Chargement…</p>}>
+        <Suspense fallback={<Skeleton lines={4} />}>
           <Outlet context={context} />
         </Suspense>
       </main>

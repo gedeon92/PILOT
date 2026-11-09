@@ -15,7 +15,7 @@ import {
   useRenewInvitation,
 } from '../api/queries'
 import { LinkIcon, PlusIcon } from '../components/icons'
-import { Alert, PageHeader, StatusPill } from '../components/ui'
+import { Alert, PageHeader, StatusPill, Skeleton } from '../components/ui'
 import type { SpaceContext } from './space-layout'
 
 type InvitableRole = Exclude<Role, 'owner'>
@@ -281,7 +281,7 @@ export function MembersPage() {
 
       <section className="section">
         <h2>Membres de l’espace</h2>
-        {members.isPending && <p className="muted">Chargement…</p>}
+        {members.isPending && <Skeleton />}
         {members.isError && <Alert>{errorMessage(members.error)}</Alert>}
         {members.data && (
           <div className="table-scroll">

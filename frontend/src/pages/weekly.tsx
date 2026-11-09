@@ -3,7 +3,7 @@ import { Link, useOutletContext } from 'react-router'
 import { errorMessage, type Project, type Task } from '../api/client'
 import { useProjects, useSpaceTasks } from '../api/queries'
 import { PortfolioMark } from '../components/portfolio-mark'
-import { Alert, PageHeader, StatusPill } from '../components/ui'
+import { Alert, PageHeader, StatusPill, Skeleton } from '../components/ui'
 import { matchesAttention } from '../attention'
 import {
   addDays,
@@ -168,7 +168,7 @@ export function WeeklyPage() {
       </p>
       {projects.isError && <Alert>{errorMessage(projects.error)}</Alert>}
       {projects.isPending ? (
-        <p className="muted">Chargement…</p>
+        <Skeleton />
       ) : (
         <div className="weekly__grid">
           <Block

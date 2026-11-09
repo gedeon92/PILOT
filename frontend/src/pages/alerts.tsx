@@ -10,7 +10,7 @@ import {
   useSendTestEmail,
 } from '../api/queries'
 import { BellIcon } from '../components/icons'
-import { Alert, PageHeader } from '../components/ui'
+import { Alert, PageHeader, Skeleton } from '../components/ui'
 import { formatDay, todayIso } from '../labels'
 import type { SpaceContext } from './space-layout'
 
@@ -189,7 +189,7 @@ export function AlertsPage() {
         <h2 id="today-title">
           Aujourd’hui <span className="count">{todays.length}</span>
         </h2>
-        {alerts.isPending && <p className="muted">Chargement…</p>}
+        {alerts.isPending && <Skeleton />}
         {!alerts.isPending && todays.length === 0 && (
           <div className="mini-empty">
             <span className="icon-tile icon-tile--neutral">
