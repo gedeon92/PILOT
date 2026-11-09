@@ -1417,6 +1417,9 @@ textarea:focus-visible {
   flex-direction: column;
   gap: 14px;
 }
+.history--drawer {
+  margin-top: 8px;
+}
 .history__item {
   position: relative;
   display: flex;
@@ -5695,11 +5698,15 @@ a {
   font-weight: 600;
   color: var(--color-muted);
 }
+.board-card {
+  min-width: 0;
+}
 .board-card__foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 4px 8px;
   font-size: 12.5px;
 }
 .board-card__person {
@@ -5707,6 +5714,10 @@ a {
   align-items: center;
   gap: 6px;
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .board-card__due {
   white-space: nowrap;
@@ -5718,6 +5729,7 @@ a {
 }
 .board-card__move {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: 8px;
   font-size: 12px;
@@ -5725,6 +5737,8 @@ a {
 }
 .board-card__move select {
   flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
   min-height: 30px;
   padding: 2px 8px;
   font-size: 12.5px;

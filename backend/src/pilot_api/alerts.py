@@ -375,7 +375,7 @@ def digest_email(
         if alert.target_type == "proposal":
             url = f"{base}/espaces/{space.id}/mises-a-jour"
         elif alert.project_id is None:
-            url = f"{base}/espaces/{space.id}/taches"  # tâche du suivi général
+            url = f"{base}/espaces/{space.id}"  # ancienne tâche sans projet
         else:
             url = f"{base}/espaces/{space.id}/projets/{alert.project_id}"
         if alert.target_type == "task":

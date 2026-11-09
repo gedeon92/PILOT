@@ -16,7 +16,6 @@ import { NewProjectPage, ProjectsPage } from './pages/projects'
 import { SettingsPage } from './pages/settings'
 import { SpaceLayout } from './pages/space-layout'
 import { StatusPage } from './pages/status'
-import { TasksPage } from './pages/tasks'
 import { TimelinePage } from './pages/timeline'
 import { WeeklyPage } from './pages/weekly'
 import { UpdatesPage } from './pages/updates'
@@ -85,7 +84,6 @@ export default function App() {
         <Route index element={<DashboardPage />} />
         <Route path="projets" element={<ProjectsPage />} />
         <Route path="evenements" element={<EventsPage />} />
-        <Route path="taches" element={<TasksPage />} />
         <Route path="point-hebdo" element={<WeeklyPage />} />
         <Route path="timeline" element={<TimelinePage />} />
         <Route path="documents" element={<DocumentsPage />} />

@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useOutletContext, useParams } from 'react-router'
 import { ApiError, errorMessage, type HistoryEntry, type Project } from '../api/client'
 import {
@@ -669,28 +669,75 @@ function describe(entry: HistoryEntry): { what: string; detail?: string } {
   }
 }
 
-function HistorySection({ spaceId, projectId }: { spaceId: string; projectId: string }) {
+/** Historique du projet : ouvert à la demande (bouton « Historique »), dans un panneau à droite. */
+function HistoryDrawer({
+  spaceId,
+  projectId,
+  onClose,
+}: {
+  spaceId: string
+  projectId: string
+  onClose: () => void
+}) {
   const history = useHistory(spaceId, projectId)
+  const panel = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    panel.current?.focus()
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [])
+
   return (
-    <section className="card-panel" aria-labelledby="history-title">
-      <h2 id="history-title">Historique</h2>
-      {history.isPending && <p className="muted">Chargement…</p>}
-      <ol className="history">
-        {history.data?.map((entry) => {
-          const { what, detail } = describe(entry)
-          return (
-            <li key={entry.id} className="history__item">
-              <span className="history__what">{what}</span>
-              {detail && <span className="history__detail">{detail}</span>}
-              <span className="history__when">
-                {formatMoment(entry.created_at)}
-                {entry.actor_name && ` · ${entry.actor_name}`}
-              </span>
-            </li>
-          )
-        })}
-      </ol>
-    </section>
+    <div
+      className="task-drawer-backdrop"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <aside
+        ref={panel}
+        className="task-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="history-title"
+        tabIndex={-1}
+        onKeyDown={(e) => e.key === 'Escape' && onClose()}
+      >
+        <button
+          type="button"
+          className="icon-button task-drawer__close"
+          aria-label="Fermer l’historique"
+          onClick={onClose}
+        >
+          ×
+        </button>
+        <h2 id="history-title" className="task-drawer__title">
+          Historique
+        </h2>
+        <p className="task-drawer__hint">
+          Toutes les modifications du projet, les plus récentes en haut.
+        </p>
+        {history.isPending && <p className="muted">Chargement…</p>}
+        {history.data?.length === 0 && <p className="muted">Aucune modification pour l’instant.</p>}
+        <ol className="history history--drawer">
+          {history.data?.map((entry) => {
+            const { what, detail } = describe(entry)
+            return (
+              <li key={entry.id} className="history__item">
+                <span className="history__what">{what}</span>
+                {detail && <span className="history__detail">{detail}</span>}
+                <span className="history__when">
+                  {formatMoment(entry.created_at)}
+                  {entry.actor_name && ` · ${entry.actor_name}`}
+                </span>
+              </li>
+            )
+          })}
+        </ol>
+      </aside>
+    </div>
   )
 }
 
@@ -804,6 +851,7 @@ export function ProjectDetailPage() {
   const { projectId = '' } = useParams()
   const project = useProject(space.id, projectId)
   const [mode, setMode] = useState<'view' | 'edit' | 'status'>('view')
+  const [showHistory, setShowHistory] = useState(false)
   const canWrite = space.role !== 'reader'
   const today = todayIso(space.timezone)
 
@@ -843,21 +891,31 @@ export function ProjectDetailPage() {
               ` · situation actualisée le ${formatMoment(p.situation_updated_at)}`}
           </p>
         </div>
-        {canWrite && mode === 'view' && (
+        {mode === 'view' && (
           <div className="page-header__actions">
-            <button type="button" className="button" onClick={() => setMode('status')}>
-              Changer le statut
+            <button type="button" className="button" onClick={() => setShowHistory(true)}>
+              Historique
             </button>
-            <button
-              type="button"
-              className="button button--primary"
-              onClick={() => setMode('edit')}
-            >
-              Modifier la fiche
-            </button>
+            {canWrite && (
+              <>
+                <button type="button" className="button" onClick={() => setMode('status')}>
+                  Changer le statut
+                </button>
+                <button
+                  type="button"
+                  className="button button--primary"
+                  onClick={() => setMode('edit')}
+                >
+                  Modifier la fiche
+                </button>
+              </>
+            )}
           </div>
         )}
       </header>
+      {showHistory && (
+        <HistoryDrawer spaceId={space.id} projectId={p.id} onClose={() => setShowHistory(false)} />
+      )}
 
       {mode === 'status' && (
         <section className="card-panel" aria-label="Changer le statut">
@@ -1030,7 +1088,6 @@ export function ProjectDetailPage() {
               </dl>
             </section>
             <ProjectLinksSection spaceId={space.id} projectId={p.id} canWrite={canWrite} />
-            <HistorySection spaceId={space.id} projectId={p.id} />
           </aside>
         </div>
       )}

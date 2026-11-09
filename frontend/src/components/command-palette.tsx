@@ -12,7 +12,6 @@ const PAGES = [
   { title: 'Projets', path: '/projets' },
   { title: 'Nouveau projet', path: '/projets/nouveau' },
   { title: 'Événements', path: '/evenements' },
-  { title: 'Tâches', path: '/taches' },
   { title: 'Timeline', path: '/timeline' },
   { title: 'Documents', path: '/documents' },
   { title: 'Mises à jour', path: '/mises-a-jour' },

@@ -246,7 +246,7 @@ Règles d'alerte (seuils réglables par espace) :
 
 - [x] Contributeurs du projet, distincts du responsable, sans droit supplémentaire (§21)
 - [x] Liens entre projets, symétriques et journalisés, sans duplication (§5)
-- [x] Tâches du « suivi général », sans projet : page Tâches, rappels, export/import (objets du modèle)
+- [x] ~~Tâches du « suivi général », sans projet~~ — **retiré le 9 nov. 2026** à la demande de la propriétaire du produit : une tâche appartient toujours à un projet. Les tâches sans projet déjà saisies sont rangées automatiquement dans un projet « Suivi général » de leur espace (migration `e56683f9014f`, journalisée) ; un ancien export qui en contient fait de même à l'import.
 - [x] Vue hebdomadaire « Point hebdo » : à surveiller, décisions, échéances, changements, informations manquantes ; date et source affichées ; impression (§7)
 - [x] Source et fraîcheur de la situation : saisie sur la fiche ou boîte de mise à jour, date et auteur (§21)
 - [x] Origine du besoin à la création et sur la fiche (§6, étape 1)
@@ -278,14 +278,15 @@ Ce qui manque à PILOT par rapport à Asana pour le travail d'équipe au quotidi
 - Réalisation :
   - Tout se passe dans une **fenêtre de la tâche**, ouverte en cliquant sur son titre depuis n'importe quelle page (adresse `?tache=…`, partageable). On peut aussi y modifier la tâche : titre, livrable, responsable, échéance.
   - Dans les listes, des repères : « En attente », sous-tâches « 1/3 », nombre de commentaires.
-  - Décision du 9 nov. 2026, révisée le même jour (propriétaire du produit) : **« Tâches » est retiré du menu** ; les tâches se gèrent **dans la fiche de leur projet**, en liste ou en tableau (bouton « Liste / Tableau »). Les sous-tâches restent dans leur tâche (fenêtre de la tâche, compteur ☑), pas en lignes à part. Depuis une tâche, aucun lien ne renvoie ailleurs. La page `/taches` reste joignable par la recherche (⌘K) et par les alertes des tâches du « suivi général », qui n'ont pas de projet.
+  - Décision du 9 nov. 2026, révisée le même jour (propriétaire du produit) : **tout se passe dans la fiche du projet**. « Tâches » est retiré du menu et la page `/taches` supprimée ; plus de tâche sans projet. Dans la fiche : liste ou tableau (bouton « Liste / Tableau »), « + Tâche », « + Sous-tâche ». Les sous-tâches restent dans leur tâche (fenêtre de la tâche, compteur ☑). Depuis une tâche, aucun lien ne renvoie ailleurs.
+  - Décision du 9 nov. 2026 (propriétaire du produit) : l'**historique du projet** n'est plus affiché en permanence ; il s'ouvre avec le bouton « Historique » en haut de la fiche (panneau à droite, accessible aussi aux lecteurs).
   - Notifications (CDC §16) : une alerte « Mention » ou « Tâche suivie » apparaît tout de suite dans Alertes, et figure dans le récapitulatif e-mail du jour s'il n'est pas encore parti. Pas d'e-mail à chaque commentaire. Une seule alerte par tâche et par jour, mise à jour à chaque nouvel événement.
   - Lecteurs : consultent et peuvent suivre une tâche ; ils ne commentent pas et ne modifient rien.
   - Un commentaire est retiré seulement par son auteur ou par un propriétaire.
   - Journal du projet, export et import mis à jour. Les abonnements ne sont pas exportés : ils sont propres à chaque compte.
 
 ### Lot B — Tableau avec cartes à glisser (fait le 9 nov. 2026)
-- [x] Nouvelle vue **Tableau** dans la fiche de chaque projet (bouton « Liste / Tableau »), et aussi sur la page `/taches` (adresse `?vue=tableau`) : colonnes À faire / En cours / Terminé, avec la carte qu'on fait glisser d'une colonne à l'autre.
+- [x] Nouvelle vue **Tableau** dans la fiche de chaque projet (bouton « Liste / Tableau ») : colonnes À faire / En cours / Terminé, avec la carte qu'on fait glisser d'une colonne à l'autre.
   - Une autre manière d'afficher les mêmes tâches : la vue Liste reste. Les statuts ne changent pas.
 - [x] Tout reste faisable au clavier et sur téléphone, sans glisser, avec le choix du statut sur la carte.
 - [x] Les lecteurs voient le tableau mais ne peuvent pas déplacer les cartes.

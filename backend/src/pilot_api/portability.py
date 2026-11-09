@@ -42,6 +42,7 @@ from pilot_api.models import (
     Project,
     ProjectContributor,
     ProjectLink,
+    ProjectStatus,
     ProjectType,
     Role,
     Space,
@@ -289,6 +290,31 @@ def read_archive(raw: bytes) -> tuple[dict[str, Any], dict[str, bytes]]:
     return data, files
 
 
+def _general_project(db: Session, space: Space, user: User) -> uuid.UUID:
+    """Projet qui accueille les tâches sans projet d'un ancien export."""
+    portfolio_id = db.scalar(
+        select(Portfolio.id)
+        .where(Portfolio.space_id == space.id, Portfolio.archived_at.is_(None))
+        .order_by(Portfolio.created_at)
+        .limit(1)
+    )
+    if portfolio_id is None:
+        portfolio = Portfolio(space_id=space.id, name="Suivi général", color="gray")
+        db.add(portfolio)
+        db.flush()
+        portfolio_id = portfolio.id
+    project = Project(
+        space_id=space.id,
+        portfolio_id=portfolio_id,
+        title="Suivi général",
+        status=ProjectStatus.IN_PROGRESS,
+        created_by_id=user.id,
+    )
+    db.add(project)
+    db.flush()
+    return project.id
+
+
 def import_space(
     db: Session, user: User, data: dict[str, Any], files: dict[str, bytes]
 ) -> ImportReport:
@@ -425,11 +451,20 @@ def import_space(
 
     task_ids: dict[str, Task] = {}
     parents: list[tuple[Task, str]] = []
+    general_project: uuid.UUID | None = None
     for item in data.get("tasks", []):
         source_project = item.get("project_id")
         project_id = project_ids.get(str(source_project)) if source_project else None
         if source_project and project_id is None:
             continue  # tâche d'un projet absent de l'export
+        if project_id is None:
+            # Ancien export : les tâches sans projet sont rangées dans « Suivi général ».
+            if general_project is None:
+                general_project = _general_project(db, space, user)
+                report.warnings.append(
+                    "Les tâches sans projet ont été rangées dans le projet « Suivi général »."
+                )
+            project_id = general_project
         values = _load(
             Task, item, {"project_id", "assignee_member_id", "assignee_label", "parent_id"}
         )

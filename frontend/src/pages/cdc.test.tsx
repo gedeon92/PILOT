@@ -1,7 +1,15 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { meWith, mockApi, OWNER_MEMBER, renderApp, SPACE_ID, spaceWith } from '../test-utils'
+import {
+  meWith,
+  mockApi,
+  OWNER_MEMBER,
+  projectFixture as project,
+  renderApp,
+  SPACE_ID,
+  spaceWith,
+} from '../test-utils'
 import { countryFlag } from '../countries'
 
 const base = `/api/spaces/${SPACE_ID}`
@@ -9,55 +17,6 @@ const base = `/api/spaces/${SPACE_ID}`
 afterEach(() => {
   vi.unstubAllGlobals()
 })
-
-function project(extra: Record<string, unknown> = {}) {
-  return {
-    id: 'pr1',
-    title: 'Salon Agri',
-    status: 'in_progress',
-    portfolio: { id: 'p1', name: 'Événements', color: 'orange', emoji: '🎪' },
-    entity: null,
-    project_type: null,
-    owner: { member_id: null, name: 'Mon assistante', has_account: false },
-    contributors: [{ member_id: null, name: 'Agence Lumière', has_account: false }],
-    event: null,
-    origin: 'Demandé en comité de direction',
-    situation: 'Devis signé',
-    situation_updated_at: '2026-11-05T09:00:00Z',
-    situation_source: 'update',
-    situation_source_label: 'point.docx',
-    situation_updated_by: 'Aïcha Ndiaye',
-    next_step: 'Réserver la salle',
-    decision_needed: 'Choisir le lieu',
-    decision_maker: 'Directrice générale',
-    decision_options: [
-      { label: 'CICAD', consequence: 'Plus cher, plus grand' },
-      { label: 'Hôtel', consequence: null },
-    ],
-    objective: null,
-    deliverables: null,
-    progress: null,
-    risk_level: null,
-    risk_note: null,
-    start_date: null,
-    end_date: null,
-    due_date: null,
-    date_certainty: null,
-    window_start: null,
-    window_end: null,
-    country: 'Sénégal',
-    city: 'Dakar',
-    external_url: null,
-    outcome: null,
-    cancel_reason: null,
-    open_tasks: 0,
-    late_tasks: 0,
-    created_at: '2026-11-03T10:00:00Z',
-    updated_at: '2026-11-05T09:00:00Z',
-    version: 2,
-    ...extra,
-  }
-}
 
 function routes(extra: Record<string, (body: unknown) => { status: number; json?: unknown }> = {}) {
   return {
@@ -157,39 +116,24 @@ describe('fiche projet : compléments du cahier des charges', () => {
   })
 })
 
-describe('tâches du suivi général', () => {
-  it('crée une tâche sans projet depuis la page Tâches', async () => {
+describe('tâches dans la fiche projet', () => {
+  it('crée la tâche dans le projet de la fiche (plus de tâche sans projet)', async () => {
     const calls = mockApi(
       routes({
-        [`POST ${base}/tasks`]: () => ({
-          status: 201,
-          json: {
-            id: 't1',
-            project_id: null,
-            title: 'Préparer le comité',
-            deliverable: null,
-            status: 'todo',
-            assignee: { member_id: null, name: null, has_account: false },
-            due_date: null,
-            due_certainty: null,
-            late: false,
-            closed_at: null,
-            version: 1,
-          },
-        }),
+        [`POST ${base}/projects/pr1/tasks`]: () => ({ status: 201, json: {} }),
       }),
     )
-    renderApp(`/espaces/${SPACE_ID}/taches`)
+    renderApp(`/espaces/${SPACE_ID}/projets/pr1`)
     const user = userEvent.setup()
 
-    await user.click(await screen.findByRole('button', { name: /Nouvelle tâche/ }))
+    await user.click(await screen.findByRole('button', { name: /Tâche$/ }))
     await user.type(screen.getByLabelText('Tâche *'), 'Préparer le comité')
     await user.click(screen.getByRole('button', { name: 'Ajouter la tâche' }))
 
-    expect(calls.find((c) => c.key === `POST ${base}/tasks`)?.body).toMatchObject({
+    expect(calls.find((c) => c.key === `POST ${base}/projects/pr1/tasks`)?.body).toMatchObject({
       title: 'Préparer le comité',
-      project_id: null,
     })
+    expect(screen.queryByLabelText('Projet')).not.toBeInTheDocument()
   })
 })
 

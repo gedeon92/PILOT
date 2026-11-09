@@ -2019,7 +2019,7 @@
           "projets"
         ],
         "summary": "Create Space Task",
-        "description": "Depuis la page Tâches : dans un projet, ou sans projet (suivi général, CDC §5).",
+        "description": "Une tâche appartient toujours à un projet (décision du 9 nov. 2026 : plus de tâche du\n« suivi général » sans projet).",
         "operationId": "create_space_task_api_spaces__space_id__tasks_post",
         "parameters": [
           {
@@ -7880,24 +7880,18 @@
             "default": "todo"
           },
           "project_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Project Id"
           }
         },
         "type": "object",
         "required": [
-          "title"
+          "title",
+          "project_id"
         ],
         "title": "SpaceTaskCreate",
-        "description": "Tâche créée depuis la page Tâches : un projet, ou aucun (suivi général)."
+        "description": "Tâche créée hors d'une fiche : le projet est obligatoire (décision du 9 nov. 2026)."
       },
       "SpaceUpdate": {
         "properties": {

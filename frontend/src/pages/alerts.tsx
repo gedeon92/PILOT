@@ -39,7 +39,7 @@ function AlertRow({ alert, spaceId }: { alert: AlertItem; spaceId: string }) {
           (alert.target_type === 'proposal'
             ? `/espaces/${spaceId}/mises-a-jour`
             : !alert.project_id
-              ? `/espaces/${spaceId}/taches`
+              ? `/espaces/${spaceId}`
               : `/espaces/${spaceId}/projets/${alert.project_id}`) +
           (alert.target_type === 'task' && alert.target_id ? `?tache=${alert.target_id}` : '')
         }

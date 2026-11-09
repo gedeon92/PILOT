@@ -833,8 +833,9 @@ def create_task(
 def create_space_task(
     body: SpaceTaskCreate, membership: WriterMembership, db: DbSession
 ) -> TaskOut:
-    """Depuis la page Tâches : dans un projet, ou sans projet (suivi général, CDC §5)."""
-    project = _load_project(db, membership.space_id, body.project_id) if body.project_id else None
+    """Une tâche appartient toujours à un projet (décision du 9 nov. 2026 : plus de tâche du
+    « suivi général » sans projet)."""
+    project = _load_project(db, membership.space_id, body.project_id)
     return create_task_in(db, membership, project, body)
 
 

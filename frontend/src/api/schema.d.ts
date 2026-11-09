@@ -528,7 +528,8 @@ export interface paths {
         put?: never;
         /**
          * Create Space Task
-         * @description Depuis la page Tâches : dans un projet, ou sans projet (suivi général, CDC §5).
+         * @description Une tâche appartient toujours à un projet (décision du 9 nov. 2026 : plus de tâche du
+         *     « suivi général » sans projet).
          */
         post: operations["create_space_task_api_spaces__space_id__tasks_post"];
         delete?: never;
@@ -2199,7 +2200,7 @@ export interface components {
         };
         /**
          * SpaceTaskCreate
-         * @description Tâche créée depuis la page Tâches : un projet, ou aucun (suivi général).
+         * @description Tâche créée hors d'une fiche : le projet est obligatoire (décision du 9 nov. 2026).
          */
         SpaceTaskCreate: {
             /** Deliverable */
@@ -2215,8 +2216,11 @@ export interface components {
             title: string;
             /** @default todo */
             status: components["schemas"]["TaskStatus"];
-            /** Project Id */
-            project_id?: string | null;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
         };
         /** SpaceUpdate */
         SpaceUpdate: {

@@ -1,7 +1,15 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { meWith, mockApi, OWNER_MEMBER, renderApp, SPACE_ID, spaceWith } from '../test-utils'
+import {
+  meWith,
+  mockApi,
+  OWNER_MEMBER,
+  projectFixture,
+  renderApp,
+  SPACE_ID,
+  spaceWith,
+} from '../test-utils'
 
 const base = `/api/spaces/${SPACE_ID}`
 
@@ -84,10 +92,15 @@ function routes(extra = {}) {
     [`GET ${base}/members`]: () => ({ status: 200, json: [OWNER_MEMBER, MOUSSA] }),
     [`GET ${base}/portfolios`]: () => ({ status: 200, json: [] }),
     [`GET ${base}/alerts`]: () => ({ status: 200, json: { unread: 0, items: [] } }),
-    [`GET ${base}/projects`]: () => ({
+    [`GET ${base}/projects`]: () => ({ status: 200, json: [projectFixture()] }),
+    [`GET ${base}/projects/pr1`]: () => ({ status: 200, json: projectFixture() }),
+    [`GET ${base}/projects/pr1/tasks`]: () => ({
       status: 200,
-      json: [{ id: 'pr1', title: 'Salon Agri 2026' }],
+      json: [detail.task, ...detail.subtasks],
     }),
+    [`GET ${base}/projects/pr1/history`]: () => ({ status: 200, json: [] }),
+    [`GET ${base}/projects/pr1/documents`]: () => ({ status: 200, json: [] }),
+    [`GET ${base}/projects/pr1/links`]: () => ({ status: 200, json: [] }),
     [`GET ${base}/tasks`]: () => ({ status: 200, json: [detail.task, ...detail.subtasks] }),
     [`GET ${base}/tasks/t1`]: () => ({ status: 200, json: detail }),
     ...extra,
@@ -97,10 +110,10 @@ function routes(extra = {}) {
 describe('fenêtre d’une tâche', () => {
   it('s’ouvre depuis la liste et montre sous-tâches, attente, commentaires et abonnés', async () => {
     mockApi(routes())
-    renderApp(`/espaces/${SPACE_ID}/taches`)
+    renderApp(`/espaces/${SPACE_ID}/projets/pr1`)
     const user = userEvent.setup()
 
-    const list = await screen.findByRole('region', { name: 'Liste des tâches' })
+    const list = await screen.findByRole('region', { name: /^Tâches/ })
     expect(await within(list).findByText('☑ 1/2')).toBeInTheDocument()
     expect(within(list).getByText('En attente')).toBeInTheDocument()
     // Les sous-tâches ne sont pas des lignes de la liste : elles restent dans leur tâche.
@@ -126,7 +139,7 @@ describe('fenêtre d’une tâche', () => {
     const calls = mockApi(
       routes({ [`POST ${base}/tasks/t1/comments`]: () => ({ status: 201, json: detail }) }),
     )
-    renderApp(`/espaces/${SPACE_ID}/taches?tache=t1`)
+    renderApp(`/espaces/${SPACE_ID}/projets/pr1?tache=t1`)
     const user = userEvent.setup()
 
     const dialog = await screen.findByRole('dialog', { name: 'Envoyer les invitations' })
@@ -154,10 +167,10 @@ describe('bouton « + Sous-tâche »', () => {
         }),
       }),
     )
-    renderApp(`/espaces/${SPACE_ID}/taches`)
+    renderApp(`/espaces/${SPACE_ID}/projets/pr1`)
     const user = userEvent.setup()
 
-    const list = await screen.findByRole('region', { name: 'Liste des tâches' })
+    const list = await screen.findByRole('region', { name: /^Tâches/ })
     await user.click(
       await within(list).findByRole('button', {
         name: 'Ajouter une sous-tâche à « Envoyer les invitations »',

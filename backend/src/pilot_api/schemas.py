@@ -395,9 +395,9 @@ class TaskCreate(_TaskFields):
 
 
 class SpaceTaskCreate(TaskCreate):
-    """Tâche créée depuis la page Tâches : un projet, ou aucun (suivi général)."""
+    """Tâche créée hors d'une fiche : le projet est obligatoire (décision du 9 nov. 2026)."""
 
-    project_id: uuid.UUID | None = None
+    project_id: uuid.UUID
 
 
 class TaskUpdate(_TaskFields):

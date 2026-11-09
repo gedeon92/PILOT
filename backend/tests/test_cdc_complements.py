@@ -2,10 +2,14 @@
 suivi général, source de la situation (§21), origine du besoin (§6), options de décision (§7),
 emoji de portefeuille (§13)."""
 
-from datetime import datetime, timedelta
+import io
+import json
+import zipfile
 from zoneinfo import ZoneInfo
 
 from conftest import create_space, invite_and_join, register
+
+from pilot_api.portability import DATA_NAME
 
 DAKAR = ZoneInfo("Africa/Dakar")
 
@@ -127,33 +131,21 @@ def test_situation_source_says_where_it_comes_from(make_client):
     assert after["situation_updated_by"] == "Aïcha Ndiaye"
 
 
-def test_general_tasks_have_no_project_and_remind_the_owner(make_client):
+def test_tasks_always_belong_to_a_project(make_client):
+    """Décision du 9 nov. 2026 : plus de tâche du « suivi général » sans projet."""
     owner, space, base, portfolio = _setup(make_client)
     project = _project(owner, base, portfolio, "Atlas")
-    today = datetime.now(DAKAR).date()
 
-    general = owner.post(
-        f"{base}/tasks",
-        json={"title": "Préparer le comité", "due_date": (today + timedelta(days=1)).isoformat()},
-    )
+    without = owner.post(f"{base}/tasks", json={"title": "Préparer le comité"})
     in_project = owner.post(f"{base}/tasks", json={"title": "Devis", "project_id": project["id"]})
     reader = make_client()
     invite_and_join(owner, reader, space["id"], "lecteur@exemple.com", "reader")
-    refused = reader.post(f"{base}/tasks", json={"title": "Non"})
+    refused = reader.post(f"{base}/tasks", json={"title": "Non", "project_id": project["id"]})
 
-    assert general.status_code == 201 and general.json()["project_id"] is None
-    assert in_project.json()["project_id"] == project["id"]
+    assert without.status_code == 422
+    assert in_project.status_code == 201 and in_project.json()["project_id"] == project["id"]
     assert refused.status_code == 403
-    titles = {t["title"] for t in owner.get(f"{base}/tasks").json()}
-    assert titles == {"Préparer le comité", "Devis"}
-    alerts = owner.get(f"{base}/alerts").json()["items"]
-    reminder = next(a for a in alerts if a["title"].startswith("Préparer le comité"))
-    assert reminder["project_id"] is None and "Suivi général" in reminder["title"]
-
-    done = owner.patch(
-        f"{base}/tasks/{general.json()['id']}", json={"version": 1, "status": "done"}
-    )
-    assert done.json()["status"] == "done"
+    assert [t["title"] for t in owner.get(f"{base}/tasks").json()] == ["Devis"]
 
 
 def test_project_links_are_symmetric_and_journaled(make_client):
@@ -198,11 +190,18 @@ def test_complements_survive_export_and_import(make_client):
     )
     campagne = _project(owner, base, portfolio, "Campagne radio")
     owner.post(f"{base}/projects/{salon['id']}/links", json={"project_id": campagne["id"]})
-    owner.post(f"{base}/tasks", json={"title": "Préparer le comité"})
+    owner.post(f"{base}/tasks", json={"title": "Préparer le comité", "project_id": salon["id"]})
+    # Un ancien export peut contenir des tâches sans projet : on en fabrique une.
+    archive = zipfile.ZipFile(io.BytesIO(owner.get(f"{base}/export").content))
+    data = json.loads(archive.read(DATA_NAME))
+    data["tasks"][0]["project_id"] = None
+    rebuilt = io.BytesIO()
+    with zipfile.ZipFile(rebuilt, "w") as out:
+        for name in archive.namelist():
+            out.writestr(name, archive.read(name) if name != DATA_NAME else json.dumps(data))
 
     report = owner.post(
-        "/api/space-imports",
-        files={"file": ("e.zip", owner.get(f"{base}/export").content, "application/zip")},
+        "/api/space-imports", files={"file": ("e.zip", rebuilt.getvalue(), "application/zip")}
     ).json()
 
     new = f"/api/spaces/{report['space_id']}"
@@ -214,5 +213,8 @@ def test_complements_survive_export_and_import(make_client):
     assert imported["portfolio"]["emoji"] == "🎪"
     links = owner.get(f"{new}/projects/{imported['id']}/links").json()
     assert [lk["project"]["title"] for lk in links] == ["Campagne radio"]
+    # La tâche sans projet de l'ancien export est rangée dans « Suivi général ».
+    general = projects["Suivi général"]
     tasks = owner.get(f"{new}/tasks").json()
-    assert [(t["title"], t["project_id"]) for t in tasks] == [("Préparer le comité", None)]
+    assert [(t["title"], t["project_id"]) for t in tasks] == [("Préparer le comité", general["id"])]
+    assert any("Suivi général" in w for w in report["warnings"])

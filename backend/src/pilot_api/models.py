@@ -402,7 +402,8 @@ class Task(Base):
     space_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("spaces.id", ondelete="CASCADE"), index=True
     )
-    # Vide : tâche du « suivi général », rattachée à aucun projet (CDC §5, objets du modèle).
+    # Toujours renseigné depuis le 9 nov. 2026 (les anciennes tâches sans projet ont été rangées
+    # dans un projet « Suivi général ») ; la colonne reste facultative pour les anciens exports.
     project_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("projects.id", ondelete="CASCADE"), index=True
     )
