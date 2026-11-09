@@ -3345,11 +3345,7 @@ kbd {
 .task-row__project {
   font-size: 12px;
   font-weight: 600;
-  color: var(--color-action);
-  text-decoration: none;
-}
-.task-row__project:hover {
-  text-decoration: underline;
+  color: var(--color-muted);
 }
 
 .task-row__general {

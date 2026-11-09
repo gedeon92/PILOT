@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router'
 import { errorMessage, type Task } from '../api/client'
 import { useCreateSpaceTask, useCreateTask, useMembers, useUpdateTask } from '../api/queries'
 import { CERTAINTY, formatDay, TASK_STATUS, type TaskStatus } from '../labels'
@@ -86,15 +85,7 @@ export function TaskRow({
         {project === 'general' ? (
           <span className="task-row__general">Suivi général</span>
         ) : (
-          project && (
-            <Link
-              className="task-row__project"
-              to={`/espaces/${spaceId}/projets/${project.id}`}
-              title="Ouvrir la fiche du projet"
-            >
-              Projet : {project.title}
-            </Link>
-          )
+          project && <span className="task-row__project">Projet : {project.title}</span>
         )}
         {task.deliverable && <span className="task-row__meta">Livrable : {task.deliverable}</span>}
       </span>

@@ -8,7 +8,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 import { errorMessage, type Member, type Task, type TaskDetail, type TaskRef } from '../api/client'
 import {
   useAddComment,
@@ -164,12 +164,7 @@ function TaskContent({
               </button>
             </>
           ) : task.project_id ? (
-            <Link
-              to={`/espaces/${spaceId}/projets/${task.project_id}`}
-              title="Quitter la tâche et ouvrir la fiche du projet"
-            >
-              Projet : {detail.project_title} ↗
-            </Link>
+            <span>Projet : {detail.project_title}</span>
           ) : (
             'Suivi général'
           )}
