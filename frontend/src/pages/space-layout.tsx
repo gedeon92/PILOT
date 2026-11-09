@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router'
 import { canWriteSpace, ROLE_LABELS, type Me, type Space } from '../api/client'
 import { useAlerts, useCatalog, useLogout, useMembers, useSpace } from '../api/queries'
@@ -26,6 +26,7 @@ import { PortfolioMark } from '../components/portfolio-mark'
 import { Avatar } from '../components/avatar'
 import { ThemeToggle } from '../components/theme-toggle'
 import { TaskDialogHost } from '../components/task-dialog'
+import { preloadPages } from '../lazy-pages'
 
 export type SpaceContext = { space: Space; me: Me }
 
@@ -216,6 +217,7 @@ export function SpaceLayout({ me }: { me: Me }) {
   const { spaceId = '' } = useParams()
   const space = useSpace(spaceId)
   const [searching, setSearching] = useState(false)
+  useEffect(() => preloadPages(), [])
 
   if (space.isPending) return <FullPageLoader />
   if (space.isError) {
@@ -240,7 +242,10 @@ export function SpaceLayout({ me }: { me: Me }) {
       </a>
       <Sidebar {...context} onSearch={() => setSearching(true)} />
       <main className="app__main" id="contenu" tabIndex={-1}>
-        <Outlet context={context} />
+        {/* Page en cours de chargement (première visite seulement : elles sont préchargées). */}
+        <Suspense fallback={<p className="muted page-loading">Chargement…</p>}>
+          <Outlet context={context} />
+        </Suspense>
       </main>
       <CommandPalette
         spaceId={space.data.id}

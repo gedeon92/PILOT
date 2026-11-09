@@ -353,6 +353,20 @@ Audit technique et fonctionnel de tout l'existant (serveur, base de données, é
 - [x] F11 — Le retour arrière du lot C refuse de s'exécuter s'il existe des projets privés.
 - Adresse de retour après connexion durcie (`/\…` refusé).
 
+## Fluidité de l'interface (10 nov. 2026)
+
+Demande de la propriétaire du produit : l'interface paraissait lente.
+
+Mesure avant : une page mettait **0,9 s** à finir d'apparaître après un clic. Après : **0,3 s**.
+
+- Entrée des pages en 0,15 s, d'un seul bloc. Avant : 0,6 s par bloc, en cascade, avec un flou.
+- Plus de « verre dépoli » (16 flous recalculés à chaque image derrière un fond animé). Les surfaces sont presque opaques, avec le même rendu.
+- Plus d'animations qui redessinent sans arrêt : dégradés défilants des barres d'avancement, du nom et du logo, bordure tournante du bandeau, pulsation des pastilles.
+- Le fond et les halos bougent sans flou calculé : seule la carte graphique travaille.
+- Chiffres du tableau de bord animés en 0,35 s (au lieu de 0,7 s).
+- Pages chargées à la demande puis préchargées en arrière-plan. Le programme téléchargé à l'ouverture passe d'environ 500 Ko à 317 Ko (−35 %).
+- Limite qui reste (hébergement gratuit) : après 15 minutes sans visite, le serveur s'endort ; le premier accès prend alors 30 à 60 s. Elle disparaît avec l'offre Render payante (décision reportée).
+
 ## Phase 10 — Mise en production
 
 - [ ] Changer le mot de passe de la base Neon (il a circulé pendant la mise en place)

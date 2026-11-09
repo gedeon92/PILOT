@@ -3,22 +3,26 @@ import type { Me } from './api/client'
 import { useMe } from './api/queries'
 import { Alert, AuthCard, FullPageLoader } from './components/ui'
 import { ForgotPasswordPage, LoginPage, RegisterPage, ResetPasswordPage } from './pages/auth'
-import { AccountPage, ConfirmEmailPage } from './pages/account'
-import { AlertsPage } from './pages/alerts'
+import { ConfirmEmailPage } from './pages/account'
 import { CreateSpacePage } from './pages/create-space'
 import { DashboardPage } from './pages/dashboard'
 import { InvitationPage } from './pages/invitation'
-import { DocumentsPage } from './pages/documents'
-import { EventsPage } from './pages/events'
-import { MembersPage } from './pages/members'
-import { ProjectDetailPage } from './pages/project-detail'
-import { NewProjectPage, ProjectsPage } from './pages/projects'
-import { SettingsPage } from './pages/settings'
 import { SpaceLayout } from './pages/space-layout'
 import { StatusPage } from './pages/status'
-import { TimelinePage } from './pages/timeline'
-import { WeeklyPage } from './pages/weekly'
-import { UpdatesPage } from './pages/updates'
+import {
+  AccountPage,
+  AlertsPage,
+  DocumentsPage,
+  EventsPage,
+  MembersPage,
+  NewProjectPage,
+  ProjectDetailPage,
+  ProjectsPage,
+  SettingsPage,
+  TimelinePage,
+  UpdatesPage,
+  WeeklyPage,
+} from './lazy-pages'
 
 /** Affiche `children(me)` si quelqu'un est connecté, sinon renvoie vers la connexion. */
 function RequireAuth({ children }: { children: (me: Me) => React.ReactNode }) {

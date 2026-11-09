@@ -3663,8 +3663,8 @@ a.weekly-line__title:hover {
     radial-gradient(34% 30% at 82% 8%, rgb(139 92 246 / 0.22), transparent 70%),
     radial-gradient(40% 34% at 70% 88%, rgb(34 211 238 / 0.14), transparent 70%),
     radial-gradient(30% 28% at 25% 85%, rgb(255 61 129 / 0.14), transparent 70%);
-  filter: blur(10px);
   animation: aurora 26s ease-in-out infinite alternate;
+  will-change: transform;
   pointer-events: none;
 }
 .app::after,
@@ -3737,7 +3737,6 @@ h3,
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: neon-shift 8s linear infinite;
 }
 .brand svg,
 .brand img {
@@ -3762,8 +3761,6 @@ h3,
   background: var(--glass);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
 }
 /* Lueur qui suit la souris sur les cartes (variables posées par spotlight.ts). */
 .card-panel::after,
@@ -3799,9 +3796,7 @@ h3,
 
 /* ---------- Menu latéral ---------- */
 .sidebar {
-  background: rgb(8 10 18 / 0.72);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgb(8 10 18 / 0.94);
   border-right: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
 }
@@ -3998,7 +3993,6 @@ input[type='radio'] {
 /* ---------- Statuts : pastilles lumineuses ---------- */
 .pill {
   border: 1px solid transparent;
-  backdrop-filter: blur(6px);
 }
 .pill__dot {
   box-shadow: 0 0 8px currentColor;
@@ -4019,7 +4013,6 @@ input[type='radio'] {
   border-color: rgb(139 92 246 / 0.3);
 }
 .pill--danger .pill__dot {
-  animation: pulse 1.8s ease-out infinite;
 }
 @keyframes pulse {
   0% {
@@ -4033,7 +4026,6 @@ input[type='radio'] {
   }
 }
 .alert {
-  backdrop-filter: blur(8px);
 }
 
 /* ---------- Bandeau d'accueil : verre, bordure néon qui tourne ---------- */
@@ -4053,7 +4045,6 @@ input[type='radio'] {
     rgb(14 16 28 / 0.75);
   color: #fff;
   box-shadow: 0 20px 60px rgb(0 0 0 / 0.45);
-  backdrop-filter: blur(18px);
 }
 .hero::before {
   content: '';
@@ -4074,7 +4065,7 @@ input[type='radio'] {
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: spin-border 8s linear infinite;
+
   pointer-events: none;
 }
 @property --angle {
@@ -4094,19 +4085,20 @@ input[type='radio'] {
   top: 0;
   bottom: 0;
   width: 30%;
-  left: -40%;
+  left: 0;
   background: linear-gradient(90deg, transparent, rgb(var(--fx) / 0.07), transparent);
   animation: scan 6s ease-in-out infinite;
+  will-change: transform;
   pointer-events: none;
 }
 @keyframes scan {
   0%,
   20% {
-    left: -40%;
+    transform: translateX(-140%);
   }
   60%,
   100% {
-    left: 120%;
+    transform: translateX(400%);
   }
 }
 .hero__text,
@@ -4150,7 +4142,6 @@ input[type='radio'] {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: neon-shift 6s linear infinite;
 }
 .hero__summary {
   margin: 8px 0 0;
@@ -4188,23 +4179,23 @@ input[type='radio'] {
 .hero__orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(30px);
   pointer-events: none;
   animation: float 10s ease-in-out infinite;
+  will-change: transform;
 }
 .hero__orb--1 {
   width: 220px;
   height: 220px;
   right: 22%;
   top: -130px;
-  background: rgb(255 61 129 / 0.35);
+  background: radial-gradient(circle, rgb(255 61 129 / 0.35), transparent 70%);
 }
 .hero__orb--2 {
   width: 180px;
   height: 180px;
   right: -60px;
   bottom: -90px;
-  background: rgb(34 211 238 / 0.3);
+  background: radial-gradient(circle, rgb(34 211 238 / 0.3), transparent 70%);
   animation-delay: -5s;
 }
 @keyframes float {
@@ -4291,32 +4282,17 @@ input[type='radio'] {
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(14px);
-    filter: blur(6px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
     transform: none;
-    filter: none;
   }
 }
+/* Fluidité (10 nov. 2026) : la page apparaît en 0,15 s, d'un seul bloc (avant : 0,9 s, bloc
+   par bloc avec un flou), pour que chaque clic donne une réponse immédiate. */
 .page-content > * {
-  animation: rise 0.6s var(--ease-out) both;
-}
-.page-content > *:nth-child(2) {
-  animation-delay: 0.06s;
-}
-.page-content > *:nth-child(3) {
-  animation-delay: 0.12s;
-}
-.page-content > *:nth-child(4) {
-  animation-delay: 0.18s;
-}
-.page-content > *:nth-child(5) {
-  animation-delay: 0.24s;
-}
-.page-content > *:nth-child(n + 6) {
-  animation-delay: 0.3s;
+  animation: rise 0.15s ease-out both;
 }
 
 /* ---------- Tableaux et listes ---------- */
@@ -4429,9 +4405,7 @@ input[type='radio'] {
   background-size: 200% 100%;
   box-shadow: 0 0 12px rgb(255 61 129 / 0.6);
   transform-origin: left;
-  animation:
-    grow 1s var(--ease-out) both,
-    neon-shift 4s linear infinite;
+  animation: grow 0.5s var(--ease-out) both;
 }
 .progress--done .progress__fill {
   background: linear-gradient(90deg, #22c55e, #22d3ee);
@@ -4494,8 +4468,6 @@ input[type='radio'] {
 .rules__body {
   background: var(--glass-strong);
   border-color: var(--color-border-strong);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
 }
 
 /* ---------- Segments, puces, divers ---------- */
@@ -4608,7 +4580,6 @@ a {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: neon-shift 7s linear infinite;
 }
 .showcase__lead {
   margin: 0;
@@ -4640,7 +4611,6 @@ a {
   border-radius: var(--radius-control);
   border: 1px solid var(--color-border);
   background: var(--glass);
-  backdrop-filter: blur(12px);
   font-size: 12.5px;
   line-height: 1.35;
   animation: step-focus 9s ease-in-out infinite;
@@ -5255,7 +5225,6 @@ a {
   display: flex;
   justify-content: flex-end;
   background: rgb(2 3 8 / 0.55);
-  backdrop-filter: blur(3px);
   animation: tl-fade 0.15s ease-out both;
 }
 .task-drawer {
@@ -5267,8 +5236,6 @@ a {
   background: var(--color-panel);
   border-left: 1px solid var(--color-border-strong);
   box-shadow: -24px 0 60px rgb(0 0 0 / 0.35);
-  backdrop-filter: blur(24px) saturate(140%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
   animation: drawer-in 0.28s var(--ease-out) both;
 }
 .task-drawer:focus {
@@ -5599,8 +5566,6 @@ a {
   border-radius: var(--radius-card);
   border: 1px solid var(--color-border);
   background: var(--glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   transition:
     border-color 0.2s,
     box-shadow 0.2s,
@@ -5835,7 +5800,7 @@ a {
   opacity: 0.45;
 }
 [data-theme='light'] .sidebar {
-  background: rgb(255 255 255 / 0.8);
+  background: rgb(255 255 255 / 0.96);
 }
 [data-theme='light'] .avatar {
   color: var(--avatar-fg-light);
@@ -5912,7 +5877,6 @@ a {
   }
   .card-panel,
   .weekly-block {
-    backdrop-filter: none;
     box-shadow: none;
   }
 }

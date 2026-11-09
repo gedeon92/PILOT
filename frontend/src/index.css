@@ -12,8 +12,8 @@
 
   --color-page: #05060b;
   --color-panel: #0f1220; /* surfaces opaques : menus, bulles, fenêtres, champs */
-  --glass: rgb(20 23 38 / 0.62); /* cartes en verre dépoli */
-  --glass-strong: rgb(24 27 44 / 0.86);
+  --glass: rgb(20 23 38 / 0.9); /* cartes : surface presque opaque (pas de flou à calculer) */
+  --glass-strong: rgb(24 27 44 / 0.96);
   --surface-1: rgb(255 255 255 / 0.03);
   --surface-2: rgb(255 255 255 / 0.06);
   --surface-3: rgb(255 255 255 / 0.1);
@@ -74,8 +74,8 @@
 
   --color-page: #f5f6fa;
   --color-panel: #fff;
-  --glass: rgb(255 255 255 / 0.78);
-  --glass-strong: rgb(255 255 255 / 0.94);
+  --glass: rgb(255 255 255 / 0.94);
+  --glass-strong: rgb(255 255 255 / 0.98);
   --surface-1: rgb(15 18 32 / 0.03);
   --surface-2: rgb(15 18 32 / 0.05);
   --surface-3: rgb(15 18 32 / 0.08);

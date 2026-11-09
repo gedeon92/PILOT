@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 
-/** Fait défiler un nombre de 0 jusqu'à sa valeur (environ 0,7 s). Sans animation si
+/** Fait défiler un nombre de 0 jusqu'à sa valeur (environ 0,35 s, pour ne pas faire attendre). Sans animation si
  * l'utilisateur a demandé de réduire les animations. */
-export function useCountUp(value: number, duration = 700): number {
+export function useCountUp(value: number, duration = 350): number {
   const [shown, setShown] = useState(value)
   useEffect(() => {
     const reduce =
