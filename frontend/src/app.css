@@ -5973,6 +5973,100 @@ a {
   }
 }
 
+/* ---------- Petite touche de vie au repos (10 nov. 2026) ----------
+   Animations douces et peu coûteuses : petites zones de texte, transparence et taille. */
+
+/* Dégradé qui défile doucement sur le logo, le prénom et le titre de la connexion. */
+.brand__name,
+.hero__name,
+.showcase__accent {
+  animation: neon-shift 9s linear infinite;
+}
+
+/* Cartes de chiffres : la ligne lumineuse « respire ». */
+.stat-card::before {
+  animation: breathe 3.6s ease-in-out infinite;
+}
+.stat-card:nth-child(2)::before {
+  animation-delay: -1.2s;
+}
+.stat-card:nth-child(3)::before {
+  animation-delay: -2.4s;
+}
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Lien actif du menu : il brille doucement. */
+.nav__link--active::before {
+  animation: breathe 2.8s ease-in-out infinite;
+}
+
+/* Étincelles du bandeau d'accueil. */
+.hero__sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.hero__sparkles i {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 6px 1px var(--neon-4),
+    0 0 12px 2px rgb(255 61 129 / 0.5);
+  opacity: 0;
+  animation: sparkle 3.2s ease-in-out infinite;
+}
+.hero__sparkles i:nth-child(even) {
+  box-shadow:
+    0 0 6px 1px var(--neon-1),
+    0 0 12px 2px rgb(139 92 246 / 0.5);
+}
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+[data-theme='light'] .hero__sparkles i {
+  background: var(--neon-1);
+}
+
+/* Barres d'avancement : elles se remplissent à l'ouverture de la page (déjà en place) et
+   un reflet passe de temps en temps. */
+.progress__track::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
+  transform: translateX(-100%);
+  animation: glint 5s ease-in-out 1s infinite;
+}
+@keyframes glint {
+  0%,
+  70% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* ---------- Mode clair : mêmes formes, fond blanc et texte noir ---------- */
 :root[data-theme='light'] {
   --shadow-soft: 0 1px 2px rgb(15 18 32 / 0.06), 0 8px 24px rgb(15 18 32 / 0.06);

@@ -371,6 +371,7 @@ Mesure avant : une page mettait **0,9 s** à finir d'apparaître après un clic.
   - Tâche cochée qui « saute » et s'illumine ; nouveaux éléments qui glissent en place ; carte du tableau qui « atterrit » ; boutons qui répondent au survol et au clic ; compteur d'alertes qui saute quand il change.
   - Chargements en barres scintillantes au lieu du texte « Chargement… ».
   - Données rafraîchies seules toutes les 30 s quand l'onglet est visible.
+- Petite touche de vie au repos (même jour) : dégradé qui défile doucement sur le logo, le prénom et le titre de la connexion ; cartes de chiffres qui « respirent » ; lien actif du menu qui brille ; étincelles dans le bandeau ; reflet occasionnel sur les barres d'avancement. Des animations légères : petites zones de texte, transparence et taille. Mesure inchangée : 0,28 s par page.
 - Limite qui reste (hébergement gratuit) : après 15 minutes sans visite, le serveur s'endort ; le premier accès prend alors 30 à 60 s. Elle disparaît avec l'offre Render payante (décision reportée).
 
 ## Phase 10 — Mise en production

@@ -229,6 +229,14 @@ export function DashboardPage() {
         </div>
         <span className="hero__orb hero__orb--1" aria-hidden="true" />
         <span className="hero__orb hero__orb--2" aria-hidden="true" />
+        {/* Étincelles du bandeau (animation légère : transparence et taille seulement). */}
+        <span className="hero__sparkles" aria-hidden="true">
+          <i style={{ left: '38%', top: '22%' }} />
+          <i style={{ left: '55%', top: '70%', animationDelay: '1.1s' }} />
+          <i style={{ left: '68%', top: '30%', animationDelay: '2.3s' }} />
+          <i style={{ left: '84%', top: '62%', animationDelay: '0.6s' }} />
+          <i style={{ left: '47%', top: '48%', animationDelay: '1.8s' }} />
+        </span>
       </header>
 
       <div className="stat-grid">
