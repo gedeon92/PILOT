@@ -7,6 +7,7 @@ import { lazy } from 'react'
 const loaders = {
   account: () => import('./pages/account'),
   alerts: () => import('./pages/alerts'),
+  decisions: () => import('./pages/decisions'),
   documents: () => import('./pages/documents'),
   events: () => import('./pages/events'),
   members: () => import('./pages/members'),
@@ -20,6 +21,9 @@ const loaders = {
 
 export const AccountPage = lazy(() => loaders.account().then((m) => ({ default: m.AccountPage })))
 export const AlertsPage = lazy(() => loaders.alerts().then((m) => ({ default: m.AlertsPage })))
+export const DecisionsPage = lazy(() =>
+  loaders.decisions().then((m) => ({ default: m.DecisionsPage })),
+)
 export const DocumentsPage = lazy(() =>
   loaders.documents().then((m) => ({ default: m.DocumentsPage })),
 )

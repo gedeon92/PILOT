@@ -26,6 +26,9 @@ const RULE_TONE: Record<string, string> = {
   task_activity: 'info',
   milestone_at_risk: 'warn',
   milestone_reframe: 'danger',
+  minutes_overdue: 'warn',
+  decision_reminder: 'violet',
+  orphan_subject: 'danger',
 }
 
 function AlertRow({ alert, spaceId }: { alert: AlertItem; spaceId: string }) {
@@ -40,9 +43,13 @@ function AlertRow({ alert, spaceId }: { alert: AlertItem; spaceId: string }) {
         to={
           (alert.target_type === 'proposal'
             ? `/espaces/${spaceId}/mises-a-jour`
-            : !alert.project_id
-              ? `/espaces/${spaceId}`
-              : `/espaces/${spaceId}/projets/${alert.project_id}`) +
+            : alert.target_type === 'decision'
+              ? `/espaces/${spaceId}/decisions?vue=todo`
+              : alert.target_type === 'meeting'
+                ? `/espaces/${spaceId}/decisions?vue=meetings`
+                : !alert.project_id
+                  ? `/espaces/${spaceId}`
+                  : `/espaces/${spaceId}/projets/${alert.project_id}`) +
           (alert.target_type === 'task' && alert.target_id ? `?tache=${alert.target_id}` : '')
         }
         onClick={() => !alert.read && markRead.mutate(alert.id)}

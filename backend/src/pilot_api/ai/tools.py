@@ -35,6 +35,7 @@ from pilot_api.models import (
     TaskStatus,
 )
 from pilot_api.routers import projects as P
+from pilot_api.routers.decisions import list_decisions
 from pilot_api.routers.milestones import list_milestones
 from pilot_api.routers.task_collab import task_detail
 from pilot_api.schemas import (
@@ -208,6 +209,23 @@ TOOLS: list[dict[str, Any]] = [
                 "filtre": {
                     "type": "string",
                     "enum": ["mes_taches", "en_retard", "sept_jours", "toutes"],
+                }
+            },
+            ["filtre"],
+        ),
+    },
+    {
+        "name": "lister_decisions",
+        "description": (
+            "Registre des décisions visibles (100 au plus) : énoncé, état, décideur, exécutant, "
+            "échéance, critère, retard. Filtre : « ouvertes », « en_retard », « sans_porteur » "
+            "ou « toutes »."
+        ),
+        "input_schema": _obj(
+            {
+                "filtre": {
+                    "type": "string",
+                    "enum": ["ouvertes", "en_retard", "sans_porteur", "toutes"],
                 }
             },
             ["filtre"],
@@ -430,6 +448,7 @@ def _view_project(db: Session, membership: Membership, args: dict) -> str:
         }
         for m in list_milestones(project.id, membership, db)
     ]
+    data["decisions"] = [_decision_line(d) for d in list_decisions(membership, db, project.id)]
     return _dump(data)
 
 
@@ -489,7 +508,38 @@ def _references(db: Session, membership: Membership, _args: dict) -> str:
     )
 
 
+def _decision_line(d: Any) -> dict[str, Any]:
+    return {
+        "enonce": d.statement,
+        "etat": d.state,
+        "projet": d.project.name if d.project else None,
+        "reunion": d.meeting.name if d.meeting else None,
+        "decideur": _person(d.decider),
+        "executant": _person(d.executor),
+        "acceptee_par_l_executant": d.executor_accepted,
+        "echeance": d.due_date,
+        "critere": d.criterion,
+        "en_retard": d.late or None,
+        "manque": d.missing,
+        "sans_porteur_depuis_jours": d.orphan_days,
+        "taches": [t.title for t in d.tasks],
+    }
+
+
+def _list_decisions(db: Session, membership: Membership, args: dict) -> str:
+    rows = list_decisions(membership, db)
+    kind = args.get("filtre", "ouvertes")
+    if kind == "ouvertes":
+        rows = [d for d in rows if d.state in ("draft", "open")]
+    elif kind == "en_retard":
+        rows = [d for d in rows if d.late]
+    elif kind == "sans_porteur":
+        rows = [d for d in rows if d.orphan_days is not None]
+    return _dump({"total": len(rows), "decisions": [_decision_line(d) for d in rows[:100]]})
+
+
 READERS = {
+    "lister_decisions": _list_decisions,
     "rechercher_projets": _search_projects,
     "voir_projet": _view_project,
     "voir_tache": _view_task,

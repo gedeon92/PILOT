@@ -960,6 +960,168 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/spaces/{space_id}/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Decisions */
+        get: operations["list_decisions_api_spaces__space_id__decisions_get"];
+        put?: never;
+        /** Create Decision */
+        post: operations["create_decision_api_spaces__space_id__decisions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/decisions/{decision_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Decision */
+        patch: operations["update_decision_api_spaces__space_id__decisions__decision_id__patch"];
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/decisions/{decision_id}/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Validate Decision */
+        post: operations["validate_decision_api_spaces__space_id__decisions__decision_id__validate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/decisions/{decision_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Decision
+         * @description Le responsable d'exécution accepte sa responsabilité (même en lecture seule ailleurs).
+         */
+        post: operations["accept_decision_api_spaces__space_id__decisions__decision_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/decisions/{decision_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close Decision */
+        post: operations["close_decision_api_spaces__space_id__decisions__decision_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/decisions/{decision_id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reopen Decision */
+        post: operations["reopen_decision_api_spaces__space_id__decisions__decision_id__reopen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/decisions/{decision_id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Execution Task
+         * @description Crée la tâche d'exécution dans le projet de la décision (responsable et échéance repris),
+         *     reliée à la décision.
+         */
+        post: operations["create_execution_task_api_spaces__space_id__decisions__decision_id__tasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/meetings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Meetings */
+        get: operations["list_meetings_api_spaces__space_id__meetings_get"];
+        put?: never;
+        /** Create Meeting */
+        post: operations["create_meeting_api_spaces__space_id__meetings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/meetings/{meeting_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Meeting */
+        patch: operations["update_meeting_api_spaces__space_id__meetings__meeting_id__patch"];
+        trace?: never;
+    };
     "/api/spaces/{space_id}/projects/{project_id}/access": {
         parameters: {
             query?: never;
@@ -1784,12 +1946,162 @@ export interface components {
          * @enum {string}
          */
         DateCertainty: "proposed" | "announced" | "confirmed";
+        /** DecisionClose */
+        DecisionClose: {
+            /** Version */
+            version: number;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "done" | "cancelled";
+            /** Note */
+            note: string;
+        };
+        /** DecisionCreate */
+        DecisionCreate: {
+            /** Project Id */
+            project_id?: string | null;
+            /** Meeting Id */
+            meeting_id?: string | null;
+            /** Source */
+            source?: string | null;
+            /** Decider Member Id */
+            decider_member_id?: string | null;
+            /** Decider Label */
+            decider_label?: string | null;
+            /** Executor Member Id */
+            executor_member_id?: string | null;
+            /** Executor Label */
+            executor_label?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            /** Criterion */
+            criterion?: string | null;
+            /** Private */
+            private?: boolean | null;
+            /** Statement */
+            statement: string;
+            /**
+             * Validate Now
+             * @default false
+             */
+            validate_now: boolean;
+        };
         /** DecisionOption */
         DecisionOption: {
             /** Label */
             label: string;
             /** Consequence */
             consequence?: string | null;
+        };
+        /** DecisionOut */
+        DecisionOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Statement */
+            statement: string;
+            project: components["schemas"]["RefOut"] | null;
+            meeting: components["schemas"]["RefOut"] | null;
+            /** Source */
+            source: string | null;
+            decider: components["schemas"]["PersonRef"];
+            executor: components["schemas"]["PersonRef"];
+            /** Executor Accepted */
+            executor_accepted: boolean;
+            /** Due Date */
+            due_date: string | null;
+            /** Criterion */
+            criterion: string | null;
+            /** Private */
+            private: boolean;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "draft" | "open" | "done" | "cancelled";
+            /** Proof */
+            proof: string | null;
+            /** Cancel Reason */
+            cancel_reason: string | null;
+            /** Closed At */
+            closed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Missing */
+            missing: string[];
+            /** Late */
+            late: boolean;
+            /** Reminder On */
+            reminder_on: string | null;
+            /** Orphan Days */
+            orphan_days: number | null;
+            /** Is Executor */
+            is_executor: boolean;
+            /** Can Write */
+            can_write: boolean;
+            /** Tasks */
+            tasks: components["schemas"]["DecisionTaskRef"][];
+            /** Version */
+            version: number;
+        };
+        /** DecisionTaskCreate */
+        DecisionTaskCreate: {
+            /** Version */
+            version: number;
+            /** Title */
+            title?: string | null;
+        };
+        /** DecisionTaskRef */
+        DecisionTaskRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            status: components["schemas"]["TaskStatus"];
+            /** Project Id */
+            project_id: string | null;
+        };
+        /** DecisionUpdate */
+        DecisionUpdate: {
+            /** Project Id */
+            project_id?: string | null;
+            /** Meeting Id */
+            meeting_id?: string | null;
+            /** Source */
+            source?: string | null;
+            /** Decider Member Id */
+            decider_member_id?: string | null;
+            /** Decider Label */
+            decider_label?: string | null;
+            /** Executor Member Id */
+            executor_member_id?: string | null;
+            /** Executor Label */
+            executor_label?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            /** Criterion */
+            criterion?: string | null;
+            /** Private */
+            private?: boolean | null;
+            /** Version */
+            version: number;
+            /** Statement */
+            statement?: string | null;
+        };
+        /** DecisionVersion */
+        DecisionVersion: {
+            /** Version */
+            version: number;
         };
         /** DependencyCreate */
         DependencyCreate: {
@@ -2073,6 +2385,81 @@ export interface components {
             user: components["schemas"]["UserOut"];
             /** Spaces */
             spaces: components["schemas"]["SpaceSummary"][];
+        };
+        /** MeetingCreate */
+        MeetingCreate: {
+            /** Title */
+            title: string;
+            /**
+             * Ended At
+             * Format: date-time
+             */
+            ended_at: string;
+            /** Project Id */
+            project_id?: string | null;
+            /** Participants */
+            participants?: string | null;
+        };
+        /** MeetingOut */
+        MeetingOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            project: components["schemas"]["RefOut"] | null;
+            /**
+             * Ended At
+             * Format: date-time
+             */
+            ended_at: string;
+            /** Participants */
+            participants: string | null;
+            /**
+             * Minutes State
+             * @enum {string}
+             */
+            minutes_state: "to_write" | "written" | "validated" | "sent";
+            /**
+             * Minutes Due At
+             * Format: date-time
+             */
+            minutes_due_at: string;
+            /** Minutes Late */
+            minutes_late: boolean;
+            /** Minutes Sent At */
+            minutes_sent_at: string | null;
+            /** Minutes Channel */
+            minutes_channel: string | null;
+            /** Minutes Recipients */
+            minutes_recipients: string | null;
+            /** Minutes Url */
+            minutes_url: string | null;
+            /** Decisions Count */
+            decisions_count: number;
+            /** Version */
+            version: number;
+        };
+        /** MeetingUpdate */
+        MeetingUpdate: {
+            /** Version */
+            version: number;
+            /** Title */
+            title?: string | null;
+            /** Ended At */
+            ended_at?: string | null;
+            /** Participants */
+            participants?: string | null;
+            /** Minutes State */
+            minutes_state?: ("to_write" | "written" | "validated" | "sent") | null;
+            /** Minutes Channel */
+            minutes_channel?: string | null;
+            /** Minutes Recipients */
+            minutes_recipients?: string | null;
+            /** Minutes Url */
+            minutes_url?: string | null;
         };
         /** MemberOut */
         MemberOut: {
@@ -5762,6 +6149,393 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MilestoneOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_decisions_api_spaces__space_id__decisions_get: {
+        parameters: {
+            query?: {
+                project_id?: string | null;
+                meeting_id?: string | null;
+            };
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_decision_api_spaces__space_id__decisions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_decision_api_spaces__space_id__decisions__decision_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                decision_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validate_decision_api_spaces__space_id__decisions__decision_id__validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                decision_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionVersion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_decision_api_spaces__space_id__decisions__decision_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                decision_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionVersion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_decision_api_spaces__space_id__decisions__decision_id__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                decision_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionClose"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reopen_decision_api_spaces__space_id__decisions__decision_id__reopen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                decision_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionVersion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_execution_task_api_spaces__space_id__decisions__decision_id__tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                decision_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionTaskCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_meetings_api_spaces__space_id__meetings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_meeting_api_spaces__space_id__meetings_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeetingCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_meeting_api_spaces__space_id__meetings__meeting_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meeting_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeetingUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingOut"];
                 };
             };
             /** @description Validation Error */

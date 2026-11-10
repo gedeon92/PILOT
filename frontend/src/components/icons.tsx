@@ -184,3 +184,11 @@ export const MoonIcon = () => (
     <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />
   </Icon>
 )
+
+/** Balance : registre des décisions (étape F3). */
+export const ScaleIcon = () => (
+  <Icon size={18}>
+    <path d="M12 3v18M7 21h10M5 7h14" />
+    <path d="M5 7l-3 6a3 3 0 0 0 6 0zM19 7l-3 6a3 3 0 0 0 6 0z" />
+  </Icon>
+)

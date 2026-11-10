@@ -561,6 +561,117 @@ class MilestoneTask(Base):
     )
 
 
+class MinutesState(enum.StrEnum):
+    TO_WRITE = "to_write"
+    WRITTEN = "written"
+    VALIDATED = "validated"
+    # Envoi déclaré par la personne (pas une preuve automatique de remise : DEC03).
+    SENT = "sent"
+
+
+class Meeting(Base):
+    """Réunion ou instance (étape F3) : source des décisions, avec le suivi de son relevé,
+    à diffuser dans les 24 heures suivant la fin de la réunion (DEC02, DEC03)."""
+
+    __tablename__ = "meetings"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("projects.id", ondelete="SET NULL"), index=True
+    )
+    title: Mapped[str] = mapped_column(String(200))
+    # Fin de la réunion : le délai de 24 h du relevé part de là.
+    ended_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    participants: Mapped[str | None] = mapped_column(Text)
+    minutes_state: Mapped[MinutesState] = mapped_column(_enum(MinutesState, "minutes_state"))
+    minutes_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    minutes_channel: Mapped[str | None] = mapped_column(String(120))
+    minutes_recipients: Mapped[str | None] = mapped_column(Text)
+    minutes_url: Mapped[str | None] = mapped_column(String(500))
+    created_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class DecisionState(enum.StrEnum):
+    # Brouillon : porteur, échéance ou critère manquant (DEC02).
+    DRAFT = "draft"
+    OPEN = "open"
+    DONE = "done"
+    # Devenue caduque : annulation formelle avec motif.
+    CANCELLED = "cancelled"
+
+
+class Decision(Base):
+    """Décision (cahier V2, DEC01) : distincte des tâches qui l'exécutent. Énoncé, source,
+    décideur, responsable d'exécution nommé (qui accepte), échéance, critère observable,
+    projet lié facultatif et confidentialité. L'ancienneté d'un sujet sans porteur accepté
+    court depuis sa création (DEC05)."""
+
+    __tablename__ = "decisions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("projects.id", ondelete="SET NULL"), index=True
+    )
+    meeting_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("meetings.id", ondelete="SET NULL"), index=True
+    )
+    statement: Mapped[str] = mapped_column(Text)
+    source: Mapped[str | None] = mapped_column(String(200))
+    decider_member_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("memberships.id", ondelete="SET NULL")
+    )
+    decider_label: Mapped[str | None] = mapped_column(String(120))
+    executor_member_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("memberships.id", ondelete="SET NULL")
+    )
+    executor_label: Mapped[str | None] = mapped_column(String(120))
+    executor_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    due_date: Mapped[date | None] = mapped_column(Date)
+    criterion: Mapped[str | None] = mapped_column(Text)
+    # Confidentielle : visible des propriétaires, de son auteur, du décideur et de l'exécutant.
+    private: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
+    state: Mapped[DecisionState] = mapped_column(_enum(DecisionState, "decision_state"))
+    proof: Mapped[str | None] = mapped_column(Text)
+    cancel_reason: Mapped[str | None] = mapped_column(Text)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Relance à mi-échéance : une seule fois (jour de l'envoi).
+    reminded_on: Mapped[date | None] = mapped_column(Date)
+    created_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+    decider_member: Mapped[Membership | None] = relationship(foreign_keys=[decider_member_id])
+    executor_member: Mapped[Membership | None] = relationship(foreign_keys=[executor_member_id])
+
+
+class DecisionTask(Base):
+    """Tâche qui exécute une décision (le lien vers la décision n'est jamais perdu)."""
+
+    __tablename__ = "decision_tasks"
+    __table_args__ = (UniqueConstraint("decision_id", "task_id", name="uq_decision_tasks"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    decision_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("decisions.id", ondelete="CASCADE"), index=True
+    )
+    task_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tasks.id", ondelete="CASCADE"), index=True
+    )
+
+
 class ProjectSection(Base):
     """Section d'un projet (cahier V2, STR02) : organise les tâches, n'est ni un statut ni une
     phase. Archiver une section la retire de la vue active sans rien supprimer (STR04)."""
@@ -799,6 +910,11 @@ class AlertRule(enum.StrEnum):
     # fois, qui demande une revue de cadrage avant toute nouvelle date.
     MILESTONE_AT_RISK = "milestone_at_risk"
     MILESTONE_REFRAME = "milestone_reframe"
+    # Étape F3 (cahier V2, DEC) : relevé non diffusé 24 h après la réunion, relance unique à
+    # mi-échéance d'une décision, sujet sans porteur accepté depuis 30 jours.
+    MINUTES_OVERDUE = "minutes_overdue"
+    DECISION_REMINDER = "decision_reminder"
+    ORPHAN_SUBJECT = "orphan_subject"
 
 
 class Alert(Base):

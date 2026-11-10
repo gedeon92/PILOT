@@ -695,6 +695,25 @@ function describe(entry: HistoryEntry): { what: string; detail?: string } {
         what: 'Dépendance retirée',
         detail: `« ${before.task} » n’attend plus « ${before.waits_for} »`,
       }
+    case 'decision.created':
+      return { what: 'Décision consignée', detail: after.decision as string }
+    case 'decision.validated':
+      return { what: 'Décision validée', detail: after.decision as string }
+    case 'decision.accepted':
+      return { what: 'Responsabilité acceptée', detail: after.decision as string }
+    case 'decision.updated':
+      return { what: 'Décision modifiée', detail: after.decision as string }
+    case 'decision.task_created':
+      return {
+        what: 'Tâche d’exécution créée',
+        detail: `${after.task} — pour « ${after.decision} »`,
+      }
+    case 'decision.done':
+      return { what: 'Décision exécutée', detail: `${after.decision} — preuve : ${after.note}` }
+    case 'decision.cancelled':
+      return { what: 'Décision caduque', detail: `${after.decision} — motif : ${after.note}` }
+    case 'decision.reopened':
+      return { what: 'Décision rouverte', detail: after.decision as string }
     case 'milestone.created':
       return {
         what: 'Jalon ajouté',

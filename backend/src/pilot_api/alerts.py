@@ -22,6 +22,14 @@ from pilot_api.access import (
     visible_project_ids,
 )
 from pilot_api.config import get_settings
+from pilot_api.decision_rules import (
+    ORPHAN_DAYS,
+    accepted,
+    is_late,
+    mid_term,
+    minutes_due,
+    minutes_late,
+)
 from pilot_api.email_theme import pill, render_email
 from pilot_api.mailer import MailError, mail_configured, send_email
 from pilot_api.milestone_rules import risk
@@ -32,6 +40,9 @@ from pilot_api.models import (
     Alert,
     AlertPreference,
     AlertRule,
+    Decision,
+    DecisionState,
+    Meeting,
     Membership,
     MembershipStatus,
     Milestone,
@@ -66,6 +77,9 @@ RULES: dict[AlertRule, str] = {
     AlertRule.TASK_ACTIVITY: "Tâche suivie",
     AlertRule.MILESTONE_AT_RISK: "Jalon à risque",
     AlertRule.MILESTONE_REFRAME: "Revue de cadrage",
+    AlertRule.MINUTES_OVERDUE: "Relevé à diffuser",
+    AlertRule.DECISION_REMINDER: "Relance de décision",
+    AlertRule.ORPHAN_SUBJECT: "Sujet sans porteur",
 }
 RULE_ORDER = list(RULES)
 
@@ -333,6 +347,84 @@ def compute_alerts(db: Session, space: Space, today: date) -> int:
                 _due_detail(m.due_date, today),
             )
 
+    # Réunions (étape F3) : relevé non diffusé 24 h après la fin de la réunion.
+    now = utcnow()
+    for meeting in db.scalars(
+        select(Meeting).where(Meeting.space_id == space.id, Meeting.minutes_state != "sent")
+    ).all():
+        if not minutes_late(meeting, now):
+            continue
+        project = by_id.get(meeting.project_id) if meeting.project_id else None
+        if meeting.project_id and project is None:
+            continue  # projet clôturé : plus de rappel
+        add(
+            [meeting.created_by_id] if meeting.created_by_id else owners,
+            AlertRule.MINUTES_OVERDUE,
+            "meeting",
+            meeting.id,
+            project,
+            meeting.title,
+            "Relevé à diffuser : délai de 24 h dépassé depuis le "
+            + short_date(_local_day(minutes_due(meeting), space)),
+        )
+
+    # Décisions (étape F3) : relance unique à mi-échéance, retard à escalader, sujet sans
+    # porteur accepté depuis 30 jours. Une décision confidentielle ne va qu'à ses acteurs.
+    for d in db.scalars(
+        select(Decision).where(
+            Decision.space_id == space.id,
+            Decision.state.in_([DecisionState.DRAFT, DecisionState.OPEN]),
+        )
+    ).all():
+        project = by_id.get(d.project_id) if d.project_id else None
+        if d.project_id and project is None:
+            continue
+        executor = user_of.get(d.executor_member_id) if d.executor_member_id else None
+        decider = user_of.get(d.decider_member_id) if d.decider_member_id else None
+        title = f"⚖ {d.statement[:150]}"
+
+        actors = {executor, decider, d.created_by_id, *owners}
+
+        def to(users, d=d, actors=actors):
+            users = {u for u in users if u}
+            return users & actors if d.private else users
+
+        if d.state == DecisionState.OPEN:
+            mid = mid_term(d)
+            if is_late(d, today):
+                add(
+                    to([executor, decider, *owners]),
+                    AlertRule.OVERDUE,
+                    "decision",
+                    d.id,
+                    project,
+                    title,
+                    f"Échéance du {short_date(d.due_date)} non tenue : à escalader vers "
+                    "l'instance compétente si rien ne la justifie",
+                )
+            elif mid is not None and today >= mid and d.reminded_on is None:
+                d.reminded_on = today
+                add(
+                    to([executor] if executor else [d.created_by_id]),
+                    AlertRule.DECISION_REMINDER,
+                    "decision",
+                    d.id,
+                    project,
+                    title,
+                    f"Mi-échéance : à exécuter avant le {short_date(d.due_date)}",
+                )
+        if not accepted(d) and (today - _local_day(d.created_at, space)).days >= ORPHAN_DAYS:
+            add(
+                to(owners),
+                AlertRule.ORPHAN_SUBJECT,
+                "decision",
+                d.id,
+                project,
+                title,
+                f"Sans porteur accepté depuis {(today - _local_day(d.created_at, space)).days}"
+                " jours : attribution formelle requise",
+            )
+
     # Propositions de la boîte de mise à jour restées sans décision : rappel à leur auteur.
     pending = db.execute(
         select(Proposal, UpdateRequest.author_id)
@@ -514,6 +606,9 @@ RULE_COLORS: dict[AlertRule, str] = {
     AlertRule.TASK_ACTIVITY: "#7ff0ff",
     AlertRule.MILESTONE_AT_RISK: "#fcd56a",
     AlertRule.MILESTONE_REFRAME: "#ff8fa3",
+    AlertRule.MINUTES_OVERDUE: "#fcd56a",
+    AlertRule.DECISION_REMINDER: "#c4b5fd",
+    AlertRule.ORPHAN_SUBJECT: "#ff8fa3",
 }
 
 

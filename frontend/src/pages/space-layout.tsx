@@ -12,6 +12,7 @@ import {
   DocumentIcon,
   FolderIcon,
   InboxIcon,
+  ScaleIcon,
   Logo,
   LogoutIcon,
   MembersIcon,
@@ -108,6 +109,10 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
           <NavLink to={`${base}/evenements`} className={linkClass}>
             <CalendarIcon />
             <span className="nav__label">Événements</span>
+          </NavLink>
+          <NavLink to={`${base}/decisions`} className={linkClass}>
+            <ScaleIcon />
+            <span className="nav__label">Décisions</span>
           </NavLink>
           <NavLink to={`${base}/timeline`} className={linkClass}>
             <TimelineIcon />

@@ -23,6 +23,7 @@ import {
   TimelinePage,
   UpdatesPage,
   WeeklyPage,
+  DecisionsPage,
 } from './lazy-pages'
 
 /** Affiche `children(me)` si quelqu'un est connecté, sinon renvoie vers la connexion. */
@@ -95,6 +96,7 @@ export default function App() {
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="mises-a-jour" element={<UpdatesPage />} />
           <Route path="alertes" element={<AlertsPage />} />
+          <Route path="decisions" element={<DecisionsPage />} />
           <Route path="compte" element={<AccountPage />} />
           <Route path="projets/nouveau" element={<NewProjectPage />} />
           <Route path="projets/:projectId" element={<ProjectDetailPage />} />

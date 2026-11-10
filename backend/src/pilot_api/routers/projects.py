@@ -32,6 +32,7 @@ from pilot_api.models import (
     EVENT_FOLLOW_UP_DAYS,
     AlertRule,
     AuditLog,
+    Decision,
     Document,
     Entity,
     EventDetails,
@@ -791,6 +792,15 @@ def project_history(
     milestone_ids = [
         str(m) for m in db.scalars(select(Milestone.id).where(Milestone.project_id == project.id))
     ]
+    # Décisions du projet (étape F3) ; les confidentielles restent hors de l'historique commun.
+    decision_ids = [
+        str(d)
+        for d in db.scalars(
+            select(Decision.id).where(
+                Decision.project_id == project.id, Decision.private.is_(False)
+            )
+        )
+    ]
     rows = db.execute(
         select(AuditLog, User.display_name)
         .outerjoin(User, User.id == AuditLog.actor_id)
@@ -801,6 +811,7 @@ def project_history(
                 and_(AuditLog.target_type == "task", AuditLog.target_id.in_(task_ids)),
                 and_(AuditLog.target_type == "document", AuditLog.target_id.in_(document_ids)),
                 and_(AuditLog.target_type == "milestone", AuditLog.target_id.in_(milestone_ids)),
+                and_(AuditLog.target_type == "decision", AuditLog.target_id.in_(decision_ids)),
             ),
         )
         .order_by(AuditLog.created_at.desc())

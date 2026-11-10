@@ -20,6 +20,8 @@ import {
   type ProjectLink,
   type ProjectTemplate,
   type Proposal,
+  type Decision,
+  type Meeting,
   type Milestone,
   type Section,
   type Role,
@@ -1257,6 +1259,101 @@ export function useMilestoneTasks(spaceId: string, projectId: string) {
       api<Milestone>(`/spaces/${spaceId}/milestones/${milestone.id}/tasks`, {
         method: 'PUT',
         body: { version: milestone.version, task_ids: taskIds },
+      }),
+  )
+}
+
+// ---------- Décisions et réunions (étape F3) ----------
+
+const decisionKeys = {
+  all: (spaceId: string) => ['space', spaceId, 'decisions'] as const,
+  meetings: (spaceId: string) => ['space', spaceId, 'meetings'] as const,
+}
+
+export function useDecisions(spaceId: string, filters: { project_id?: string } = {}) {
+  const query = new URLSearchParams(filters as Record<string, string>).toString()
+  return useQuery({
+    queryKey: [...decisionKeys.all(spaceId), filters],
+    queryFn: () => api<Decision[]>(`/spaces/${spaceId}/decisions${query ? `?${query}` : ''}`),
+  })
+}
+
+export function useMeetings(spaceId: string) {
+  return useQuery({
+    queryKey: decisionKeys.meetings(spaceId),
+    queryFn: () => api<Meeting[]>(`/spaces/${spaceId}/meetings`),
+  })
+}
+
+/** Écrire une décision ou une réunion recharge le registre, les réunions, les projets
+ * (tâches créées, historique) et les alertes. */
+function useDecisionMutation<V, R>(spaceId: string, success: string, fn: (v: V) => Promise<R>) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    meta: { success },
+    mutationFn: fn,
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: decisionKeys.all(spaceId) }),
+        queryClient.invalidateQueries({ queryKey: decisionKeys.meetings(spaceId) }),
+        queryClient.invalidateQueries({ queryKey: projectKeys.all(spaceId) }),
+        queryClient.invalidateQueries({ queryKey: ['space', spaceId, 'alerts'] }),
+      ]),
+  })
+}
+
+export function useCreateDecision(spaceId: string) {
+  return useDecisionMutation(spaceId, 'Décision consignée', (body: Record<string, unknown>) =>
+    api<Decision>(`/spaces/${spaceId}/decisions`, { method: 'POST', body }),
+  )
+}
+
+export function useUpdateDecision(spaceId: string) {
+  return useDecisionMutation(
+    spaceId,
+    'Décision enregistrée',
+    ({ decision, changes }: { decision: Decision; changes: Record<string, unknown> }) =>
+      api<Decision>(`/spaces/${spaceId}/decisions/${decision.id}`, {
+        method: 'PATCH',
+        body: { ...changes, version: decision.version },
+      }),
+  )
+}
+
+export function useDecisionAction(spaceId: string, success: string) {
+  return useDecisionMutation(
+    spaceId,
+    success,
+    ({
+      decision,
+      action,
+      body = {},
+    }: {
+      decision: Decision
+      action: 'validate' | 'accept' | 'close' | 'reopen' | 'tasks'
+      body?: Record<string, unknown>
+    }) =>
+      api<Decision>(`/spaces/${spaceId}/decisions/${decision.id}/${action}`, {
+        method: 'POST',
+        body: { ...body, version: decision.version },
+      }),
+  )
+}
+
+export function useCreateMeeting(spaceId: string) {
+  return useDecisionMutation(spaceId, 'Réunion ajoutée', (body: Record<string, unknown>) =>
+    api<Meeting>(`/spaces/${spaceId}/meetings`, { method: 'POST', body }),
+  )
+}
+
+export function useUpdateMeeting(spaceId: string) {
+  return useDecisionMutation(
+    spaceId,
+    'Relevé enregistré',
+    ({ meeting, changes }: { meeting: Meeting; changes: Record<string, unknown> }) =>
+      api<Meeting>(`/spaces/${spaceId}/meetings/${meeting.id}`, {
+        method: 'PATCH',
+        body: { ...changes, version: meeting.version },
       }),
   )
 }

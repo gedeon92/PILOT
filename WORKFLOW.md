@@ -436,10 +436,20 @@ Documents reçus le 10 nov. 2026 (non versionnés : dossier Téléchargements de
    - Risque (horizon de trois semaines, faits enregistrés seulement) : tâches liées en retard, bloquées ou prévues après le jalon, sans porteur, déjà reporté deux fois. Alertes : « Jalon à risque » (propriétaires aussi si critique ; propriétaires si personne n'a de compte), « En retard », « Échéance proche ».
    - Historique, modèles de projet (jalons recréés à partir de la date de début), export/import et assistant IA (lecture) en tiennent compte. API `GET /milestones` (jalons à venir de l'espace) prête pour « Ma semaine » (F5).
    - Tests : `tests/test_milestones.py` (5), `src/components/milestones.test.tsx` (2).
-3. [ ] **F3** Registre des décisions (DEC01–DEC05) : porteur, exécutant, échéance, critère observable, relance à mi-échéance, relevé sous 24 h, sujets sans porteur à 30 jours
+3. [x] **F3** Registre des décisions (DEC01–DEC05) : porteur, exécutant, échéance, critère observable, relance à mi-échéance, relevé sous 24 h, sujets sans porteur à 30 jours — fait le 10 nov. 2026 :
+   - Menu « Décisions » : onglets À traiter (brouillons, retards, sujets sans porteur), À exécuter, Clôturées, Réunions.
+   - Décision : énoncé, responsable d'exécution, échéance, critère observable, décideur, projet, réunion ou autre source, confidentielle. Brouillon tant qu'il manque un responsable nommé (« l'équipe » refusé), une échéance ou un critère (10 caractères au moins) ; « Enregistrer et valider » ou « Valider » ensuite.
+   - Le responsable membre accepte (« J'accepte cette responsabilité ») ; un nom libre vaut désignation déclarée. Changer de responsable demande une nouvelle acceptation, sans remettre l'ancienneté à zéro.
+   - « + Tâche d'exécution » crée la tâche dans le projet (responsable et échéance repris) et garde le lien. Clôture : Exécutée (preuve obligatoire) ou Caduque (motif obligatoire) ; Rouvrir.
+   - Confidentielle : visible des propriétaires, de l'auteur, du décideur et du responsable seulement (registre, alertes, historique du projet).
+   - Réunion : fin de réunion, relevé À rédiger → Rédigé → Validé → Envoyé (déclaration : date, canal, destinataires, lien ; pas une preuve de remise). Rappel des décisions encore ouvertes en ouverture.
+   - Alertes : « Relevé à diffuser » (24 h après la fin), « Relance de décision » (une seule fois, à mi-échéance ; une nouvelle échéance la réarme), « En retard » (à escalader), « Sujet sans porteur » (30 jours sans acceptation).
+   - Historique du projet, export/import et assistant IA (outil « lister_decisions ») en tiennent compte.
+   - Reporté à F6 : le dossier d'arbitrage (DEC04).
+   - Tests : `tests/test_decisions.py` (7), `src/pages/decisions.test.tsx` (2).
 4. [ ] **F4** Champs personnalisés (CHP01–CHP04)
 5. [ ] **F5** Routines (RIT01–RIT07) et vues « Ma journée » / « Ma semaine » (VIS01)
-6. [ ] **F6** Indicateurs (VIS02–VIS03), charge et capacité (CAP02), rencontres et partenariats (REL), contrôles d'événement J−10 / J−1 / 5 jours / 10 jours
+6. [ ] **F6** Indicateurs (VIS02–VIS03), charge et capacité (CAP02), dossiers d'arbitrage (DEC04), rencontres et partenariats (REL), contrôles d'événement J−10 / J−1 / 5 jours / 10 jours
 7. [ ] **F7** Targetym, OKR et BSC (chap. 18–22) : **bloqué** tant que la documentation technique de Targetym (API, accès) n'est pas fournie
 
 ## Phase 10 — Mise en production

@@ -6597,12 +6597,117 @@ a {
   gap: 8px;
   font-size: 14px;
 }
-.field--check {
+.field.field--check {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+}
+.field.field--check input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+  flex: none;
+}
+.field--check .field__hint {
+  flex-basis: 100%;
+}
+
+/* ---------- Décisions et réunions (étape F3) ---------- */
+.decision-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.decision-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.decision,
+.meeting {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--tone-info-dot);
+  border-radius: var(--radius-card);
+}
+.decision--draft {
+  border-left-color: var(--tone-neutral-dot);
+}
+.decision--done {
+  border-left-color: var(--tone-ok-dot);
+}
+.decision--cancelled {
+  border-left-color: var(--tone-neutral-dot);
+  opacity: 0.8;
+}
+.decision--late,
+.meeting--late {
+  border-left-color: var(--tone-danger-dot);
+}
+.decision__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.decision__statement {
+  flex: 1 1 280px;
+  font-size: 15.5px;
+  overflow-wrap: anywhere;
+}
+.decision__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.decision__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px 16px;
+  margin: 0;
+  font-size: 13.5px;
+}
+.decision__facts dt {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+.decision__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.decision__missing {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--tone-warn-fg);
+}
+.decision__actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
-.field--check .field__hint {
-  flex-basis: 100%;
+.decision__close {
+  flex-wrap: wrap;
+  font-size: 13.5px;
+}
+.decision__close input {
+  flex: 1 1 240px;
+}
+.decision-form textarea {
+  resize: vertical;
 }

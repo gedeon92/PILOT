@@ -32,9 +32,12 @@ from sqlalchemy.orm import Session
 from pilot_api.audit import record
 from pilot_api.models import (
     DEFAULT_PROJECT_TYPES,
+    Decision,
+    DecisionTask,
     Document,
     Entity,
     EventDetails,
+    Meeting,
     Membership,
     MembershipStatus,
     Milestone,
@@ -203,6 +206,18 @@ def build_export(db: Session, space: Space, author: User, with_files: bool) -> t
         for x in db.scalars(select(ProjectSection).where(ProjectSection.space_id == sid)).all()
     ]
     data["tasks"] = [_dump(t) for t in db.scalars(select(Task).where(Task.space_id == sid)).all()]
+    data["meetings"] = [
+        _dump(x, exclude={"created_by_id"})
+        for x in db.scalars(select(Meeting).where(Meeting.space_id == sid)).all()
+    ]
+    decisions = db.scalars(select(Decision).where(Decision.space_id == sid)).all()
+    data["decisions"] = [_dump(x, exclude={"created_by_id"}) for x in decisions]
+    data["decision_tasks"] = [
+        {"decision_id": str(link.decision_id), "task_id": str(link.task_id)}
+        for link in db.scalars(
+            select(DecisionTask).where(DecisionTask.decision_id.in_([d.id for d in decisions]))
+        ).all()
+    ]
     milestones = db.scalars(select(Milestone).where(Milestone.space_id == sid)).all()
     data["milestones"] = [_dump(m) for m in milestones]
     data["milestone_tasks"] = [
@@ -658,6 +673,74 @@ def import_space(
         seen_links.add((milestone.id, task.id))
         db.add(MilestoneTask(milestone_id=milestone.id, task_id=task.id))
     report.counts["milestones"] = len(milestone_ids)
+
+    # Réunions et décisions (étape F3). L'acceptation d'un membre n'est pas reprise : la
+    # personne rapprochée dans le nouvel espace doit accepter à nouveau.
+    meeting_ids: dict[str, Meeting] = {}
+    for item in data.get("meetings", []):
+        title = str(item.get("title") or "").strip()[:200]
+        if not title or not item.get("ended_at"):
+            continue
+        values = _load(Meeting, item, {"project_id", "title"})
+        source_project = item.get("project_id")
+        meeting = Meeting(
+            space_id=space.id,
+            title=title,
+            project_id=project_ids.get(str(source_project)) if source_project else None,
+            created_by_id=user.id,
+            **values,
+        )
+        db.add(meeting)
+        meeting_ids[str(item.get("id"))] = meeting
+    db.flush()
+    decision_ids: dict[str, Decision] = {}
+    for item in data.get("decisions", []):
+        statement = str(item.get("statement") or "").strip()[:2000]
+        if not statement:
+            continue
+        values = _load(
+            Decision,
+            item,
+            {
+                "project_id",
+                "meeting_id",
+                "statement",
+                "decider_member_id",
+                "decider_label",
+                "executor_member_id",
+                "executor_label",
+                "executor_accepted_at",
+            },
+        )
+        values["decider_member_id"], values["decider_label"] = person(
+            item.get("decider_member_id"), item.get("decider_label")
+        )
+        values["executor_member_id"], values["executor_label"] = person(
+            item.get("executor_member_id"), item.get("executor_label")
+        )
+        source_project = item.get("project_id")
+        meeting = meeting_ids.get(str(item.get("meeting_id"))) if item.get("meeting_id") else None
+        decision = Decision(
+            space_id=space.id,
+            statement=statement,
+            project_id=project_ids.get(str(source_project)) if source_project else None,
+            meeting_id=meeting.id if meeting else None,
+            created_by_id=user.id,
+            **values,
+        )
+        db.add(decision)
+        decision_ids[str(item.get("id"))] = decision
+    db.flush()
+    seen_decision_links: set[tuple] = set()
+    for item in data.get("decision_tasks", []):
+        decision = decision_ids.get(str(item.get("decision_id")))
+        task = task_ids.get(str(item.get("task_id")))
+        if decision is None or task is None or (decision.id, task.id) in seen_decision_links:
+            continue
+        seen_decision_links.add((decision.id, task.id))
+        db.add(DecisionTask(decision_id=decision.id, task_id=task.id))
+    report.counts["meetings"] = len(meeting_ids)
+    report.counts["decisions"] = len(decision_ids)
 
     for item in data.get("contributors", []):
         project_id = project_ids.get(str(item.get("project_id")))

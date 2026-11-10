@@ -970,3 +970,119 @@ class MilestoneOut(BaseModel):
     reframe_needed: bool
     tasks: list[MilestoneTaskRef]
     version: int
+
+
+# ---------- Décisions et réunions (étape F3) ----------
+
+Statement = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
+
+
+class _DecisionFields(BaseModel):
+    project_id: uuid.UUID | None = None
+    meeting_id: uuid.UUID | None = None
+    source: Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)] | None = None
+    decider_member_id: uuid.UUID | None = None
+    decider_label: Label | None = None
+    executor_member_id: uuid.UUID | None = None
+    executor_label: Label | None = None
+    due_date: date | None = None
+    criterion: LongText | None = None
+    private: bool | None = None
+
+
+class DecisionCreate(_DecisionFields):
+    statement: Statement
+    # Valider tout de suite (refusé avec la liste des champs manquants) ; sinon brouillon.
+    validate_now: bool = False
+
+
+class DecisionUpdate(_DecisionFields):
+    version: int
+    statement: Statement | None = None
+
+
+class DecisionVersion(BaseModel):
+    version: int
+
+
+class DecisionClose(BaseModel):
+    version: int
+    state: Literal["done", "cancelled"]
+    # Preuve d'exécution (Exécutée) ou motif de l'annulation formelle (Caduque).
+    note: LongText
+
+
+class DecisionTaskCreate(BaseModel):
+    version: int
+    title: Title | None = None
+
+
+class DecisionTaskRef(BaseModel):
+    id: uuid.UUID
+    title: str
+    status: TaskStatus
+    project_id: uuid.UUID | None
+
+
+class DecisionOut(BaseModel):
+    id: uuid.UUID
+    statement: str
+    project: RefOut | None
+    meeting: RefOut | None
+    source: str | None
+    decider: PersonRef
+    executor: PersonRef
+    executor_accepted: bool
+    due_date: date | None
+    criterion: str | None
+    private: bool
+    state: Literal["draft", "open", "done", "cancelled"]
+    proof: str | None
+    cancel_reason: str | None
+    closed_at: datetime | None
+    created_at: datetime
+    # Calculés : champs manquants (brouillon), retard (à escalader), relance à mi-échéance,
+    # ancienneté d'un sujet sans porteur accepté (alerte à 30 jours).
+    missing: list[str]
+    late: bool
+    reminder_on: date | None
+    orphan_days: int | None
+    is_executor: bool
+    can_write: bool
+    tasks: list[DecisionTaskRef]
+    version: int
+
+
+class MeetingCreate(BaseModel):
+    title: MilestoneTitle
+    ended_at: datetime
+    project_id: uuid.UUID | None = None
+    participants: LongText | None = None
+
+
+class MeetingUpdate(BaseModel):
+    version: int
+    title: MilestoneTitle | None = None
+    ended_at: datetime | None = None
+    participants: LongText | None = None
+    minutes_state: Literal["to_write", "written", "validated", "sent"] | None = None
+    minutes_channel: Label | None = None
+    minutes_recipients: LongText | None = None
+    minutes_url: HttpUrl | None = None
+
+
+class MeetingOut(BaseModel):
+    id: uuid.UUID
+    title: str
+    project: RefOut | None
+    ended_at: datetime
+    participants: str | None
+    minutes_state: Literal["to_write", "written", "validated", "sent"]
+    minutes_due_at: datetime
+    minutes_late: bool
+    minutes_sent_at: datetime | None
+    minutes_channel: str | None
+    minutes_recipients: str | None
+    minutes_url: str | None
+    decisions_count: int
+    version: int
