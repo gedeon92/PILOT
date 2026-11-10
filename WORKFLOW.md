@@ -316,6 +316,32 @@ Ce qui manque à PILOT par rapport à Asana pour le travail d'équipe au quotidi
   - Export : la case « privé » suit le projet. Les accès par projet, propres aux comptes, sont à redonner après un import.
   - Limite connue : un invité voit la liste des membres de l'espace (noms et adresses), nécessaire pour choisir un responsable. À restreindre si besoin.
 
+### Lot D — Tâches répétées, modèles de projet, fichiers joints (10 nov. 2026)
+
+Choisis par la propriétaire du produit dans la comparaison avec Asana (n° 1, 2 et 3). Cahier des charges relu : aucun conflit. Même règle commune : rien de ce qui existe ne change.
+
+- [x] **Tâches répétées** : dans la fenêtre d'une tâche, « Répéter : chaque jour, semaine, mois ou année ».
+  - Quand la tâche est **terminée**, la suivante est créée avec la prochaine échéance, le même responsable, ses sous-tâches remises à faire et ses abonnés. Les abonnés sont prévenus.
+  - L'échéance avance au même rythme à partir de l'ancienne. Si la tâche a été terminée en retard, les échéances déjà passées sont sautées : la suivante ne naît jamais en retard. Un 31 devient le dernier jour d'un mois plus court.
+  - Une seule suivante par tâche, même si elle est rouverte puis terminée de nouveau. Une tâche annulée ne crée rien. Rien n'est créé dans un projet clôturé.
+  - Une répétition exige une échéance. Une sous-tâche ne se répète pas : on répète sa tâche.
+  - Repère 🔁 dans la liste et sur le tableau ; journal « Tâche répétée ».
+  - Pas de service planifié : la suivante naît au moment où l'on termine la tâche (CDC §16).
+- [x] **Modèles de projet** :
+  - Bouton « Enregistrer comme modèle » sur la fiche d'un projet, réservé au rôle Propriétaire. Un modèle peut reprendre les tâches d'un projet privé : seul le propriétaire décide de ce qui y entre.
+  - Ce qui est repris : les tâches non annulées, avec leurs sous-tâches, livrables, responsables, répétitions et dépendances. Les échéances deviennent des écarts en jours par rapport à la date de début du projet (ou, sans date de début, à la première échéance).
+  - Ce qui n'est pas repris : les commentaires, les fichiers et les statuts (tout repart « À faire »).
+  - À la création d'un projet, le choix « Partir d'un modèle » et une « Date de début » : les échéances sont recalculées à partir de cette date. Sans date de début, les tâches arrivent sans échéance.
+  - Une personne qui a quitté l'espace n'est plus responsable : son nom reste en libellé.
+  - Contributeurs et propriétaires utilisent les modèles ; seuls les propriétaires les renomment ou les suppriment (Paramètres → Modèles de projet).
+  - Supprimer un modèle ne touche pas aux projets déjà créés avec lui. Création, changement de nom et suppression sont journalisés.
+- [x] **Fichiers joints aux tâches** : « 📎 Joindre un fichier » dans la fenêtre d'une tâche.
+  - Le fichier rejoint aussi les documents du projet, avec la mention « joint à « tâche » ».
+  - Mêmes règles que les documents : 4 Mo, téléchargement seulement, versions, retrait sans suppression définitive, droits du projet.
+  - Repère 📎 avec le nombre de fichiers dans la liste et sur le tableau.
+- Export et import : répétitions (et lien vers la suivante), modèles et fichiers joints suivent l'espace.
+- Migration `5576a4563ce3` : une table et trois colonnes facultatives, rien de modifié.
+
 **Hors de ces lots** (à décider plus tard) : sections dans un projet, une même tâche dans plusieurs projets, champs personnalisés, règles automatiques.
 
 ## Audit complet (9 nov. 2026)

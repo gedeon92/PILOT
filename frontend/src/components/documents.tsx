@@ -7,6 +7,7 @@ import {
   useProjectDocuments,
   useReplaceDocument,
   useUploadDocument,
+  useUploadTaskDocument,
 } from '../api/queries'
 import { extensionOf, formatSize, MAX_FILES_PER_UPLOAD, MAX_UPLOAD_BYTES } from '../files'
 import { formatMoment } from '../labels'
@@ -58,10 +59,12 @@ function DocumentRow({
   document,
   spaceId,
   canWrite,
+  showTask = false,
 }: {
   document: DocumentItem
   spaceId: string
   canWrite: boolean
+  showTask?: boolean
 }) {
   const archive = useArchiveDocument(spaceId)
   const replace = useReplaceDocument(spaceId)
@@ -94,6 +97,7 @@ function DocumentRow({
         <span className="doc-row__meta">
           {formatSize(document.size_bytes)} · ajouté le {formatMoment(document.created_at)}
           {document.uploaded_by && ` par ${document.uploaded_by}`}
+          {showTask && document.task_title && ` · joint à « ${document.task_title} »`}
           {document.revision > 1 && (
             <>
               {' · '}
@@ -171,9 +175,12 @@ function DocumentRow({
   )
 }
 
-/** Envoie les fichiers choisis un par un dans un projet et garde le résultat de chacun. */
-export function useUploader(spaceId: string, projectId: string) {
-  const upload = useUploadDocument(spaceId, projectId)
+/** Envoie les fichiers choisis un par un dans un projet (ou joints à une tâche de ce projet)
+ * et garde le résultat de chacun. */
+export function useUploader(spaceId: string, projectId: string, taskId?: string) {
+  const toProject = useUploadDocument(spaceId, projectId)
+  const toTask = useUploadTaskDocument(spaceId, taskId ?? '')
+  const upload = taskId ? toTask : toProject
   const input = useRef<HTMLInputElement>(null)
   const [uploads, setUploads] = useState<UploadState[]>([])
   const busy = uploads.some((u) => u.status === 'pending')
@@ -281,10 +288,62 @@ export function DocumentsSection({
       {documents.data && documents.data.length > 0 && (
         <ul className="doc-list">
           {documents.data.map((d) => (
-            <DocumentRow key={d.id} document={d} spaceId={spaceId} canWrite={canWrite} />
+            <DocumentRow key={d.id} document={d} spaceId={spaceId} canWrite={canWrite} showTask />
           ))}
         </ul>
       )}
     </section>
+  )
+}
+
+/** Fichiers joints à une tâche (fenêtre de la tâche) : ils sont aussi dans le dossier du projet. */
+export function TaskAttachments({
+  spaceId,
+  projectId,
+  taskId,
+  documents,
+  canWrite,
+}: {
+  spaceId: string
+  projectId: string
+  taskId: string
+  documents: DocumentItem[]
+  canWrite: boolean
+}) {
+  const { input, uploads, busy, send } = useUploader(spaceId, projectId, taskId)
+  const inputId = `attach-${taskId}`
+  return (
+    <>
+      {documents.length === 0 && !canWrite && <p className="muted">Aucun fichier joint.</p>}
+      {documents.length > 0 && (
+        <ul className="doc-list doc-list--compact">
+          {documents.map((d) => (
+            <DocumentRow key={d.id} document={d} spaceId={spaceId} canWrite={canWrite} />
+          ))}
+        </ul>
+      )}
+      {canWrite && (
+        <div className="task-attach">
+          <input
+            ref={input}
+            type="file"
+            multiple
+            className="visually-hidden"
+            id={inputId}
+            onChange={(e) => send(e.target.files)}
+          />
+          <label
+            htmlFor={inputId}
+            className={busy ? 'button button--small is-disabled' : 'button button--small'}
+          >
+            📎 Joindre un fichier
+          </label>
+          <span className="muted task-attach__help">
+            4 Mo au maximum. Le fichier rejoint aussi les documents du projet.
+          </span>
+        </div>
+      )}
+      <UploadStatus uploads={uploads} />
+    </>
   )
 }

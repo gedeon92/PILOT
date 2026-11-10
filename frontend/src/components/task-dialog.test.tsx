@@ -185,4 +185,47 @@ describe('bouton « + Sous-tâche »', () => {
       title: 'Acheter les timbres',
     })
   })
+
+  it('règle la répétition et montre les fichiers joints', async () => {
+    const repeated = {
+      ...detail,
+      task: { ...detail.task, due_date: '2026-11-16', recurrence: 'weekly', documents_count: 1 },
+      documents: [
+        {
+          id: 'd1',
+          project_id: 'pr1',
+          project_title: 'Salon Agri 2026',
+          filename: 'devis.pdf',
+          content_type: 'application/pdf',
+          size_bytes: 2048,
+          uploaded_by: 'Aïcha Ndiaye',
+          created_at: '2026-11-08T09:00:00Z',
+          archived: false,
+          revision: 1,
+          replaced_at: null,
+          task_id: 't1',
+          task_title: 'Envoyer les invitations',
+        },
+      ],
+    }
+    const calls = mockApi(
+      routes({
+        [`GET ${base}/tasks/t1`]: () => ({ status: 200, json: repeated }),
+        [`PATCH ${base}/tasks/t1`]: () => ({ status: 200, json: repeated.task }),
+      }),
+    )
+    renderApp(`/espaces/${SPACE_ID}/projets/pr1?tache=t1`)
+    const user = userEvent.setup()
+
+    const dialog = await screen.findByRole('dialog', { name: 'Envoyer les invitations' })
+    expect(within(dialog).getByText(/Chaque semaine/)).toBeInTheDocument()
+    expect(within(dialog).getByText('devis.pdf')).toBeInTheDocument()
+    expect(within(dialog).getByText('📎 Joindre un fichier')).toBeInTheDocument()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Modifier la tâche' }))
+    await user.selectOptions(within(dialog).getByLabelText('Répéter'), 'monthly')
+    await user.click(within(dialog).getByRole('button', { name: 'Enregistrer' }))
+    const patch = calls.find((c) => c.key === `PATCH ${base}/tasks/t1`)
+    expect(patch?.body).toMatchObject({ recurrence: 'monthly', due_date: '2026-11-16' })
+  })
 })

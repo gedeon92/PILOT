@@ -20,7 +20,8 @@ from pilot_api.access import ensure_visible, ensure_writer, visible_projects
 from pilot_api.audit import record
 from pilot_api.config import get_settings
 from pilot_api.deps import CurrentMembership, DbSession
-from pilot_api.models import Document, Project, utcnow
+from pilot_api.models import Document, Project, Task, utcnow
+from pilot_api.routers.projects import load_task
 from pilot_api.schemas import DocumentOut
 from pilot_api.storage import get_storage
 
@@ -42,7 +43,9 @@ def clean_filename(name: str | None) -> str:
     return base
 
 
-def _document_out(document: Document, project_title: str) -> DocumentOut:
+def _document_out(
+    document: Document, project_title: str, task_title: str | None = None
+) -> DocumentOut:
     return DocumentOut(
         id=document.id,
         project_id=document.project_id,
@@ -55,7 +58,31 @@ def _document_out(document: Document, project_title: str) -> DocumentOut:
         archived=document.archived_at is not None,
         revision=document.revision,
         replaced_at=document.replaced_at,
+        task_id=document.task_id,
+        task_title=task_title,
     )
+
+
+def task_titles(db: Session, documents) -> dict[uuid.UUID, str]:
+    """Titres des tâches auxquelles ces documents sont joints."""
+    ids = {d.task_id for d in documents if d.task_id}
+    if not ids:
+        return {}
+    return dict(db.execute(select(Task.id, Task.title).where(Task.id.in_(ids))).all())
+
+
+def current_task_documents(db: Session, task: Task, project_title: str) -> list[DocumentOut]:
+    documents = db.scalars(
+        select(Document)
+        .options(selectinload(Document.uploaded_by))
+        .where(
+            Document.task_id == task.id,
+            Document.archived_at.is_(None),
+            Document.replaced_at.is_(None),
+        )
+        .order_by(Document.created_at.desc())
+    ).all()
+    return [_document_out(d, project_title, task.title) for d in documents]
 
 
 def _get_project(db: Session, space_id: uuid.UUID, project_id: uuid.UUID) -> Project:
@@ -110,7 +137,8 @@ def list_project_documents(
         )
         .order_by(Document.created_at.desc())
     ).all()
-    return [_document_out(d, project.title) for d in documents]
+    titles = task_titles(db, documents)
+    return [_document_out(d, project.title, titles.get(d.task_id)) for d in documents]
 
 
 @router.get("/documents")
@@ -139,7 +167,10 @@ def list_space_documents(
     rows = db.execute(
         query.order_by(Document.created_at.desc(), Document.id).offset(offset).limit(limit)
     ).all()
-    return [_document_out(document, title) for document, title in rows]
+    titles = task_titles(db, [document for document, _ in rows])
+    return [
+        _document_out(document, title, titles.get(document.task_id)) for document, title in rows
+    ]
 
 
 def _store(
@@ -148,6 +179,7 @@ def _store(
     user_id: uuid.UUID,
     db: Session,
     previous: Document | None = None,
+    task: Task | None = None,
 ) -> Document:
     """Lit, vérifie et enregistre un fichier comme nouvelle fiche du projet."""
     limit = int(get_settings().max_upload_mb * 1024 * 1024)
@@ -172,6 +204,7 @@ def _store(
         uploaded_by_id=user_id,
         revision=previous.revision + 1 if previous else 1,
         previous_id=previous.id if previous else None,
+        task_id=task.id if task else (previous.task_id if previous else None),
     )
     get_storage(db).put(document.storage_key, data)
     db.add(document)
@@ -202,6 +235,34 @@ def upload_document(
     )
     db.commit()
     return _document_out(_get_document(db, project.space_id, document.id), project.title)
+
+
+@router.post("/tasks/{task_id}/documents", status_code=201)
+def upload_task_document(
+    task_id: uuid.UUID, file: UploadFile, membership: CurrentMembership, db: DbSession
+) -> DocumentOut:
+    """Joint un fichier à une tâche : il rejoint aussi le dossier de son projet."""
+    task = load_task(db, membership, task_id, write=True)
+    project = db.get(Project, task.project_id)
+    document = _store(file, project, membership.user_id, db, task=task)
+    record(
+        db,
+        action="document.uploaded",
+        actor_id=membership.user_id,
+        space_id=project.space_id,
+        target_type="document",
+        target_id=document.id,
+        after={
+            "filename": document.filename,
+            "size_bytes": document.size_bytes,
+            "project_id": str(project.id),
+            "task": task.title,
+        },
+    )
+    db.commit()
+    return _document_out(
+        _get_document(db, project.space_id, document.id), project.title, task.title
+    )
 
 
 @router.post("/documents/{document_id}/replace", status_code=201)
@@ -243,7 +304,12 @@ def replace_document(
         },
     )
     db.commit()
-    return _document_out(_get_document(db, project.space_id, document.id), project.title)
+    titles = task_titles(db, [document])
+    return _document_out(
+        _get_document(db, project.space_id, document.id),
+        project.title,
+        titles.get(document.task_id),
+    )
 
 
 MAX_VERSIONS = 100

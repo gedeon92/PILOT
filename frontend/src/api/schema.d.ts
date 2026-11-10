@@ -712,6 +712,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/spaces/{space_id}/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Templates */
+        get: operations["list_templates_api_spaces__space_id__templates_get"];
+        put?: never;
+        /** Create Template */
+        post: operations["create_template_api_spaces__space_id__templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/templates/{template_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Template */
+        delete: operations["delete_template_api_spaces__space_id__templates__template_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Template */
+        patch: operations["update_template_api_spaces__space_id__templates__template_id__patch"];
+        trace?: never;
+    };
     "/api/spaces/{space_id}/projects/{project_id}/access": {
         parameters: {
             query?: never;
@@ -766,6 +802,26 @@ export interface paths {
         get: operations["list_space_documents_api_spaces__space_id__documents_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/tasks/{task_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Task Document
+         * @description Joint un fichier à une tâche : il rejoint aussi le dossier de son projet.
+         */
+        post: operations["upload_task_document_api_spaces__space_id__tasks__task_id__documents_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1252,6 +1308,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_upload_task_document_api_spaces__space_id__tasks__task_id__documents_post */
+        Body_upload_task_document_api_spaces__space_id__tasks__task_id__documents_post: {
+            /** File */
+            file: string;
+        };
         /** CommentCreate */
         CommentCreate: {
             /** Body */
@@ -1336,6 +1397,10 @@ export interface components {
             revision: number;
             /** Replaced At */
             replaced_at?: string | null;
+            /** Task Id */
+            task_id?: string | null;
+            /** Task Title */
+            task_title?: string | null;
         };
         /** EmailChangeRequest */
         EmailChangeRequest: {
@@ -1866,6 +1931,8 @@ export interface components {
             status: components["schemas"]["ProjectStatus"];
             /** Client Request Id */
             client_request_id?: string | null;
+            /** Template Id */
+            template_id?: string | null;
         };
         /**
          * ProjectKind
@@ -2285,6 +2352,7 @@ export interface components {
             /** Due Date */
             due_date?: string | null;
             due_certainty?: components["schemas"]["DateCertainty"] | null;
+            recurrence?: components["schemas"]["TaskRecurrence"] | null;
             /** Title */
             title: string;
             /** @default todo */
@@ -2315,6 +2383,7 @@ export interface components {
             /** Due Date */
             due_date?: string | null;
             due_certainty?: components["schemas"]["DateCertainty"] | null;
+            recurrence?: components["schemas"]["TaskRecurrence"] | null;
             /** Title */
             title: string;
             /** @default todo */
@@ -2348,6 +2417,8 @@ export interface components {
              * @default false
              */
             project_closed: boolean;
+            /** Documents */
+            documents?: components["schemas"]["DocumentOut"][];
         };
         /** TaskOut */
         TaskOut: {
@@ -2395,7 +2466,21 @@ export interface components {
              * @default 0
              */
             waiting_on: number;
+            recurrence?: components["schemas"]["TaskRecurrence"] | null;
+            /** Next Task Id */
+            next_task_id?: string | null;
+            /**
+             * Documents Count
+             * @default 0
+             */
+            documents_count: number;
         };
+        /**
+         * TaskRecurrence
+         * @description Rythme d'une tâche répétée : quand elle est terminée, la suivante est créée.
+         * @enum {string}
+         */
+        TaskRecurrence: "daily" | "weekly" | "monthly" | "yearly";
         /** TaskRef */
         TaskRef: {
             /**
@@ -2427,11 +2512,68 @@ export interface components {
             /** Due Date */
             due_date?: string | null;
             due_certainty?: components["schemas"]["DateCertainty"] | null;
+            recurrence?: components["schemas"]["TaskRecurrence"] | null;
             /** Version */
             version: number;
             /** Title */
             title?: string | null;
             status?: components["schemas"]["TaskStatus"] | null;
+        };
+        /**
+         * TemplateCreate
+         * @description Enregistre les tâches d'un projet comme modèle.
+         */
+        TemplateCreate: {
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+        };
+        /** TemplateOut */
+        TemplateOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Tasks Count */
+            tasks_count: number;
+            /** Tasks */
+            tasks: components["schemas"]["TemplateTaskOut"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Version */
+            version: number;
+        };
+        /** TemplateTaskOut */
+        TemplateTaskOut: {
+            /** Title */
+            title: string;
+            /** Offset Days */
+            offset_days: number | null;
+            /** Is Subtask */
+            is_subtask: boolean;
+        };
+        /** TemplateUpdate */
+        TemplateUpdate: {
+            /** Version */
+            version: number;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
         };
         /** TestEmailResult */
         TestEmailResult: {
@@ -4327,6 +4469,138 @@ export interface operations {
             };
         };
     };
+    list_templates_api_spaces__space_id__templates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_template_api_spaces__space_id__templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_template_api_spaces__space_id__templates__template_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_template_api_spaces__space_id__templates__template_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_access_api_spaces__space_id__projects__project_id__access_get: {
         parameters: {
             query?: never;
@@ -4485,6 +4759,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_task_document_api_spaces__space_id__tasks__task_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_task_document_api_spaces__space_id__tasks__task_id__documents_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
                 };
             };
             /** @description Validation Error */

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useOutletContext, useSearchParams } from 'react-router'
 import { canWriteSpace, errorMessage } from '../api/client'
-import { useCatalog, useCreateProject, useMembers, useProjects } from '../api/queries'
+import { useCatalog, useCreateProject, useMembers, useProjects, useTemplates } from '../api/queries'
 import { FolderIcon, PlusIcon } from '../components/icons'
 import { PersonField, type PersonValue } from '../components/person-field'
 import { ProjectTable } from '../components/project-table'
@@ -217,6 +217,7 @@ export function NewProjectPage() {
   const types = useCatalog(space.id, 'project-types')
   const members = useMembers(space.id)
   const create = useCreateProject(space.id)
+  const templates = useTemplates(space.id, canWriteSpace(space.role))
   // Même identifiant à chaque envoi de ce formulaire : « Réessayer » ne crée pas de doublon.
   const [requestId] = useState(() => crypto.randomUUID())
   const [form, setForm] = useState({
@@ -229,6 +230,8 @@ export function NewProjectPage() {
     due_date: '',
     date_certainty: '',
     origin: '',
+    template_id: '',
+    start_date: '',
   })
   const [owner, setOwner] = useState<PersonValue>({ memberId: null, label: '' })
   const set = (key: keyof typeof form) => (value: string) => setForm({ ...form, [key]: value })
@@ -266,6 +269,8 @@ export function NewProjectPage() {
         origin: form.origin.trim() || null,
         due_date: form.due_date || null,
         date_certainty: form.due_date && form.date_certainty ? form.date_certainty : null,
+        template_id: form.template_id || null,
+        start_date: form.start_date || null,
         ...personPayload(owner, 'owner'),
       },
       {
@@ -282,6 +287,26 @@ export function NewProjectPage() {
         subtitle="L’essentiel suffit pour commencer : vous compléterez la fiche ensuite."
       />
       <form className="card-panel form-grid" onSubmit={submit}>
+        {templates.data && templates.data.length > 0 && (
+          <div className="field form-grid__full template-pick">
+            <label htmlFor="p-template">Partir d’un modèle</label>
+            <select
+              id="p-template"
+              value={form.template_id}
+              onChange={(e) => set('template_id')(e.target.value)}
+            >
+              <option value="">Aucun : projet vide</option>
+              {templates.data.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} · {t.tasks_count} tâche(s)
+                </option>
+              ))}
+            </select>
+            <span className="field__hint">
+              Les tâches du modèle sont ajoutées au projet, prêtes à être confiées.
+            </span>
+          </div>
+        )}
         <div className="field form-grid__full">
           <label htmlFor="p-title">Titre du projet *</label>
           <input
@@ -365,6 +390,22 @@ export function NewProjectPage() {
             value={form.next_step}
             onChange={(e) => set('next_step')(e.target.value)}
           />
+        </div>
+        <div className="field">
+          <label htmlFor="p-start">Date de début</label>
+          <input
+            id="p-start"
+            type="date"
+            value={form.start_date}
+            onChange={(e) => set('start_date')(e.target.value)}
+          />
+          {form.template_id && (
+            <span className="field__hint">
+              {form.start_date
+                ? 'Les échéances des tâches du modèle sont calculées à partir de cette date.'
+                : 'Sans date de début, les tâches du modèle arrivent sans échéance.'}
+            </span>
+          )}
         </div>
         <div className="field">
           <label htmlFor="p-due">Échéance</label>

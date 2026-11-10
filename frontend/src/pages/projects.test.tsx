@@ -57,6 +57,7 @@ function routes(extra: Record<string, (body: unknown) => { status: number; json?
     [`GET ${base}/portfolios`]: () => ({ status: 200, json: [PORTFOLIO] }),
     [`GET ${base}/entities`]: () => ({ status: 200, json: [] }),
     [`GET ${base}/project-types`]: () => ({ status: 200, json: [] }),
+    [`GET ${base}/templates`]: () => ({ status: 200, json: [] }),
     [`GET ${base}/projects/pr1`]: () => ({ status: 200, json: PROJECT }),
     [`GET ${base}/projects/pr1/tasks`]: () => ({ status: 200, json: [] }),
     [`GET ${base}/projects/pr1/history`]: () => ({ status: 200, json: [] }),
@@ -97,6 +98,44 @@ describe('projets', () => {
       owner_label: 'Mon assistante',
     })
     expect(body.client_request_id).toMatch(/^[0-9a-f-]{36}$/)
+  })
+
+  it('crée un projet à partir d’un modèle, avec sa date de début', async () => {
+    const calls = mockApi(
+      routes({
+        [`GET ${base}/templates`]: () => ({
+          status: 200,
+          json: [
+            {
+              id: 'tpl1',
+              name: 'Salon type',
+              description: null,
+              tasks_count: 12,
+              tasks: [],
+              created_at: '2026-11-10T10:00:00Z',
+              version: 1,
+            },
+          ],
+        }),
+        [`POST ${base}/projects`]: () => ({ status: 201, json: PROJECT }),
+      }),
+    )
+    renderApp(`/espaces/${SPACE_ID}/projets/nouveau`)
+    const user = userEvent.setup()
+
+    await user.selectOptions(await screen.findByLabelText('Partir d’un modèle'), 'tpl1')
+    expect(screen.getByText(/arrivent sans échéance/)).toBeInTheDocument()
+    await user.type(screen.getByLabelText('Titre du projet *'), 'Salon 2027')
+    await user.selectOptions(screen.getByLabelText('Portefeuille *'), 'p1')
+    await user.type(screen.getByLabelText('Date de début'), '2027-03-01')
+    expect(screen.getByText(/calculées à partir de cette date/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Créer le projet' }))
+
+    await screen.findByRole('heading', { name: 'Salon Dakar Tech' })
+    expect(calls.find((c) => c.key === `POST ${base}/projects`)?.body).toMatchObject({
+      template_id: 'tpl1',
+      start_date: '2027-03-01',
+    })
   })
 
   it('exige un bilan pour passer un projet à Terminé', async () => {

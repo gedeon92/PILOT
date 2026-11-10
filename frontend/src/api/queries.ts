@@ -14,6 +14,7 @@ import {
   type Project,
   type ProjectAccess,
   type ProjectLink,
+  type ProjectTemplate,
   type Proposal,
   type Role,
   type Space,
@@ -371,7 +372,11 @@ export function useUpdateTask(spaceId: string) {
   return useMutation({
     meta: {
       success: (variables) => {
-        const status = (variables as { changes: { status?: string } }).changes.status
+        const { task, changes } = variables as { task: Task; changes: { status?: string } }
+        const status = changes.status
+        if (status === 'done' && task.recurrence && !task.next_task_id) {
+          return 'Tâche terminée : la suivante est créée'
+        }
         if (status === 'done') return 'Tâche terminée'
         if (status === 'in_progress') return 'Tâche passée en cours'
         if (status === 'todo') return 'Tâche à faire'
@@ -603,6 +608,23 @@ export function useUploadDocument(spaceId: string, projectId: string) {
   })
 }
 
+/** Joint un fichier à une tâche (il rejoint aussi le dossier du projet). */
+export function useUploadTaskDocument(spaceId: string, taskId: string) {
+  const refresh = useRefreshProjects(spaceId)
+  return useMutation({
+    meta: { success: 'Fichier joint' },
+    mutationFn: (file: File) => {
+      const body = new FormData()
+      body.append('file', file)
+      return api<DocumentItem>(`/spaces/${spaceId}/tasks/${taskId}/documents`, {
+        method: 'POST',
+        body,
+      })
+    },
+    onSettled: refresh,
+  })
+}
+
 export function useReplaceDocument(spaceId: string) {
   const refresh = useRefreshProjects(spaceId)
   return useMutation({
@@ -639,6 +661,48 @@ export function useArchiveDocument(spaceId: string) {
 
 export function downloadUrl(spaceId: string, documentId: string) {
   return `/api/spaces/${spaceId}/documents/${documentId}/download`
+}
+
+// ---------- Modèles de projet ----------
+
+const templateKeys = (spaceId: string) => ['space', spaceId, 'templates'] as const
+
+export function useTemplates(spaceId: string, enabled = true) {
+  return useQuery({
+    queryKey: templateKeys(spaceId),
+    queryFn: () => api<ProjectTemplate[]>(`/spaces/${spaceId}/templates`),
+    enabled,
+  })
+}
+
+export function useCreateTemplate(spaceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    meta: { success: 'Modèle enregistré' },
+    mutationFn: (body: { project_id: string; name: string; description?: string | null }) =>
+      api<ProjectTemplate>(`/spaces/${spaceId}/templates`, { method: 'POST', body }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: templateKeys(spaceId) }),
+  })
+}
+
+export function useUpdateTemplate(spaceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    meta: { success: 'Modèle renommé' },
+    mutationFn: ({ id, ...body }: { id: string; version: number; name: string }) =>
+      api<ProjectTemplate>(`/spaces/${spaceId}/templates/${id}`, { method: 'PATCH', body }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: templateKeys(spaceId) }),
+  })
+}
+
+export function useDeleteTemplate(spaceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    meta: { success: 'Modèle supprimé' },
+    mutationFn: (id: string) =>
+      api<void>(`/spaces/${spaceId}/templates/${id}`, { method: 'DELETE' }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: templateKeys(spaceId) }),
+  })
 }
 
 /** Tâches ouvertes de tout l'espace (jalons de la timeline). */

@@ -12,6 +12,7 @@ const COUNT_LABELS: Record<string, string> = {
   entities: 'filiale(s)',
   programs: 'programme(s)',
   project_types: 'type(s) ajouté(s)',
+  project_templates: 'modèle(s) de projet',
 }
 
 /** Export complet de l'espace (propriétaire) et import d'un export dans un nouvel espace. */

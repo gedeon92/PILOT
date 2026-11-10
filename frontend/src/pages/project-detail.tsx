@@ -12,6 +12,7 @@ import {
   useUpdateProject,
 } from '../api/queries'
 import { DocumentsSection } from '../components/documents'
+import { SaveTemplateForm } from '../components/templates'
 import { TaskAddForm, TaskRow } from '../components/task-row'
 import { TaskBoard } from '../components/task-board'
 import { ProjectAccessDrawer } from '../components/project-access'
@@ -613,6 +614,7 @@ const FIELD_LABELS: Record<string, string> = {
   assignee_label: 'responsable',
   deliverable: 'livrable',
   due_certainty: 'certitude',
+  recurrence: 'répétition',
   origin: 'origine',
   contributors: 'contributeurs',
   decision_options: 'options de décision',
@@ -628,7 +630,12 @@ function describe(entry: HistoryEntry): { what: string; detail?: string } {
   const fields = [...new Set(Object.keys(after).map((k) => FIELD_LABELS[k] ?? k))].join(', ')
   switch (entry.action) {
     case 'project.created':
-      return { what: 'Projet créé' }
+      return after.template
+        ? {
+            what: 'Projet créé à partir d’un modèle',
+            detail: `${after.template} (${after.template_tasks} tâche(s))`,
+          }
+        : { what: 'Projet créé' }
     case 'project.updated':
       return { what: 'Fiche modifiée', detail: fields }
     case 'project.updated_from_proposal':
@@ -644,6 +651,11 @@ function describe(entry: HistoryEntry): { what: string; detail?: string } {
       return after.parent_title
         ? { what: 'Sous-tâche ajoutée', detail: `${after.title} (dans « ${after.parent_title} »)` }
         : { what: 'Tâche ajoutée', detail: after.title as string }
+    case 'task.repeated':
+      return {
+        what: 'Tâche répétée : la suivante est créée',
+        detail: `${after.title} — échéance ${formatDay(after.due_date as string)}`,
+      }
     case 'task.commented':
       return {
         what: `Commentaire sur « ${after.task} »`,
@@ -669,7 +681,9 @@ function describe(entry: HistoryEntry): { what: string; detail?: string } {
         detail: after.status ? undefined : fields,
       }
     case 'document.uploaded':
-      return { what: 'Document ajouté', detail: after.filename as string }
+      return after.task
+        ? { what: `Fichier joint à « ${after.task} »`, detail: after.filename as string }
+        : { what: 'Document ajouté', detail: after.filename as string }
     case 'document.archived':
       return { what: 'Document retiré', detail: before.filename as string }
     case 'document.replaced':
@@ -863,7 +877,7 @@ export function ProjectDetailPage() {
   const { space } = useOutletContext<SpaceContext>()
   const { projectId = '' } = useParams()
   const project = useProject(space.id, projectId)
-  const [mode, setMode] = useState<'view' | 'edit' | 'status'>('view')
+  const [mode, setMode] = useState<'view' | 'edit' | 'status' | 'template'>('view')
   const [showHistory, setShowHistory] = useState(false)
   const [showAccess, setShowAccess] = useState(false)
   const today = todayIso(space.timezone)
@@ -922,6 +936,16 @@ export function ProjectDetailPage() {
             <button type="button" className="button" onClick={() => setShowHistory(true)}>
               Historique
             </button>
+            {space.role === 'owner' && (
+              <button
+                type="button"
+                className="button"
+                onClick={() => setMode('template')}
+                title="Réutiliser les tâches de ce projet pour un prochain projet"
+              >
+                Enregistrer comme modèle
+              </button>
+            )}
             {canWrite && (
               <>
                 <button type="button" className="button" onClick={() => setMode('status')}>
@@ -949,6 +973,12 @@ export function ProjectDetailPage() {
       )}
       {showHistory && (
         <HistoryDrawer spaceId={space.id} projectId={p.id} onClose={() => setShowHistory(false)} />
+      )}
+
+      {mode === 'template' && (
+        <section className="card-panel" aria-label="Enregistrer comme modèle">
+          <SaveTemplateForm spaceId={space.id} project={p} onDone={() => setMode('view')} />
+        </section>
       )}
 
       {mode === 'status' && (

@@ -242,6 +242,15 @@ class TaskStatus(enum.StrEnum):
 CLOSED_TASK_STATUSES = {TaskStatus.DONE, TaskStatus.CANCELLED}
 
 
+class TaskRecurrence(enum.StrEnum):
+    """Rythme d'une tâche répétée : quand elle est terminée, la suivante est créée."""
+
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+    YEARLY = "yearly"
+
+
 class DateCertainty(enum.StrEnum):
     PROPOSED = "proposed"
     ANNOUNCED = "announced"
@@ -452,11 +461,19 @@ class Task(Base):
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("tasks.id", ondelete="CASCADE", name="fk_tasks_parent_id_tasks"), index=True
     )
+    # Tâche répétée : à sa clôture (Terminée), la suivante est créée et notée dans `next_task_id`
+    # (une seule fois, même si la tâche est rouverte puis terminée de nouveau).
+    recurrence: Mapped[TaskRecurrence | None] = mapped_column(
+        _enum(TaskRecurrence, "task_recurrence")
+    )
+    next_task_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tasks.id", ondelete="SET NULL", name="fk_tasks_next_task_id_tasks")
+    )
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
-    assignee_member: Mapped[Membership | None] = relationship()
+    assignee_member: Mapped[Membership | None] = relationship(foreign_keys=[assignee_member_id])
 
 
 class TaskComment(Base):
@@ -529,6 +546,10 @@ class Document(Base):
         ForeignKey("spaces.id", ondelete="CASCADE"), index=True
     )
     project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
+    # Fichier joint à une tâche (facultatif) : il reste aussi dans le dossier du projet.
+    task_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tasks.id", ondelete="SET NULL", name="fk_documents_task_id_tasks"), index=True
+    )
     filename: Mapped[str] = mapped_column(String(255))
     content_type: Mapped[str] = mapped_column(String(120))
     size_bytes: Mapped[int] = mapped_column(Integer)
@@ -549,6 +570,28 @@ class Document(Base):
     replaced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     uploaded_by: Mapped[User | None] = relationship()
+
+
+class ProjectTemplate(Base):
+    """Modèle de projet : une liste de tâches prêtes à l'emploi, copiée à la création d'un
+    projet. `tasks` : [{"ref", "title", "deliverable", "offset_days", "parent", "waits_for",
+    "recurrence", "assignee_member_id", "assignee_label"}]. `offset_days` compte les jours
+    depuis la date de début du projet (négatif = avant)."""
+
+    __tablename__ = "project_templates"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String(120))
+    description: Mapped[str | None] = mapped_column(Text)
+    tasks: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    created_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    version: Mapped[int] = mapped_column(Integer, default=1)
 
 
 class StoredFile(Base):

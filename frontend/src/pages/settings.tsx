@@ -10,6 +10,7 @@ import {
   type CatalogResource,
 } from '../api/queries'
 import { BackupSection } from '../components/backup-section'
+import { TemplatesSection } from '../components/templates'
 import { PlusIcon } from '../components/icons'
 import { Alert, PageHeader, StatusPill, Skeleton } from '../components/ui'
 import { allTimezones } from '../timezones'
@@ -455,6 +456,9 @@ export function SettingsPage() {
           canManage={canManage}
         />
       ))}
+      {space.role !== 'reader' && space.role !== 'guest' && (
+        <TemplatesSection spaceId={space.id} canManage={canManage} />
+      )}
       <BackupSection spaceId={space.id} canExport={canManage} />
     </div>
   )

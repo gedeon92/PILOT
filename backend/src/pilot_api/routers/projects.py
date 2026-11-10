@@ -44,6 +44,7 @@ from pilot_api.models import (
     ProjectKind,
     ProjectLink,
     ProjectStatus,
+    ProjectTemplate,
     ProjectType,
     Role,
     Space,
@@ -55,6 +56,7 @@ from pilot_api.models import (
     User,
     utcnow,
 )
+from pilot_api.recurrence import next_due_date
 from pilot_api.schemas import (
     EventOut,
     HistoryEntry,
@@ -74,6 +76,7 @@ from pilot_api.schemas import (
     TaskOut,
     TaskUpdate,
 )
+from pilot_api.templates import apply_template
 
 router = APIRouter(prefix="/api/spaces/{space_id}", tags=["projets"])
 
@@ -113,7 +116,7 @@ PROJECT_AUDIT_FIELDS = [
     "decision_options",
 ]
 EVENT_FIELDS = ["venue", "audience", "expected_attendance", "program_id", "edition_label"]
-TASK_PLAIN_FIELDS = ["title", "deliverable", "due_date", "due_certainty"]
+TASK_PLAIN_FIELDS = ["title", "deliverable", "due_date", "due_certainty", "recurrence"]
 TASK_AUDIT_FIELDS = [*TASK_PLAIN_FIELDS, "status", "assignee_member_id", "assignee_label"]
 
 CONFLICT = "Cet élément a été modifié entre-temps. Rechargez la page avant de réessayer."
@@ -361,6 +364,16 @@ def task_extras(db: Session, task_ids: list[uuid.UUID]) -> dict[uuid.UUID, dict[
         .group_by(TaskDependency.task_id)
     ):
         extras.setdefault(task_id, {})["waiting_on"] = count
+    for task_id, count in db.execute(
+        select(Document.task_id, func.count())
+        .where(
+            Document.task_id.in_(task_ids),
+            Document.archived_at.is_(None),
+            Document.replaced_at.is_(None),
+        )
+        .group_by(Document.task_id)
+    ):
+        extras.setdefault(task_id, {})["documents_count"] = count
     return extras
 
 
@@ -383,6 +396,8 @@ def _task_out(task: Task, today: date, extras: dict | None = None) -> TaskOut:
         closed_at=task.closed_at,
         version=task.version,
         parent_id=task.parent_id,
+        recurrence=task.recurrence,
+        next_task_id=task.next_task_id,
         **(extras or {}).get(task.id, {}),
     )
 
@@ -602,6 +617,15 @@ def create_project(body: ProjectCreate, membership: WriterMembership, db: DbSess
             return _project_with_counts(db, membership, existing)
 
     _check_ref(db, Portfolio, space_id, body.portfolio_id, "Le portefeuille")
+    template = None
+    if body.template_id is not None:
+        template = db.scalar(
+            select(ProjectTemplate).where(
+                ProjectTemplate.id == body.template_id, ProjectTemplate.space_id == space_id
+            )
+        )
+        if template is None:
+            raise HTTPException(404, "Modèle de projet introuvable.")
     project = Project(
         space_id=space_id,
         portfolio_id=body.portfolio_id,
@@ -610,12 +634,19 @@ def create_project(body: ProjectCreate, membership: WriterMembership, db: DbSess
         client_request_id=body.client_request_id,
         created_by_id=membership.user_id,
     )
-    sent = body.model_fields_set - {"portfolio_id", "status", "client_request_id"}
+    sent = body.model_fields_set - {"portfolio_id", "status", "client_request_id", "template_id"}
     db.add(project)
     _apply_project_fields(db, project, body, sent)
     if project.situation:
         _mark_manual_situation(project, membership)
     db.flush()
+    after = {k: v for k, v in _project_snapshot(project).items() if v is not None}
+    if template is not None:
+        # Tâches du modèle : l'auteur et chaque responsable les suivent (sans alerte par tâche).
+        created = apply_template(db, project, template)
+        for task in created:
+            follow(db, task, [membership.user_id, _member_user(db, task.assignee_member_id)])
+        after |= {"template": template.name, "template_tasks": len(created)}
     record(
         db,
         action="project.created",
@@ -623,7 +654,7 @@ def create_project(body: ProjectCreate, membership: WriterMembership, db: DbSess
         space_id=space_id,
         target_type="project",
         target_id=project.id,
-        after={k: v for k, v in _project_snapshot(project).items() if v is not None},
+        after=after,
     )
     db.commit()
     return _project_with_counts(db, membership, _load_project(db, space_id, project.id))
@@ -848,6 +879,13 @@ def _apply_task_fields(db: Session, task: Task, body: Any, sent: set[str]) -> No
     if "status" in sent and body.status is not None and body.status != task.status:
         task.status = body.status
         task.closed_at = utcnow() if body.status in CLOSED_TASK_STATUSES else None
+    if task.recurrence is not None:
+        if task.parent_id is not None:
+            raise HTTPException(422, "Une sous-tâche ne peut pas se répéter : répétez sa tâche.")
+        if task.due_date is None:
+            raise HTTPException(
+                422, "Une tâche répétée a besoin d'une échéance : indiquez-la d'abord."
+            )
 
 
 def create_task_in(
@@ -963,9 +1001,83 @@ def update_task(
             after=new,
         )
         _notify_changes(db, membership, task, new, old_assignee, was_closed)
+        if not was_closed and task.status == TaskStatus.DONE:
+            _repeat(db, membership, task, project)
         db.commit()
         task = _load_task(db, membership.space_id, task_id)
     return task_out(db, task, today_in(membership.space))
+
+
+def _repeat(db: Session, membership: Membership, task: Task, project: Project | None) -> None:
+    """Tâche répétée terminée : crée la suivante (une seule fois), avec ses sous-tâches remises
+    à faire et ses abonnés. Rien n'est créé dans un projet clôturé."""
+    if (
+        task.recurrence is None
+        or task.next_task_id is not None
+        or task.due_date is None
+        or task.parent_id is not None
+        or project is None
+        or project.status in CLOSED_PROJECT_STATUSES
+    ):
+        return
+    due = next_due_date(task.due_date, task.recurrence, today_in(membership.space))
+    shift = due - task.due_date
+    following = Task(
+        space_id=task.space_id,
+        project_id=task.project_id,
+        title=task.title,
+        deliverable=task.deliverable,
+        status=TaskStatus.TODO,
+        assignee_member_id=task.assignee_member_id,
+        assignee_label=task.assignee_label,
+        due_date=due,
+        due_certainty=task.due_certainty,
+        recurrence=task.recurrence,
+    )
+    db.add(following)
+    db.flush()
+    task.next_task_id = following.id
+    subtasks = db.scalars(
+        select(Task)
+        .where(Task.parent_id == task.id, Task.status != TaskStatus.CANCELLED)
+        .order_by(Task.created_at)
+    ).all()
+    for sub in subtasks:
+        db.add(
+            Task(
+                space_id=task.space_id,
+                project_id=task.project_id,
+                parent_id=following.id,
+                title=sub.title,
+                deliverable=sub.deliverable,
+                status=TaskStatus.TODO,
+                assignee_member_id=sub.assignee_member_id,
+                assignee_label=sub.assignee_label,
+                due_date=sub.due_date + shift if sub.due_date else None,
+                due_certainty=sub.due_certainty,
+            )
+        )
+    record(
+        db,
+        action="task.repeated",
+        actor_id=membership.user_id,
+        space_id=task.space_id,
+        target_type="task",
+        target_id=following.id,
+        after={
+            "title": following.title,
+            "due_date": due.isoformat(),
+            "recurrence": task.recurrence.value,
+            "previous_task_id": str(task.id),
+        },
+    )
+    follow(db, following, followers_of(db, task.id))
+    notify_followers(
+        db,
+        membership,
+        following,
+        f"Tâche répétée : la prochaine est prévue le {short_date(due)}",
+    )
 
 
 def _notify_changes(

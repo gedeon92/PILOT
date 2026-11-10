@@ -43,6 +43,7 @@ from pilot_api.models import (
     ProjectContributor,
     ProjectLink,
     ProjectStatus,
+    ProjectTemplate,
     ProjectType,
     Role,
     Space,
@@ -212,6 +213,10 @@ def build_export(db: Session, space: Space, author: User, with_files: bool) -> t
     data["project_links"] = [
         _dump(link)
         for link in db.scalars(select(ProjectLink).where(ProjectLink.space_id == sid)).all()
+    ]
+    data["project_templates"] = [
+        _dump(t)
+        for t in db.scalars(select(ProjectTemplate).where(ProjectTemplate.space_id == sid)).all()
     ]
 
     documents = db.scalars(select(Document).where(Document.space_id == sid)).all()
@@ -459,6 +464,7 @@ def import_space(
 
     task_ids: dict[str, Task] = {}
     parents: list[tuple[Task, str]] = []
+    following: list[tuple[Task, str]] = []
     general_project: uuid.UUID | None = None
     for item in data.get("tasks", []):
         source_project = item.get("project_id")
@@ -474,7 +480,9 @@ def import_space(
                 )
             project_id = general_project
         values = _load(
-            Task, item, {"project_id", "assignee_member_id", "assignee_label", "parent_id"}
+            Task,
+            item,
+            {"project_id", "assignee_member_id", "assignee_label", "parent_id", "next_task_id"},
         )
         values["assignee_member_id"], values["assignee_label"] = person(
             item.get("assignee_member_id"), item.get("assignee_label")
@@ -484,7 +492,13 @@ def import_space(
         task_ids[str(item.get("id"))] = task
         if item.get("parent_id"):
             parents.append((task, str(item["parent_id"])))
+        if item.get("next_task_id"):
+            following.append((task, str(item["next_task_id"])))
     db.flush()
+    # Tâche répétée : relie chaque tâche terminée à la suivante, si elle est dans l'import.
+    for task, next_id in following:
+        if next_id in task_ids:
+            task.next_task_id = task_ids[next_id].id
     # Sous-tâches : reliées à leur tâche si elle fait partie de l'import, du même projet.
     for task, parent in parents:
         parent_task = task_ids.get(parent)
@@ -591,8 +605,12 @@ def import_space(
             corrupted.append(filename)
             continue
         values = _load(
-            Document, item, {"project_id", "storage_key", "size_bytes", "sha256", "previous_id"}
+            Document,
+            item,
+            {"project_id", "storage_key", "size_bytes", "sha256", "previous_id", "task_id"},
         )
+        joined = task_ids.get(str(item.get("task_id"))) if item.get("task_id") else None
+        values["task_id"] = joined.id if joined and joined.project_id == project_id else None
         # Nom et type venus du fichier : nettoyés comme lors d'un envoi normal.
         values["filename"] = clean_filename(values.get("filename"))
         values["content_type"] = str(values.get("content_type") or "application/octet-stream")[:120]
@@ -625,6 +643,51 @@ def import_space(
             f"{len(corrupted)} pièce(s) dont l'empreinte ne correspond pas, écartée(s) : "
             f"{', '.join(corrupted[:10])}."
         )
+    templates = 0
+    for item in data.get("project_templates", [])[:200]:
+        name = str(item.get("name") or "").strip()[:120]
+        tasks = item.get("tasks")
+        if not name or not isinstance(tasks, list):
+            continue
+        cleaned = []
+        for entry in tasks[:500]:
+            if not isinstance(entry, dict) or not str(entry.get("title") or "").strip():
+                continue
+            member, label = person(entry.get("assignee_member_id"), entry.get("assignee_label"))
+            offset = entry.get("offset_days")
+            cleaned.append(
+                {
+                    "ref": str(entry.get("ref"))[:20],
+                    "title": str(entry["title"]).strip()[:200],
+                    "deliverable": str(entry["deliverable"])[:300]
+                    if entry.get("deliverable")
+                    else None,
+                    "offset_days": max(-3650, min(3650, offset))
+                    if isinstance(offset, int) and not isinstance(offset, bool)
+                    else None,
+                    "parent": str(entry["parent"])[:20] if entry.get("parent") else None,
+                    "waits_for": [str(r)[:20] for r in entry.get("waits_for") or []][:20]
+                    if isinstance(entry.get("waits_for"), list)
+                    else [],
+                    "recurrence": entry.get("recurrence")
+                    if entry.get("recurrence") in {"daily", "weekly", "monthly", "yearly"}
+                    else None,
+                    "assignee_member_id": str(member) if member else None,
+                    "assignee_label": (label or "")[:120] or None,
+                }
+            )
+        description = item.get("description")
+        db.add(
+            ProjectTemplate(
+                space_id=space.id,
+                name=name,
+                description=str(description)[:5000] if description else None,
+                tasks=cleaned,
+                created_by_id=user.id,
+            )
+        )
+        templates += 1
+    report.counts["project_templates"] = templates
     others = [m for m in data.get("members", []) if str(m["id"]) not in member_ids]
     if others:
         report.warnings.append(

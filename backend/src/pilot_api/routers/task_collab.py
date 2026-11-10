@@ -31,6 +31,7 @@ from pilot_api.models import (
     User,
     utcnow,
 )
+from pilot_api.routers.documents import current_task_documents
 from pilot_api.routers.projects import (
     actor_name,
     create_task_in,
@@ -152,6 +153,7 @@ def task_detail(task_id: uuid.UUID, membership: CurrentMembership, db: DbSession
         following=any(uid == membership.user_id for uid, _ in followers),
         can_write=_can_write(db, membership, project),
         project_closed=project is not None and project.status in CLOSED_PROJECT_STATUSES,
+        documents=current_task_documents(db, task, project.title if project else ""),
     )
 
 

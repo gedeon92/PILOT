@@ -6,6 +6,7 @@ export type ProjectStatus = Schemas['ProjectStatus']
 export type TaskStatus = Schemas['TaskStatus']
 export type DateCertainty = Schemas['DateCertainty']
 export type RiskLevel = Schemas['RiskLevel']
+export type TaskRecurrence = Schemas['TaskRecurrence']
 
 export const PROJECT_STATUS: Record<ProjectStatus, { label: string; tone: Tone }> = {
   to_frame: { label: 'À cadrer', tone: 'neutral' },
@@ -38,6 +39,14 @@ export const CERTAINTY: Record<DateCertainty, string> = {
   proposed: 'Proposée',
   announced: 'Annoncée',
   confirmed: 'Confirmée',
+}
+
+/** Rythme d'une tâche répétée : « Se répète chaque semaine ». */
+export const RECURRENCE: Record<TaskRecurrence, string> = {
+  daily: 'Chaque jour',
+  weekly: 'Chaque semaine',
+  monthly: 'Chaque mois',
+  yearly: 'Chaque année',
 }
 
 export const RISK: Record<RiskLevel, string> = {

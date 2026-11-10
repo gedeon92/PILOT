@@ -14,6 +14,7 @@ from pilot_api.models import (
     ProjectStatus,
     RiskLevel,
     Role,
+    TaskRecurrence,
     TaskStatus,
 )
 
@@ -315,6 +316,8 @@ class ProjectCreate(_ProjectFields):
     portfolio_id: uuid.UUID
     status: ProjectStatus = ProjectStatus.TO_FRAME
     client_request_id: uuid.UUID | None = None
+    # Modèle de projet : ses tâches sont copiées dans le nouveau projet.
+    template_id: uuid.UUID | None = None
 
     @field_validator("status")
     @classmethod
@@ -393,6 +396,8 @@ class _TaskFields(BaseModel):
     assignee_label: Label | None = None
     due_date: date | None = None
     due_certainty: DateCertainty | None = None
+    # Répétition : chaque jour, semaine, mois ou année (exige une échéance).
+    recurrence: TaskRecurrence | None = None
 
 
 class TaskCreate(_TaskFields):
@@ -432,6 +437,10 @@ class TaskOut(BaseModel):
     comments_count: int = 0
     # Nombre de tâches encore ouvertes dont celle-ci attend la fin.
     waiting_on: int = 0
+    # Tâche répétée, et la suivante une fois créée ; nombre de fichiers joints.
+    recurrence: TaskRecurrence | None = None
+    next_task_id: uuid.UUID | None = None
+    documents_count: int = 0
 
 
 class TaskRef(BaseModel):
@@ -490,6 +499,8 @@ class TaskDetail(BaseModel):
     can_write: bool = True
     # Projet terminé ou annulé : plus de sous-tâche ni de nouvelle tâche (audit M6).
     project_closed: bool = False
+    # Fichiers joints à la tâche (versions actuelles, non retirés).
+    documents: list["DocumentOut"] = Field(default_factory=list)
 
 
 class ProjectLinkCreate(BaseModel):
@@ -537,6 +548,42 @@ class DocumentOut(BaseModel):
     # Numéro de version (1 pour le premier envoi) ; une version remplacée garde sa date.
     revision: int = 1
     replaced_at: datetime | None = None
+    # Fichier joint à une tâche du projet (facultatif).
+    task_id: uuid.UUID | None = None
+    task_title: str | None = None
+
+
+# ---------- Modèles de projet ----------
+
+
+class TemplateCreate(BaseModel):
+    """Enregistre les tâches d'un projet comme modèle."""
+
+    project_id: uuid.UUID
+    name: Name
+    description: LongText | None = None
+
+
+class TemplateUpdate(BaseModel):
+    version: int
+    name: Name | None = None
+    description: LongText | None = None
+
+
+class TemplateTaskOut(BaseModel):
+    title: str
+    offset_days: int | None
+    is_subtask: bool
+
+
+class TemplateOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    description: str | None
+    tasks_count: int
+    tasks: list[TemplateTaskOut]
+    created_at: datetime
+    version: int
 
 
 # ---------- Alertes ----------
@@ -723,3 +770,6 @@ class ProjectAccessMember(BaseModel):
 class ProjectAccessOut(BaseModel):
     private: bool
     members: list[ProjectAccessMember]
+
+
+TaskDetail.model_rebuild()  # DocumentOut est défini plus bas

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { errorMessage, type Task } from '../api/client'
 import { useCreateTask, useMembers, useUpdateTask } from '../api/queries'
-import { CERTAINTY, formatDay, TASK_STATUS, type TaskStatus } from '../labels'
+import { CERTAINTY, formatDay, RECURRENCE, TASK_STATUS, type TaskStatus } from '../labels'
 import { personPayload } from '../person'
 import { PersonField, type PersonValue } from './person-field'
 import { Avatar } from './avatar'
@@ -26,7 +26,9 @@ export function TaskRow({
   const subtasks = task.subtasks_total ?? 0
   const comments = task.comments_count ?? 0
   const waiting = (task.waiting_on ?? 0) > 0
+  const files = task.documents_count ?? 0
   const closed = task.status === 'done' || task.status === 'cancelled'
+  const repeats = Boolean(task.recurrence) && !closed
   const status = TASK_STATUS[task.status]
 
   return (
@@ -54,7 +56,7 @@ export function TaskRow({
         >
           {task.title}
         </button>
-        {(subtasks > 0 || comments > 0 || (waiting && !closed)) && (
+        {(subtasks > 0 || comments > 0 || files > 0 || repeats || (waiting && !closed)) && (
           <span className="task-row__badges">
             {waiting && !closed && (
               <span className="task-badge task-badge--waiting">En attente</span>
@@ -70,6 +72,19 @@ export function TaskRow({
             {comments > 0 && (
               <span className="task-badge" aria-label={`${comments} commentaire(s)`}>
                 💬 {comments}
+              </span>
+            )}
+            {files > 0 && (
+              <span className="task-badge" aria-label={`${files} fichier(s) joint(s)`}>
+                📎 {files}
+              </span>
+            )}
+            {repeats && task.recurrence && (
+              <span
+                className="task-badge"
+                aria-label={`Se répète : ${RECURRENCE[task.recurrence]}`}
+              >
+                🔁 {RECURRENCE[task.recurrence].toLowerCase()}
               </span>
             )}
           </span>

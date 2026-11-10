@@ -24,9 +24,18 @@ import {
   useTaskDetail,
   useUpdateTask,
 } from '../api/queries'
-import { CERTAINTY, formatDay, formatMoment, TASK_STATUS, type TaskStatus } from '../labels'
+import {
+  CERTAINTY,
+  formatDay,
+  formatMoment,
+  RECURRENCE,
+  TASK_STATUS,
+  type TaskRecurrence,
+  type TaskStatus,
+} from '../labels'
 import { personPayload, personValue } from '../person'
 import { Avatar } from './avatar'
+import { TaskAttachments } from './documents'
 import { PersonField, type PersonValue } from './person-field'
 import { Alert, StatusPill } from './ui'
 
@@ -188,6 +197,15 @@ function TaskContent({
       <TaskFields spaceId={spaceId} task={task} canWrite={canWrite} />
 
       {!detail.parent && <Subtasks spaceId={spaceId} detail={detail} canWrite={canWrite} />}
+      <Section title="Fichiers joints" count={detail.documents?.length ?? 0}>
+        <TaskAttachments
+          spaceId={spaceId}
+          projectId={task.project_id ?? ''}
+          taskId={task.id}
+          documents={detail.documents ?? []}
+          canWrite={canWrite}
+        />
+      </Section>
       <Dependencies spaceId={spaceId} detail={detail} canWrite={canWrite} />
       <Comments spaceId={spaceId} detail={detail} canWrite={canWrite} />
       <Followers detail={detail} />
@@ -226,6 +244,7 @@ function TaskFields({
   canWrite: boolean
 }) {
   const update = useUpdateTask(spaceId)
+  const openTask = useOpenTask()
   const [editing, setEditing] = useState(false)
   const status = TASK_STATUS[task.status]
 
@@ -292,6 +311,37 @@ function TaskFields({
         <dt>Livrable</dt>
         <dd>{task.deliverable ?? <span className="muted">Non précisé</span>}</dd>
       </div>
+      {!task.parent_id && (
+        <div>
+          <dt>Répétition</dt>
+          <dd>
+            {task.recurrence ? (
+              <>
+                🔁 {RECURRENCE[task.recurrence]}
+                {task.next_task_id ? (
+                  <>
+                    {' · '}
+                    <button
+                      type="button"
+                      className="link-button"
+                      onClick={() => openTask(task.next_task_id!)}
+                    >
+                      voir la suivante
+                    </button>
+                  </>
+                ) : (
+                  <span className="muted">
+                    {' '}
+                    · la suivante sera créée une fois celle-ci terminée
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="muted">Ne se répète pas</span>
+            )}
+          </dd>
+        </div>
+      )}
       {canWrite && (
         <div className="task-drawer__edit">
           <button type="button" className="button button--small" onClick={() => setEditing(true)}>
@@ -320,6 +370,7 @@ function TaskEditForm({
   const [due, setDue] = useState(task.due_date ?? '')
   const [certainty, setCertainty] = useState<string>(task.due_certainty ?? '')
   const [assignee, setAssignee] = useState<PersonValue>(personValue(task.assignee))
+  const [recurrence, setRecurrence] = useState<string>(task.recurrence ?? '')
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -331,6 +382,7 @@ function TaskEditForm({
           deliverable: deliverable || null,
           due_date: due || null,
           due_certainty: due && certainty ? certainty : null,
+          ...(task.parent_id ? {} : { recurrence: (recurrence || null) as TaskRecurrence | null }),
           ...personPayload(assignee, 'assignee'),
         },
       },
@@ -344,6 +396,8 @@ function TaskEditForm({
         <label htmlFor="edit-task-title">Tâche *</label>
         <input
           id="edit-task-title"
+          // Le curseur arrive dans le formulaire : Échap ferme toujours la fenêtre.
+          autoFocus
           required
           maxLength={200}
           value={title}
@@ -388,6 +442,28 @@ function TaskEditForm({
           <option value="confirmed">Confirmée</option>
         </select>
       </div>
+      {!task.parent_id && (
+        <div className="field form-grid__full">
+          <label htmlFor="edit-task-recurrence">Répéter</label>
+          <select
+            id="edit-task-recurrence"
+            value={recurrence}
+            onChange={(e) => setRecurrence(e.target.value)}
+          >
+            <option value="">Ne se répète pas</option>
+            {(Object.keys(RECURRENCE) as TaskRecurrence[]).map((r) => (
+              <option key={r} value={r}>
+                {RECURRENCE[r]}
+              </option>
+            ))}
+          </select>
+          <p className="field__hint">
+            {recurrence && !due
+              ? 'Indiquez une échéance : la répétition part de cette date.'
+              : 'Une fois la tâche terminée, la suivante est créée avec la nouvelle échéance.'}
+          </p>
+        </div>
+      )}
       {update.isError && (
         <div className="form-grid__full">
           <Alert>{errorMessage(update.error)}</Alert>

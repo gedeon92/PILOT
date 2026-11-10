@@ -6093,3 +6093,38 @@ a {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- Fichiers joints aux tâches, modèles de projet (10 nov. 2026) ---------- */
+.task-attach {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+}
+.task-attach__help {
+  font-size: 0.8rem;
+}
+.doc-list--compact .doc-row {
+  padding: 8px 12px;
+}
+.template-pick {
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  border: 1px dashed var(--accent-line);
+  background: var(--accent-surface);
+}
+.template-row__tasks {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  display: grid;
+  gap: 0.2rem;
+}
+.template-row__sub {
+  margin-left: 1rem;
+  list-style: circle;
+}
+.template-saved .form-actions {
+  margin-top: 0.75rem;
+}

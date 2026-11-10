@@ -175,6 +175,8 @@ function BoardCard({
   const subtasks = task.subtasks_total ?? 0
   const comments = task.comments_count ?? 0
   const waiting = (task.waiting_on ?? 0) > 0 && !closed
+  const files = task.documents_count ?? 0
+  const repeats = Boolean(task.recurrence) && !closed
 
   return (
     <li
@@ -198,7 +200,12 @@ function BoardCard({
       <button type="button" className="board-card__title" onClick={() => openTask(task.id)}>
         {task.title}
       </button>
-      {(waiting || subtasks > 0 || comments > 0 || status === 'cancelled') && (
+      {(waiting ||
+        subtasks > 0 ||
+        comments > 0 ||
+        files > 0 ||
+        repeats ||
+        status === 'cancelled') && (
         <span className="task-row__badges">
           {status === 'cancelled' && <span className="task-badge">Annulée</span>}
           {waiting && <span className="task-badge task-badge--waiting">En attente</span>}
@@ -208,6 +215,16 @@ function BoardCard({
             </span>
           )}
           {comments > 0 && <span className="task-badge">💬 {comments}</span>}
+          {files > 0 && (
+            <span className="task-badge" aria-label={`${files} fichier(s) joint(s)`}>
+              📎 {files}
+            </span>
+          )}
+          {repeats && (
+            <span className="task-badge" aria-label="Tâche répétée">
+              🔁
+            </span>
+          )}
         </span>
       )}
       <span className="board-card__foot">
