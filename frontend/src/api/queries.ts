@@ -20,6 +20,7 @@ import {
   type ProjectLink,
   type ProjectTemplate,
   type Proposal,
+  type Milestone,
   type Section,
   type Role,
   type Space,
@@ -1169,5 +1170,93 @@ export function useArchiveSection(spaceId: string, projectId: string) {
 export function useRestoreSection(spaceId: string, projectId: string) {
   return useSectionMutation(spaceId, projectId, 'Section restaurée', (id: string) =>
     api<Section>(`/spaces/${spaceId}/sections/${id}/restore`, { method: 'POST' }),
+  )
+}
+
+// ---------- Jalons (étape F2) ----------
+
+const milestoneKey = (spaceId: string, projectId: string) =>
+  [...projectKeys.one(spaceId, projectId), 'milestones'] as const
+
+export function useMilestones(spaceId: string, projectId: string) {
+  return useQuery({
+    queryKey: milestoneKey(spaceId, projectId),
+    queryFn: () => api<Milestone[]>(`/spaces/${spaceId}/projects/${projectId}/milestones`),
+  })
+}
+
+/** Écrire un jalon recharge le projet (jalons, historique) et les alertes. */
+function useMilestoneMutation<V>(
+  spaceId: string,
+  projectId: string,
+  success: string,
+  fn: (vars: V) => Promise<Milestone>,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    meta: { success },
+    mutationFn: fn,
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: projectKeys.one(spaceId, projectId) }),
+        queryClient.invalidateQueries({ queryKey: ['space', spaceId, 'alerts'] }),
+      ]),
+  })
+}
+
+export function useCreateMilestone(spaceId: string, projectId: string) {
+  return useMilestoneMutation(spaceId, projectId, 'Jalon ajouté', (body: Record<string, unknown>) =>
+    api<Milestone>(`/spaces/${spaceId}/projects/${projectId}/milestones`, {
+      method: 'POST',
+      body,
+    }),
+  )
+}
+
+export function useUpdateMilestone(spaceId: string, projectId: string) {
+  return useMilestoneMutation(
+    spaceId,
+    projectId,
+    'Jalon enregistré',
+    ({ milestone, changes }: { milestone: Milestone; changes: Record<string, unknown> }) =>
+      api<Milestone>(`/spaces/${spaceId}/milestones/${milestone.id}`, {
+        method: 'PATCH',
+        body: { ...changes, version: milestone.version },
+      }),
+  )
+}
+
+export function useCloseMilestone(spaceId: string, projectId: string) {
+  return useMilestoneMutation(
+    spaceId,
+    projectId,
+    'Jalon clôturé',
+    ({ milestone, state, note }: { milestone: Milestone; state: string; note: string | null }) =>
+      api<Milestone>(`/spaces/${spaceId}/milestones/${milestone.id}/close`, {
+        method: 'POST',
+        body: { version: milestone.version, state, note },
+      }),
+  )
+}
+
+export function useReopenMilestone(spaceId: string, projectId: string) {
+  return useMilestoneMutation(spaceId, projectId, 'Jalon rouvert', (milestone: Milestone) =>
+    api<Milestone>(`/spaces/${spaceId}/milestones/${milestone.id}/reopen`, {
+      method: 'POST',
+      body: { version: milestone.version },
+    }),
+  )
+}
+
+export function useMilestoneTasks(spaceId: string, projectId: string) {
+  return useMilestoneMutation(
+    spaceId,
+    projectId,
+    'Tâches liées enregistrées',
+    ({ milestone, taskIds }: { milestone: Milestone; taskIds: string[] }) =>
+      api<Milestone>(`/spaces/${spaceId}/milestones/${milestone.id}/tasks`, {
+        method: 'PUT',
+        body: { version: milestone.version, task_ids: taskIds },
+      }),
   )
 }

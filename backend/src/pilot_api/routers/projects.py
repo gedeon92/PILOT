@@ -37,6 +37,7 @@ from pilot_api.models import (
     EventDetails,
     Membership,
     MembershipStatus,
+    Milestone,
     Portfolio,
     Program,
     Project,
@@ -787,6 +788,9 @@ def project_history(
     document_ids = [
         str(d) for d in db.scalars(select(Document.id).where(Document.project_id == project.id))
     ]
+    milestone_ids = [
+        str(m) for m in db.scalars(select(Milestone.id).where(Milestone.project_id == project.id))
+    ]
     rows = db.execute(
         select(AuditLog, User.display_name)
         .outerjoin(User, User.id == AuditLog.actor_id)
@@ -796,6 +800,7 @@ def project_history(
                 and_(AuditLog.target_type == "project", AuditLog.target_id == str(project.id)),
                 and_(AuditLog.target_type == "task", AuditLog.target_id.in_(task_ids)),
                 and_(AuditLog.target_type == "document", AuditLog.target_id.in_(document_ids)),
+                and_(AuditLog.target_type == "milestone", AuditLog.target_id.in_(milestone_ids)),
             ),
         )
         .order_by(AuditLog.created_at.desc())

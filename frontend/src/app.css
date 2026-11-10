@@ -6497,3 +6497,112 @@ a {
   background: var(--tone-danger-bg);
   color: var(--tone-danger-fg);
 }
+
+/* ---------- Jalons (étape F2) ---------- */
+.milestone-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.milestone {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--tone-info-dot);
+  border-radius: var(--radius-card);
+}
+.milestone--reached {
+  border-left-color: var(--tone-ok-dot);
+}
+.milestone--missed,
+.milestone--late {
+  border-left-color: var(--tone-danger-dot);
+}
+.milestone--risk {
+  border-left-color: var(--tone-warn-dot);
+}
+.milestone--cancelled {
+  border-left-color: var(--tone-neutral-dot);
+  opacity: 0.8;
+}
+.milestone__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+.milestone__diamond {
+  color: var(--accent, #f26a1b);
+  font-size: 18px;
+  line-height: 1.4;
+}
+.milestone__text {
+  display: flex;
+  flex: 1 1 260px;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.milestone__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+.milestone__meta {
+  margin: 0;
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+.milestone__risk {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--tone-warn-fg);
+}
+.milestone__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.milestone-form {
+  padding: 12px;
+  border: 1px dashed var(--color-border);
+  border-radius: 10px;
+}
+.milestone-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  margin: 0;
+  padding: 10px 12px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+.milestone-picker legend {
+  padding: 0 4px;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+.milestone-picker__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.field--check {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.field--check .field__hint {
+  flex-basis: 100%;
+}

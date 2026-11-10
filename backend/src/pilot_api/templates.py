@@ -15,6 +15,9 @@ from sqlalchemy.orm import Session
 from pilot_api.models import (
     Membership,
     MembershipStatus,
+    Milestone,
+    MilestoneState,
+    MilestoneTask,
     Project,
     ProjectSection,
     ProjectTemplate,
@@ -28,22 +31,78 @@ from pilot_api.models import (
 MAX_TEMPLATE_TASKS = 500
 
 
+def _template_tasks(db: Session, project: Project) -> list[Task]:
+    return list(
+        db.scalars(
+            select(Task)
+            .where(
+                Task.project_id == project.id,
+                Task.status != TaskStatus.CANCELLED,
+                # Une occurrence passée d'une tâche répétée : seule la plus récente est reprise.
+                Task.next_task_id.is_(None),
+            )
+            .order_by(Task.parent_id.is_not(None), Task.created_at)
+            .limit(MAX_TEMPLATE_TASKS)
+        ).all()
+    )
+
+
+def _template_milestones(db: Session, project: Project) -> list[Milestone]:
+    return list(
+        db.scalars(
+            select(Milestone)
+            .where(Milestone.project_id == project.id, Milestone.state != MilestoneState.CANCELLED)
+            .order_by(Milestone.due_date)
+            .limit(100)
+        ).all()
+    )
+
+
+def _reference(project: Project, tasks: list[Task], milestones: list[Milestone]) -> date | None:
+    dues = [t.due_date for t in tasks if t.due_date] + [m.due_date for m in milestones]
+    return project.start_date or (min(dues) if dues else None)
+
+
+def snapshot_milestones(db: Session, project: Project) -> list[dict[str, Any]]:
+    """Jalons non annulés (étape F2), en jours depuis la même date de référence que les
+    tâches ; `tasks` cite les tâches liées par leur numéro dans le modèle."""
+    tasks = _template_tasks(db, project)
+    milestones = _template_milestones(db, project)
+    reference = _reference(project, tasks, milestones)
+    refs = {t.id: str(index) for index, t in enumerate(tasks, start=1)}
+    sections = {
+        s.id: s.title
+        for s in db.scalars(select(ProjectSection).where(ProjectSection.project_id == project.id))
+    }
+    links: dict[uuid.UUID, list[str]] = {}
+    if milestones:
+        for milestone_id, task_id in db.execute(
+            select(MilestoneTask.milestone_id, MilestoneTask.task_id).where(
+                MilestoneTask.milestone_id.in_([m.id for m in milestones])
+            )
+        ):
+            if task_id in refs:
+                links.setdefault(milestone_id, []).append(refs[task_id])
+    return [
+        {
+            "title": m.title,
+            "criterion": m.criterion,
+            "offset_days": (m.due_date - reference).days if reference else None,
+            "section": sections.get(m.section_id) if m.section_id else None,
+            "critical": bool(m.critical),
+            "tasks": links.get(m.id, []),
+            "owner_member_id": str(m.owner_member_id) if m.owner_member_id else None,
+            "owner_label": m.owner_label,
+        }
+        for m in milestones
+    ]
+
+
 def snapshot_tasks(db: Session, project: Project) -> list[dict[str, Any]]:
     """Tâches non annulées du projet (tâches puis sous-tâches), prêtes à être recopiées.
     Les occurrences déjà remplacées d'une tâche répétée ne sont pas reprises."""
-    tasks = db.scalars(
-        select(Task)
-        .where(
-            Task.project_id == project.id,
-            Task.status != TaskStatus.CANCELLED,
-            # Une occurrence passée d'une tâche répétée : seule la plus récente est reprise.
-            Task.next_task_id.is_(None),
-        )
-        .order_by(Task.parent_id.is_not(None), Task.created_at)
-        .limit(MAX_TEMPLATE_TASKS)
-    ).all()
-    dues = [t.due_date for t in tasks if t.due_date]
-    reference: date | None = project.start_date or (min(dues) if dues else None)
+    tasks = _template_tasks(db, project)
+    reference: date | None = _reference(project, tasks, _template_milestones(db, project))
     refs = {t.id: str(index) for index, t in enumerate(tasks, start=1)}
     waits: dict[uuid.UUID, list[str]] = {}
     for task_id, other in db.execute(
@@ -172,4 +231,31 @@ def apply_template(db: Session, project: Project, template: ProjectTemplate) -> 
             db.add(
                 TaskDependency(space_id=project.space_id, task_id=task.id, depends_on_id=other.id)
             )
+    # Jalons (étape F2) : leur date engagée vient de la date de début ; sans elle, ils ne
+    # peuvent pas être datés et ne sont pas recréés (le journal le signale).
+    for item in (template.milestones or [])[:100]:
+        offset = item.get("offset_days") if isinstance(item, dict) else None
+        if not isinstance(item, dict) or not item.get("title") or anchor is None or offset is None:
+            continue
+        member = item.get("owner_member_id")
+        section = sections.get(str(item.get("section") or ""))
+        milestone = Milestone(
+            space_id=project.space_id,
+            project_id=project.id,
+            section_id=section.id if section else None,
+            title=str(item["title"])[:200],
+            criterion=str(item["criterion"])[:5000] if item.get("criterion") else None,
+            owner_member_id=uuid.UUID(member) if member in active else None,
+            owner_label=str(item["owner_label"])[:120] if item.get("owner_label") else None,
+            due_date=anchor + timedelta(days=int(offset)),
+            postpone_count=0,
+            critical=bool(item.get("critical")),
+            state=MilestoneState.PLANNED,
+        )
+        db.add(milestone)
+        db.flush()
+        for ref in {str(r) for r in (item.get("tasks") or [])[:100]}:
+            task = created.get(ref)
+            if task is not None:
+                db.add(MilestoneTask(milestone_id=milestone.id, task_id=task.id))
     return list(created.values())

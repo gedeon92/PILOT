@@ -24,6 +24,7 @@ from pilot_api.access import (
 from pilot_api.config import get_settings
 from pilot_api.email_theme import pill, render_email
 from pilot_api.mailer import MailError, mail_configured, send_email
+from pilot_api.milestone_rules import risk
 from pilot_api.models import (
     CLOSED_PROJECT_STATUSES,
     CLOSED_TASK_STATUSES,
@@ -33,6 +34,9 @@ from pilot_api.models import (
     AlertRule,
     Membership,
     MembershipStatus,
+    Milestone,
+    MilestoneState,
+    MilestoneTask,
     Project,
     ProjectStatus,
     Proposal,
@@ -60,6 +64,8 @@ RULES: dict[AlertRule, str] = {
     AlertRule.PROPOSAL_PENDING: "Proposition à valider",
     AlertRule.MENTION: "Mention",
     AlertRule.TASK_ACTIVITY: "Tâche suivie",
+    AlertRule.MILESTONE_AT_RISK: "Jalon à risque",
+    AlertRule.MILESTONE_REFRAME: "Revue de cadrage",
 }
 RULE_ORDER = list(RULES)
 
@@ -268,6 +274,65 @@ def compute_alerts(db: Session, space: Space, today: date) -> int:
                 f"Tâche en retard depuis le {short_date(t.due_date)}",
             )
 
+    # Jalons (étape F2) : échéance proche, dépassée, ou à risque dans les trois semaines.
+    milestones = db.scalars(
+        select(Milestone).where(
+            Milestone.space_id == space.id,
+            Milestone.state == MilestoneState.PLANNED,
+            Milestone.project_id.in_(list(by_id)),
+        )
+    ).all()
+    linked: dict[uuid.UUID, list[Task]] = {}
+    if milestones:
+        for milestone_id, task in db.execute(
+            select(MilestoneTask.milestone_id, Task)
+            .join(Task, Task.id == MilestoneTask.task_id)
+            .where(MilestoneTask.milestone_id.in_([m.id for m in milestones]))
+        ).all():
+            linked.setdefault(milestone_id, []).append(task)
+    for m in milestones:
+        project = by_id[m.project_id]
+        users = [
+            user_of.get(m.owner_member_id) if m.owner_member_id else None,
+            user_of.get(project.owner_member_id) if project.owner_member_id else None,
+        ]
+        # Sans porteur ni responsable avec un compte : les propriétaires de l'espace.
+        if not any(users):
+            users = list(owners)
+        title = f"◆ {m.title} · {project.title}"
+        late, at_risk, reasons = risk(m, linked.get(m.id, []), today)
+        days = (m.due_date - today).days
+        if late:
+            add(
+                [*users, *owners],
+                AlertRule.OVERDUE,
+                "milestone",
+                m.id,
+                project,
+                title,
+                f"Jalon non atteint, prévu le {short_date(m.due_date)}",
+            )
+        elif at_risk:
+            add(
+                [*users, *owners] if m.critical else users,
+                AlertRule.MILESTONE_AT_RISK,
+                "milestone",
+                m.id,
+                project,
+                title,
+                f"Prévu le {short_date(m.due_date)} : " + ", ".join(reasons),
+            )
+        elif days in DUE_SOON_DAYS:
+            add(
+                users,
+                AlertRule.DUE_SOON,
+                "milestone",
+                m.id,
+                project,
+                title,
+                _due_detail(m.due_date, today),
+            )
+
     # Propositions de la boîte de mise à jour restées sans décision : rappel à leur auteur.
     pending = db.execute(
         select(Proposal, UpdateRequest.author_id)
@@ -348,6 +413,41 @@ def notify(
         )
 
 
+def notify_milestone(
+    db: Session,
+    space: Space,
+    user_ids,
+    rule: AlertRule,
+    milestone: Milestone,
+    project: Project,
+    detail: str,
+) -> None:
+    """Alerte déclenchée par un événement sur un jalon (ex. deuxième report)."""
+    users = users_who_can_see(db, project, user_ids)
+    today = local_now(space).date()
+    now = utcnow()
+    for user_id in users:
+        stmt = insert(Alert).values(
+            id=uuid.uuid4(),
+            space_id=space.id,
+            user_id=user_id,
+            rule=rule,
+            target_type="milestone",
+            target_id=milestone.id,
+            project_id=project.id,
+            alert_date=today,
+            title=f"◆ {milestone.title} · {project.title}"[:200],
+            detail=detail[:300],
+            created_at=now,
+        )
+        db.execute(
+            stmt.on_conflict_do_update(
+                constraint="uq_alerts_user_rule_target_day",
+                set_={"detail": stmt.excluded.detail, "read_at": None, "created_at": now},
+            )
+        )
+
+
 def preference_for(db: Session, user_id: uuid.UUID, space_id: uuid.UUID) -> AlertPreference:
     pref = db.scalar(
         select(AlertPreference).where(
@@ -412,6 +512,8 @@ RULE_COLORS: dict[AlertRule, str] = {
     AlertRule.PROPOSAL_PENDING: "#7dd3fc",
     AlertRule.MENTION: "#ffa3c4",
     AlertRule.TASK_ACTIVITY: "#7ff0ff",
+    AlertRule.MILESTONE_AT_RISK: "#fcd56a",
+    AlertRule.MILESTONE_REFRAME: "#ff8fa3",
 }
 
 

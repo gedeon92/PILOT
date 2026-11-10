@@ -429,7 +429,13 @@ Documents reçus le 10 nov. 2026 (non versionnés : dossier Téléchargements de
    - Report : repousser l'échéance garde la première échéance et compte les reports ; l'écran demande un motif (gardé au journal). L'API l'accepte sans motif pour ne rien casser (assistant, mises à jour).
    - Modèles de projet, export/import et assistant IA tiennent compte des sections et de la priorité.
    - Tests : `tests/test_sections_statuses.py` (5), `src/components/task-sections.test.tsx` (3).
-2. [ ] **F2** Jalons (TCH04) et alerte après deux reports (CAP)
+2. [x] **F2** Jalons (TCH04) et alerte après deux reports (CAP) — fait le 10 nov. 2026 :
+   - Panneau « Jalons » dans la fiche projet (au-dessus des tâches) : titre, date engagée, porteur (membre ou nom libre), critère de passage, section, « critique », tâches dont il dépend (même projet).
+   - Clôture : Atteint (preuve facultative), Manqué ou Annulé (motif obligatoire) ; Rouvrir. Rien n'est supprimé.
+   - Report : motif obligatoire, date d'origine gardée, compteur. Au deuxième report, alerte « Revue de cadrage » au porteur, au responsable du projet et aux propriétaires ; au troisième, la nouvelle date exige le texte de la revue de cadrage.
+   - Risque (horizon de trois semaines, faits enregistrés seulement) : tâches liées en retard, bloquées ou prévues après le jalon, sans porteur, déjà reporté deux fois. Alertes : « Jalon à risque » (propriétaires aussi si critique ; propriétaires si personne n'a de compte), « En retard », « Échéance proche ».
+   - Historique, modèles de projet (jalons recréés à partir de la date de début), export/import et assistant IA (lecture) en tiennent compte. API `GET /milestones` (jalons à venir de l'espace) prête pour « Ma semaine » (F5).
+   - Tests : `tests/test_milestones.py` (5), `src/components/milestones.test.tsx` (2).
 3. [ ] **F3** Registre des décisions (DEC01–DEC05) : porteur, exécutant, échéance, critère observable, relance à mi-échéance, relevé sous 24 h, sujets sans porteur à 30 jours
 4. [ ] **F4** Champs personnalisés (CHP01–CHP04)
 5. [ ] **F5** Routines (RIT01–RIT07) et vues « Ma journée » / « Ma semaine » (VIS01)

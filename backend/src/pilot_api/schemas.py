@@ -589,14 +589,21 @@ class TemplateTaskOut(BaseModel):
     is_subtask: bool
 
 
+class TemplateMilestoneOut(BaseModel):
+    title: str
+    offset_days: int | None
+    critical: bool = False
+
+
 class TemplateOut(BaseModel):
     id: uuid.UUID
     name: str
     description: str | None
     tasks_count: int
     tasks: list[TemplateTaskOut]
-    # Étape F1 : sections recréées dans le nouveau projet.
+    # Étape F1 : sections recréées dans le nouveau projet ; F2 : jalons.
     sections: list[str] = []
+    milestones: list["TemplateMilestoneOut"] = []
     created_at: datetime
     version: int
 
@@ -885,4 +892,81 @@ class SectionOut(BaseModel):
     description: str | None
     position: int
     archived: bool
+    version: int
+
+
+# ---------- Jalons (étape F2) ----------
+
+MilestoneTitle = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)
+]
+
+
+class _MilestoneFields(BaseModel):
+    criterion: LongText | None = None
+    owner_member_id: uuid.UUID | None = None
+    owner_label: Label | None = None
+    section_id: uuid.UUID | None = None
+    critical: bool | None = None
+
+
+class MilestoneCreate(_MilestoneFields):
+    title: MilestoneTitle
+    due_date: date
+    task_ids: Annotated[list[uuid.UUID], Field(max_length=100)] = []
+
+
+class MilestoneUpdate(_MilestoneFields):
+    version: int
+    title: MilestoneTitle | None = None
+    due_date: date | None = None
+    # Report : motif obligatoire ; après deux reports, revue de cadrage obligatoire aussi.
+    postpone_reason: LongText | None = None
+    reframe_note: LongText | None = None
+
+
+class MilestoneClose(BaseModel):
+    version: int
+    state: Literal["reached", "missed", "cancelled"]
+    note: LongText | None = None
+
+
+class MilestoneVersion(BaseModel):
+    version: int
+
+
+class MilestoneTasks(BaseModel):
+    version: int
+    task_ids: Annotated[list[uuid.UUID], Field(max_length=100)]
+
+
+class MilestoneTaskRef(BaseModel):
+    id: uuid.UUID
+    title: str
+    status: TaskStatus
+    late: bool
+
+
+class MilestoneOut(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    project_title: str
+    section_id: uuid.UUID | None
+    title: str
+    criterion: str | None
+    owner: PersonRef
+    due_date: date
+    original_due_date: date | None
+    postpone_count: int
+    critical: bool
+    state: Literal["planned", "reached", "missed", "cancelled"]
+    close_note: str | None
+    closed_at: datetime | None
+    reframe_note: str | None
+    # Calculés : jalon dépassé, à risque (et pourquoi), revue de cadrage due.
+    late: bool
+    at_risk: bool
+    risk_reasons: list[str]
+    reframe_needed: bool
+    tasks: list[MilestoneTaskRef]
     version: int

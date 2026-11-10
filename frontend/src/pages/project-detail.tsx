@@ -17,6 +17,7 @@ import { SaveTemplateForm } from '../components/templates'
 import { TaskAddForm, TaskRow } from '../components/task-row'
 import { TaskBoard } from '../components/task-board'
 import { SectionedTasks, SectionTools } from '../components/task-sections'
+import { MilestonesSection } from '../components/milestones'
 import { ProjectAccessDrawer } from '../components/project-access'
 import { PlusIcon } from '../components/icons'
 import { Avatar } from '../components/avatar'
@@ -694,6 +695,44 @@ function describe(entry: HistoryEntry): { what: string; detail?: string } {
         what: 'Dépendance retirée',
         detail: `« ${before.task} » n’attend plus « ${before.waits_for} »`,
       }
+    case 'milestone.created':
+      return {
+        what: 'Jalon ajouté',
+        detail: `${after.milestone} — ${formatDay(after.due_date as string)}`,
+      }
+    case 'milestone.updated':
+      return {
+        what: `Jalon modifié : ${after.milestone}`,
+        detail: fields.replace(/milestone, ?/, ''),
+      }
+    case 'milestone.postponed':
+      return {
+        what: `Jalon reporté au ${formatDay(after.due_date as string)} : ${after.milestone}`,
+        detail: [
+          `report n° ${after.postpone_count}`,
+          `date précédente : ${formatDay(after.postponed_from as string)}`,
+          `motif : ${after.postpone_reason}`,
+          after.reframe_note ? `revue de cadrage : ${after.reframe_note}` : null,
+        ]
+          .filter(Boolean)
+          .join(' — '),
+      }
+    case 'milestone.reached':
+      return {
+        what: `Jalon atteint : ${after.milestone}`,
+        detail: after.note as string | undefined,
+      }
+    case 'milestone.missed':
+      return { what: `Jalon manqué : ${after.milestone}`, detail: after.note as string }
+    case 'milestone.cancelled':
+      return { what: `Jalon annulé : ${after.milestone}`, detail: after.note as string }
+    case 'milestone.reopened':
+      return { what: `Jalon rouvert : ${after.milestone}` }
+    case 'milestone.tasks':
+      return {
+        what: `Tâches liées au jalon « ${after.milestone} »`,
+        detail: `${after.tasks} tâche(s)`,
+      }
     case 'section.created':
       return { what: 'Section ajoutée', detail: after.section as string }
     case 'section.defaults':
@@ -1124,6 +1163,7 @@ export function ProjectDetailPage() {
                 )}
               </div>
             </section>
+            <MilestonesSection project={p} spaceId={space.id} canWrite={canWrite} />
             <TasksSection project={p} spaceId={space.id} canWrite={canWrite} />
             <DocumentsSection spaceId={space.id} projectId={p.id} canWrite={canWrite} />
           </div>

@@ -37,6 +37,8 @@ from pilot_api.models import (
     EventDetails,
     Membership,
     MembershipStatus,
+    Milestone,
+    MilestoneTask,
     Portfolio,
     Program,
     Project,
@@ -201,6 +203,14 @@ def build_export(db: Session, space: Space, author: User, with_files: bool) -> t
         for x in db.scalars(select(ProjectSection).where(ProjectSection.space_id == sid)).all()
     ]
     data["tasks"] = [_dump(t) for t in db.scalars(select(Task).where(Task.space_id == sid)).all()]
+    milestones = db.scalars(select(Milestone).where(Milestone.space_id == sid)).all()
+    data["milestones"] = [_dump(m) for m in milestones]
+    data["milestone_tasks"] = [
+        {"milestone_id": str(link.milestone_id), "task_id": str(link.task_id)}
+        for link in db.scalars(
+            select(MilestoneTask).where(MilestoneTask.milestone_id.in_([m.id for m in milestones]))
+        ).all()
+    ]
     data["task_comments"] = [
         _dump(c, exclude={"author_id", "mentions"})
         for c in db.scalars(select(TaskComment).where(TaskComment.space_id == sid)).all()
@@ -258,6 +268,35 @@ def build_export(db: Session, space: Space, author: User, with_files: bool) -> t
 
 
 # ---------- Import ----------
+
+
+def _template_milestones(raw: Any, person) -> list[dict[str, Any]]:
+    """Jalons d'un modèle importé, nettoyés (étape F2)."""
+    if not isinstance(raw, list):
+        return []
+    cleaned = []
+    for entry in raw[:100]:
+        if not isinstance(entry, dict) or not str(entry.get("title") or "").strip():
+            continue
+        offset = entry.get("offset_days")
+        member, label = person(entry.get("owner_member_id"), entry.get("owner_label"))
+        cleaned.append(
+            {
+                "title": str(entry["title"]).strip()[:200],
+                "criterion": str(entry["criterion"])[:5000] if entry.get("criterion") else None,
+                "offset_days": max(-3650, min(3650, offset))
+                if isinstance(offset, int) and not isinstance(offset, bool)
+                else None,
+                "section": str(entry["section"])[:120] if entry.get("section") else None,
+                "critical": bool(entry.get("critical")),
+                "tasks": [str(r)[:20] for r in entry.get("tasks") or []][:100]
+                if isinstance(entry.get("tasks"), list)
+                else [],
+                "owner_member_id": str(member) if member else None,
+                "owner_label": (label or "")[:120] or None,
+            }
+        )
+    return cleaned
 
 
 @dataclass
@@ -582,6 +621,44 @@ def import_space(
         waits.setdefault(task.id, set()).add(other.id)
         db.add(TaskDependency(space_id=space.id, task_id=task.id, depends_on_id=other.id))
 
+    # Jalons (étape F2) et tâches dont ils dépendent.
+    milestone_ids: dict[str, Milestone] = {}
+    for item in data.get("milestones", []):
+        project_id = project_ids.get(str(item.get("project_id")))
+        title = str(item.get("title") or "").strip()[:200]
+        if project_id is None or not title or not item.get("due_date"):
+            continue
+        values = _load(
+            Milestone,
+            item,
+            {"project_id", "title", "section_id", "owner_member_id", "owner_label"},
+        )
+        values["owner_member_id"], values["owner_label"] = person(
+            item.get("owner_member_id"), item.get("owner_label")
+        )
+        section = section_ids.get(str(item.get("section_id"))) if item.get("section_id") else None
+        milestone = Milestone(
+            space_id=space.id,
+            project_id=project_id,
+            title=title,
+            section_id=section.id if section and section.project_id == project_id else None,
+            **values,
+        )
+        db.add(milestone)
+        milestone_ids[str(item.get("id"))] = milestone
+    db.flush()
+    seen_links: set[tuple] = set()
+    for item in data.get("milestone_tasks", []):
+        milestone = milestone_ids.get(str(item.get("milestone_id")))
+        task = task_ids.get(str(item.get("task_id")))
+        if milestone is None or task is None or task.project_id != milestone.project_id:
+            continue
+        if (milestone.id, task.id) in seen_links:
+            continue
+        seen_links.add((milestone.id, task.id))
+        db.add(MilestoneTask(milestone_id=milestone.id, task_id=task.id))
+    report.counts["milestones"] = len(milestone_ids)
+
     for item in data.get("contributors", []):
         project_id = project_ids.get(str(item.get("project_id")))
         if project_id is None:
@@ -722,6 +799,7 @@ def import_space(
                 ][:50]
                 if isinstance(item.get("sections"), list)
                 else None,
+                milestones=_template_milestones(item.get("milestones"), person) or None,
                 created_by_id=user.id,
             )
         )

@@ -499,6 +499,68 @@ class Task(Base):
     assignee_member: Mapped[Membership | None] = relationship(foreign_keys=[assignee_member_id])
 
 
+class MilestoneState(enum.StrEnum):
+    PLANNED = "planned"
+    REACHED = "reached"
+    MISSED = "missed"
+    CANCELLED = "cancelled"
+
+
+class Milestone(Base):
+    """Jalon (cahier V2, TCH04) : un résultat de passage daté, pas une tâche longue. Il a un
+    porteur, une date engagée, un critère, un état et des tâches dont il dépend. Un report garde
+    la première date ; après deux reports, une revue de cadrage est exigée (CAP01)."""
+
+    __tablename__ = "milestones"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    section_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("project_sections.id", ondelete="SET NULL", name="fk_milestones_section_id")
+    )
+    title: Mapped[str] = mapped_column(String(200))
+    criterion: Mapped[str | None] = mapped_column(Text)
+    owner_member_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("memberships.id", ondelete="SET NULL")
+    )
+    owner_label: Mapped[str | None] = mapped_column(String(120))
+    due_date: Mapped[date] = mapped_column(Date)
+    original_due_date: Mapped[date | None] = mapped_column(Date)
+    postpone_count: Mapped[int] = mapped_column(Integer, default=0)
+    # Jalon déclaré critique (pas de chemin critique calculé : CAP04).
+    critical: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
+    state: Mapped[MilestoneState] = mapped_column(_enum(MilestoneState, "milestone_state"))
+    # Preuve d'atteinte, ou motif d'un jalon manqué ou annulé.
+    close_note: Mapped[str | None] = mapped_column(Text)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Revue de cadrage faite avant le troisième report.
+    reframe_note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+    owner_member: Mapped[Membership | None] = relationship()
+
+
+class MilestoneTask(Base):
+    """Tâche dont dépend un jalon (même projet)."""
+
+    __tablename__ = "milestone_tasks"
+    __table_args__ = (UniqueConstraint("milestone_id", "task_id", name="uq_milestone_tasks"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    milestone_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("milestones.id", ondelete="CASCADE"), index=True
+    )
+    task_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tasks.id", ondelete="CASCADE"), index=True
+    )
+
+
 class ProjectSection(Base):
     """Section d'un projet (cahier V2, STR02) : organise les tâches, n'est ni un statut ni une
     phase. Archiver une section la retire de la vue active sans rien supprimer (STR04)."""
@@ -633,6 +695,8 @@ class ProjectTemplate(Base):
     tasks: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     # Étape F1 : titres des sections, dans l'ordre (les tâches citent leur section par son titre).
     sections: Mapped[list[str] | None] = mapped_column(JSONB)
+    # Étape F2 : jalons [{"title", "criterion", "offset_days", "section", "critical", "tasks"}].
+    milestones: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)
     created_by_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )
@@ -731,6 +795,10 @@ class AlertRule(enum.StrEnum):
     # Notifications déclenchées par un événement (CDC §16), distinctes des rappels calculés.
     MENTION = "mention"
     TASK_ACTIVITY = "task_activity"
+    # Étape F2 (cahier V2, CAP) : jalon à risque dans les trois semaines ; jalon reporté deux
+    # fois, qui demande une revue de cadrage avant toute nouvelle date.
+    MILESTONE_AT_RISK = "milestone_at_risk"
+    MILESTONE_REFRAME = "milestone_reframe"
 
 
 class Alert(Base):
@@ -748,7 +816,7 @@ class Alert(Base):
     space_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("spaces.id", ondelete="CASCADE"))
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     rule: Mapped[AlertRule] = mapped_column(_enum(AlertRule, "alert_rule"))
-    target_type: Mapped[str] = mapped_column(String(16))  # project | task | proposal
+    target_type: Mapped[str] = mapped_column(String(16))  # project | task | proposal | milestone
     target_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
     # Vide pour une proposition dont le projet reste à préciser.
     project_id: Mapped[uuid.UUID | None] = mapped_column(

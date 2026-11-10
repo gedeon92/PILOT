@@ -24,6 +24,8 @@ const RULE_TONE: Record<string, string> = {
   proposal_pending: 'info',
   mention: 'violet',
   task_activity: 'info',
+  milestone_at_risk: 'warn',
+  milestone_reframe: 'danger',
 }
 
 function AlertRow({ alert, spaceId }: { alert: AlertItem; spaceId: string }) {

@@ -35,6 +35,7 @@ from pilot_api.models import (
     TaskStatus,
 )
 from pilot_api.routers import projects as P
+from pilot_api.routers.milestones import list_milestones
 from pilot_api.routers.task_collab import task_detail
 from pilot_api.schemas import (
     CommentCreate,
@@ -185,7 +186,7 @@ TOOLS: list[dict[str, Any]] = [
     },
     {
         "name": "voir_projet",
-        "description": "Fiche complète d'un projet et la liste de ses tâches.",
+        "description": "Fiche complète d'un projet : sections, tâches et jalons.",
         "input_schema": _obj({"projet_id": {"type": "string"}}, ["projet_id"]),
     },
     {
@@ -413,6 +414,22 @@ def _view_project(db: Session, membership: Membership, args: dict) -> str:
         )
     ]
     data["taches"] = [_task_line(t) for t in tasks[:200]]
+    data["jalons"] = [
+        {
+            "titre": m.title,
+            "date_engagee": m.due_date,
+            "etat": m.state,
+            "porteur": _person(m.owner),
+            "critere": m.criterion,
+            "reports": m.postpone_count or None,
+            "a_risque": m.at_risk or None,
+            "en_retard": m.late or None,
+            "raisons": m.risk_reasons,
+            "revue_de_cadrage_due": m.reframe_needed or None,
+            "taches_liees": [t.title for t in m.tasks],
+        }
+        for m in list_milestones(project.id, membership, db)
+    ]
     return _dump(data)
 
 

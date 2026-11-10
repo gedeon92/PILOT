@@ -16,6 +16,7 @@ from pilot_api.routers import (
     catalog,
     documents,
     invitations,
+    milestones,
     portability,
     project_access,
     projects,
@@ -48,6 +49,7 @@ app.include_router(projects.router)
 app.include_router(task_collab.router)
 app.include_router(templates.router)
 app.include_router(sections.router)
+app.include_router(milestones.router)
 app.include_router(project_access.router)
 app.include_router(documents.router)
 app.include_router(updates.router)

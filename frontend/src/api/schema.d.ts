@@ -854,6 +854,112 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/spaces/{space_id}/projects/{project_id}/milestones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Milestones */
+        get: operations["list_milestones_api_spaces__space_id__projects__project_id__milestones_get"];
+        put?: never;
+        /** Create Milestone */
+        post: operations["create_milestone_api_spaces__space_id__projects__project_id__milestones_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/milestones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Upcoming Milestones
+         * @description Jalons à venir de l'espace (projets visibles), y compris ceux déjà dépassés.
+         */
+        get: operations["upcoming_milestones_api_spaces__space_id__milestones_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/milestones/{milestone_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Milestone */
+        patch: operations["update_milestone_api_spaces__space_id__milestones__milestone_id__patch"];
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/milestones/{milestone_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close Milestone */
+        post: operations["close_milestone_api_spaces__space_id__milestones__milestone_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/milestones/{milestone_id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reopen Milestone */
+        post: operations["reopen_milestone_api_spaces__space_id__milestones__milestone_id__reopen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/milestones/{milestone_id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Milestone Tasks */
+        put: operations["set_milestone_tasks_api_spaces__space_id__milestones__milestone_id__tasks_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/spaces/{space_id}/projects/{project_id}/access": {
         parameters: {
             query?: never;
@@ -2015,6 +2121,147 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** MilestoneClose */
+        MilestoneClose: {
+            /** Version */
+            version: number;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "reached" | "missed" | "cancelled";
+            /** Note */
+            note?: string | null;
+        };
+        /** MilestoneCreate */
+        MilestoneCreate: {
+            /** Criterion */
+            criterion?: string | null;
+            /** Owner Member Id */
+            owner_member_id?: string | null;
+            /** Owner Label */
+            owner_label?: string | null;
+            /** Section Id */
+            section_id?: string | null;
+            /** Critical */
+            critical?: boolean | null;
+            /** Title */
+            title: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /**
+             * Task Ids
+             * @default []
+             */
+            task_ids: string[];
+        };
+        /** MilestoneOut */
+        MilestoneOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Project Title */
+            project_title: string;
+            /** Section Id */
+            section_id: string | null;
+            /** Title */
+            title: string;
+            /** Criterion */
+            criterion: string | null;
+            owner: components["schemas"]["PersonRef"];
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Original Due Date */
+            original_due_date: string | null;
+            /** Postpone Count */
+            postpone_count: number;
+            /** Critical */
+            critical: boolean;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "planned" | "reached" | "missed" | "cancelled";
+            /** Close Note */
+            close_note: string | null;
+            /** Closed At */
+            closed_at: string | null;
+            /** Reframe Note */
+            reframe_note: string | null;
+            /** Late */
+            late: boolean;
+            /** At Risk */
+            at_risk: boolean;
+            /** Risk Reasons */
+            risk_reasons: string[];
+            /** Reframe Needed */
+            reframe_needed: boolean;
+            /** Tasks */
+            tasks: components["schemas"]["MilestoneTaskRef"][];
+            /** Version */
+            version: number;
+        };
+        /** MilestoneTaskRef */
+        MilestoneTaskRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            status: components["schemas"]["TaskStatus"];
+            /** Late */
+            late: boolean;
+        };
+        /** MilestoneTasks */
+        MilestoneTasks: {
+            /** Version */
+            version: number;
+            /** Task Ids */
+            task_ids: string[];
+        };
+        /** MilestoneUpdate */
+        MilestoneUpdate: {
+            /** Criterion */
+            criterion?: string | null;
+            /** Owner Member Id */
+            owner_member_id?: string | null;
+            /** Owner Label */
+            owner_label?: string | null;
+            /** Section Id */
+            section_id?: string | null;
+            /** Critical */
+            critical?: boolean | null;
+            /** Version */
+            version: number;
+            /** Title */
+            title?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            /** Postpone Reason */
+            postpone_reason?: string | null;
+            /** Reframe Note */
+            reframe_note?: string | null;
+        };
+        /** MilestoneVersion */
+        MilestoneVersion: {
+            /** Version */
+            version: number;
+        };
         /** PasswordChange */
         PasswordChange: {
             /** Current Password */
@@ -2954,6 +3201,18 @@ export interface components {
             /** Description */
             description?: string | null;
         };
+        /** TemplateMilestoneOut */
+        TemplateMilestoneOut: {
+            /** Title */
+            title: string;
+            /** Offset Days */
+            offset_days: number | null;
+            /**
+             * Critical
+             * @default false
+             */
+            critical: boolean;
+        };
         /** TemplateOut */
         TemplateOut: {
             /**
@@ -2974,6 +3233,11 @@ export interface components {
              * @default []
              */
             sections: string[];
+            /**
+             * Milestones
+             * @default []
+             */
+            milestones: components["schemas"]["TemplateMilestoneOut"][];
             /**
              * Created At
              * Format: date-time
@@ -5253,6 +5517,251 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_milestones_api_spaces__space_id__projects__project_id__milestones_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MilestoneOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_milestone_api_spaces__space_id__projects__project_id__milestones_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MilestoneCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MilestoneOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upcoming_milestones_api_spaces__space_id__milestones_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MilestoneOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_milestone_api_spaces__space_id__milestones__milestone_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                milestone_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MilestoneUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MilestoneOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_milestone_api_spaces__space_id__milestones__milestone_id__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                milestone_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MilestoneClose"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MilestoneOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reopen_milestone_api_spaces__space_id__milestones__milestone_id__reopen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                milestone_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MilestoneVersion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MilestoneOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_milestone_tasks_api_spaces__space_id__milestones__milestone_id__tasks_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                milestone_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MilestoneTasks"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MilestoneOut"];
                 };
             };
             /** @description Validation Error */

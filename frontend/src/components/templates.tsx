@@ -160,6 +160,8 @@ function TemplateRow({
           {template.tasks_count} tâche(s)
           {(template.sections ?? []).length > 0 &&
             ` · ${(template.sections ?? []).length} section(s)`}
+          {(template.milestones ?? []).length > 0 &&
+            ` · ${(template.milestones ?? []).length} jalon(s)`}
           {template.description && ` · ${template.description}`} ·{' '}
           <button
             type="button"
