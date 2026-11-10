@@ -16,7 +16,7 @@ from pilot_api.audit import record
 from pilot_api.deps import DbSession, OwnerMembership, WriterMembership
 from pilot_api.models import Project, ProjectTemplate
 from pilot_api.schemas import TemplateCreate, TemplateOut, TemplateTaskOut, TemplateUpdate
-from pilot_api.templates import snapshot_tasks
+from pilot_api.templates import snapshot_sections, snapshot_tasks
 
 router = APIRouter(prefix="/api/spaces/{space_id}", tags=["modèles de projet"])
 
@@ -30,6 +30,7 @@ def _out(template: ProjectTemplate) -> TemplateOut:
         name=template.name,
         description=template.description,
         tasks_count=len(tasks),
+        sections=[str(x) for x in template.sections or []],
         tasks=[
             TemplateTaskOut(
                 title=str(t.get("title", "")),
@@ -89,6 +90,7 @@ def create_template(
         name=body.name,
         description=body.description,
         tasks=tasks,
+        sections=snapshot_sections(db, project) or None,
         created_by_id=membership.user_id,
     )
     db.add(template)

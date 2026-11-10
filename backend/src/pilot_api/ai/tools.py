@@ -28,6 +28,7 @@ from pilot_api.models import (
     MembershipStatus,
     Portfolio,
     Project,
+    ProjectSection,
     ProjectType,
     Role,
     Task,
@@ -61,6 +62,9 @@ TASK_FIELDS = {
     "assignee_label": "Responsable (nom libre)",
     "deliverable": "Livrable",
     "recurrence": "Répétition",
+    "section_id": "Section",
+    "priority": "Priorité",
+    "start_date": "Date de début",
 }
 PROJECT_FIELDS = {
     "title": "Titre",
@@ -95,6 +99,7 @@ RECURRENCE_LABELS = {
     "yearly": "Chaque année",
 }
 RISK_LABELS = {"watch": "À surveiller", "high": "Élevée"}
+PRIORITY_LABELS = {"low": "Basse", "normal": "Normale", "high": "Haute", "urgent": "Urgente"}
 
 _NULLABLE_DATE = {
     "type": ["string", "null"],
@@ -118,6 +123,12 @@ _TASK_PROPS: dict[str, Any] = {
         "enum": ["daily", "weekly", "monthly", "yearly", None],
         "description": "Répétition ; exige une échéance, impossible sur une sous-tâche",
     },
+    "section_id": {
+        "type": ["string", "null"],
+        "description": "Section du projet (voir voir_projet) ; null = sans section",
+    },
+    "priority": {"type": ["string", "null"], "enum": ["low", "normal", "high", "urgent", None]},
+    "start_date": _NULLABLE_DATE,
 }
 _PROJECT_PROPS: dict[str, Any] = {
     "title": {"type": "string"},
@@ -232,7 +243,19 @@ TOOLS: list[dict[str, Any]] = [
             "modifié avant la validation de la personne."
         ),
         "input_schema": _obj(
-            {"tache_id": {"type": "string"}, "modifications": _obj(_TASK_PROPS, [])},
+            {
+                "tache_id": {"type": "string"},
+                "modifications": _obj(
+                    {
+                        **_TASK_PROPS,
+                        "postpone_reason": {
+                            "type": ["string", "null"],
+                            "description": "Motif, si l'échéance est repoussée (à demander)",
+                        },
+                    },
+                    [],
+                ),
+            },
             ["tache_id", "modifications"],
         ),
     },
@@ -327,6 +350,10 @@ def _task_line(task: Any, project_titles: dict | None = None) -> dict[str, Any]:
         "en_retard": task.late or None,
         "parent_id": task.parent_id,
         "repetition": task.recurrence,
+        "section_id": task.section_id,
+        "priorite": task.priority,
+        "debut": task.start_date,
+        "reports": task.postpone_count or None,
         "sous_taches": f"{task.subtasks_done}/{task.subtasks_total}"
         if task.subtasks_total
         else None,
@@ -377,6 +404,14 @@ def _view_project(db: Session, membership: Membership, args: dict) -> str:
     out = P._project_with_counts(db, membership, project)
     tasks = P.list_tasks(project.id, membership, db)
     data = out.model_dump(exclude={"situation_source", "situation_source_label"})
+    data["sections"] = [
+        {"id": x.id, "titre": x.title, "archivee": x.archived_at is not None or None}
+        for x in db.scalars(
+            select(ProjectSection)
+            .where(ProjectSection.project_id == project.id)
+            .order_by(ProjectSection.position)
+        )
+    ]
     data["taches"] = [_task_line(t) for t in tasks[:200]]
     return _dump(data)
 
@@ -472,7 +507,7 @@ def _catalog_name(db: Session, model: type, raw: Any) -> str:
         row = db.get(model, uuid.UUID(str(raw)))
     except ValueError:
         row = None
-    return row.name if row else str(raw)
+    return (getattr(row, "name", None) or getattr(row, "title", None)) if row else str(raw)
 
 
 def display(db: Session, space_id: uuid.UUID, field: str, value: Any) -> str:
@@ -502,6 +537,10 @@ def display(db: Session, space_id: uuid.UUID, field: str, value: Any) -> str:
                     return label
     if field == "recurrence":
         return RECURRENCE_LABELS.get(text, text)
+    if field == "priority":
+        return PRIORITY_LABELS.get(text, text)
+    if field == "section_id":
+        return _catalog_name(db, ProjectSection, text)
     if field == "risk_level":
         return RISK_LABELS.get(text, text)
     return str(text)
@@ -579,7 +618,9 @@ def _propose_task_update(db: Session, membership: Membership, args: dict) -> dic
         ensure_writer(db, membership, project)
     elif membership.role in (Role.READER, Role.GUEST):
         raise ToolError("Votre rôle permet de consulter, pas de modifier.")
-    fields = {k: v for k, v in (args.get("modifications") or {}).items() if k in TASK_FIELDS}
+    mods = args.get("modifications") or {}
+    fields = {k: v for k, v in mods.items() if k in TASK_FIELDS}
+    reason = mods.get("postpone_reason") or None
     body = _check(TaskUpdate, {"version": task.version, **fields})
     sent = _sent(body, {"version"})
     if not sent:
@@ -589,6 +630,10 @@ def _propose_task_update(db: Session, membership: Membership, args: dict) -> dic
     sent = {k: v for k, v in sent.items() if _differs(getattr(task, k, None), v)}
     if not sent:
         raise ToolError("Ces valeurs sont déjà celles de la tâche : rien à changer.")
+    changes = _changes(db, membership.space_id, TASK_FIELDS, task, sent)
+    if reason and "due_date" in sent:
+        sent["postpone_reason"] = str(reason)[:5000]
+        changes.append({"field": "Motif du report", "before": "", "after": sent["postpone_reason"]})
     cancelling = sent.get("status") == TaskStatus.CANCELLED.value
     verb = "Annuler" if cancelling and len(sent) == 1 else "Modifier"
     return {
@@ -597,7 +642,7 @@ def _propose_task_update(db: Session, membership: Membership, args: dict) -> dic
         "base_version": task.version,
         "payload": {"body": sent},
         "summary": f"{verb} la tâche « {task.title} »",
-        "changes": _changes(db, membership.space_id, TASK_FIELDS, task, sent),
+        "changes": changes,
     }
 
 

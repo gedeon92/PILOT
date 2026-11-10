@@ -8,6 +8,7 @@ import {
   useHistory,
   useMembers,
   useProject,
+  useSections,
   useTasks,
   useUpdateProject,
 } from '../api/queries'
@@ -15,6 +16,7 @@ import { DocumentsSection } from '../components/documents'
 import { SaveTemplateForm } from '../components/templates'
 import { TaskAddForm, TaskRow } from '../components/task-row'
 import { TaskBoard } from '../components/task-board'
+import { SectionedTasks, SectionTools } from '../components/task-sections'
 import { ProjectAccessDrawer } from '../components/project-access'
 import { PlusIcon } from '../components/icons'
 import { Avatar } from '../components/avatar'
@@ -494,6 +496,8 @@ function TasksSection({
   // Les tâches se gèrent dans la fiche de leur projet (décision du 9 nov. 2026) : liste ou
   // tableau ; les sous-tâches restent dans leur tâche (fenêtre de la tâche, compteur ☑).
   const tasks = useTasks(spaceId, project.id)
+  const sections = useSections(spaceId, project.id)
+  const hasSections = (sections.data ?? []).length > 0
   const [adding, setAdding] = useState(false)
   const [board, setBoard] = useState(false)
   const closed = isClosedProject(project.status)
@@ -533,6 +537,9 @@ function TasksSection({
           )}
         </div>
       </div>
+      {canWrite && !closed && !board && sections.isSuccess && (
+        <SectionTools spaceId={spaceId} projectId={project.id} hasSections={hasSections} />
+      )}
       {adding && (
         <TaskAddForm spaceId={spaceId} projectId={project.id} onDone={() => setAdding(false)} />
       )}
@@ -549,7 +556,17 @@ function TasksSection({
         <p className="muted">Aucune tâche. Déclinez la prochaine étape en actions concrètes.</p>
       )}
       {board && main.length > 0 && <TaskBoard tasks={main} spaceId={spaceId} canWrite={canWrite} />}
-      {!board && open.length > 0 && (
+      {!board && hasSections && (
+        <SectionedTasks
+          sections={sections.data ?? []}
+          tasks={main}
+          spaceId={spaceId}
+          projectId={project.id}
+          canWrite={canWrite}
+          projectClosed={closed}
+        />
+      )}
+      {!board && !hasSections && open.length > 0 && (
         <ul className="task-list">
           {open.map((task) => (
             <TaskRow
@@ -618,6 +635,10 @@ const FIELD_LABELS: Record<string, string> = {
   origin: 'origine',
   contributors: 'contributeurs',
   decision_options: 'options de décision',
+  section_id: 'section',
+  priority: 'priorité',
+  postponed_from: 'report',
+  postpone_reason: 'motif du report',
 }
 
 function statusLabel(value: unknown) {
@@ -673,7 +694,38 @@ function describe(entry: HistoryEntry): { what: string; detail?: string } {
         what: 'Dépendance retirée',
         detail: `« ${before.task} » n’attend plus « ${before.waits_for} »`,
       }
+    case 'section.created':
+      return { what: 'Section ajoutée', detail: after.section as string }
+    case 'section.defaults':
+      return {
+        what: 'Sections types ajoutées',
+        detail: (after.sections as string[] | undefined)?.join(', '),
+      }
+    case 'section.renamed':
+      return { what: 'Section renommée', detail: `${after.previous} → ${after.section}` }
+    case 'section.reordered':
+      return { what: 'Sections réordonnées' }
+    case 'section.archived':
+      return {
+        what: 'Section archivée',
+        detail: after.tasks_moved
+          ? `${after.section} — ${after.tasks_moved} tâche(s) rangée(s) dans « ${after.moved_to} »`
+          : (after.section as string),
+      }
+    case 'section.restored':
+      return { what: 'Section restaurée', detail: after.section as string }
     case 'task.updated':
+      if (after.postponed_from) {
+        return {
+          what: `Tâche reportée au ${formatDay(after.due_date as string)}`,
+          detail: [
+            `échéance précédente : ${formatDay(after.postponed_from as string)}`,
+            after.postpone_reason ? `motif : ${after.postpone_reason}` : null,
+          ]
+            .filter(Boolean)
+            .join(' — '),
+        }
+      }
       return {
         what: after.status
           ? `Tâche ${TASK_STATUS[after.status as TaskStatus]?.label.toLowerCase()}`

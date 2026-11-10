@@ -16,9 +16,11 @@ from pilot_api.models import (
     Membership,
     MembershipStatus,
     Project,
+    ProjectSection,
     ProjectTemplate,
     Task,
     TaskDependency,
+    TaskPriority,
     TaskRecurrence,
     TaskStatus,
 )
@@ -51,9 +53,15 @@ def snapshot_tasks(db: Session, project: Project) -> list[dict[str, Any]]:
     ):
         if other in refs:
             waits.setdefault(task_id, []).append(refs[other])
+    section_titles = {
+        s.id: s.title
+        for s in db.scalars(select(ProjectSection).where(ProjectSection.project_id == project.id))
+    }
     return [
         {
             "ref": refs[t.id],
+            "section": section_titles.get(t.section_id) if t.section_id else None,
+            "priority": t.priority.value if t.priority else None,
             "title": t.title,
             "deliverable": t.deliverable,
             "offset_days": (t.due_date - reference).days if t.due_date and reference else None,
@@ -68,6 +76,18 @@ def snapshot_tasks(db: Session, project: Project) -> list[dict[str, Any]]:
     ]
 
 
+def snapshot_sections(db: Session, project: Project) -> list[str]:
+    """Titres des sections actives du projet, dans l'ordre (étape F1)."""
+    return [
+        s.title
+        for s in db.scalars(
+            select(ProjectSection)
+            .where(ProjectSection.project_id == project.id, ProjectSection.archived_at.is_(None))
+            .order_by(ProjectSection.position, ProjectSection.created_at)
+        )
+    ][:50]
+
+
 def apply_template(db: Session, project: Project, template: ProjectTemplate) -> list[Task]:
     """Crée dans `project` les tâches du modèle. Renvoie les tâches créées."""
     anchor = project.start_date
@@ -80,6 +100,16 @@ def apply_template(db: Session, project: Project, template: ProjectTemplate) -> 
             )
         )
     }
+    sections: dict[str, ProjectSection] = {}
+    for position, title in enumerate(template.sections or [], start=1):
+        name = str(title).strip()[:120]
+        if name and name not in sections and len(sections) < 50:
+            section = ProjectSection(
+                space_id=project.space_id, project_id=project.id, title=name, position=position
+            )
+            db.add(section)
+            sections[name] = section
+    db.flush()
     created: dict[str, Task] = {}
     items = [i for i in template.tasks or [] if isinstance(i, dict) and i.get("title")]
     for item in items[:MAX_TEMPLATE_TASKS]:
@@ -109,6 +139,11 @@ def apply_template(db: Session, project: Project, template: ProjectTemplate) -> 
                 else None
             ),
         )
+        section = sections.get(str(item.get("section") or "")) if not parent else None
+        task.section_id = section.id if section else None
+        priority = item.get("priority")
+        if priority in TaskPriority._value2member_map_:
+            task.priority = TaskPriority(priority)
         db.add(task)
         db.flush()
         created[str(item.get("ref"))] = task

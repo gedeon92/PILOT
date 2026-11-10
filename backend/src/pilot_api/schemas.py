@@ -14,6 +14,7 @@ from pilot_api.models import (
     ProjectStatus,
     RiskLevel,
     Role,
+    TaskPriority,
     TaskRecurrence,
     TaskStatus,
 )
@@ -398,6 +399,10 @@ class _TaskFields(BaseModel):
     due_certainty: DateCertainty | None = None
     # Répétition : chaque jour, semaine, mois ou année (exige une échéance).
     recurrence: TaskRecurrence | None = None
+    # Étape F1 : section du projet, priorité et date de début (facultatives).
+    section_id: uuid.UUID | None = None
+    priority: TaskPriority | None = None
+    start_date: date | None = None
 
 
 class TaskCreate(_TaskFields):
@@ -415,6 +420,8 @@ class TaskUpdate(_TaskFields):
     version: int
     title: Title | None = None
     status: TaskStatus | None = None
+    # Motif d'un report (échéance repoussée) : gardé au journal avec l'échéance d'origine.
+    postpone_reason: LongText | None = None
 
 
 class TaskOut(BaseModel):
@@ -441,6 +448,12 @@ class TaskOut(BaseModel):
     recurrence: TaskRecurrence | None = None
     next_task_id: uuid.UUID | None = None
     documents_count: int = 0
+    section_id: uuid.UUID | None = None
+    priority: TaskPriority | None = None
+    start_date: date | None = None
+    # Première échéance, gardée dès le premier report ; nombre de reports.
+    original_due_date: date | None = None
+    postpone_count: int = 0
 
 
 class TaskRef(BaseModel):
@@ -582,6 +595,8 @@ class TemplateOut(BaseModel):
     description: str | None
     tasks_count: int
     tasks: list[TemplateTaskOut]
+    # Étape F1 : sections recréées dans le nouveau projet.
+    sections: list[str] = []
     created_at: datetime
     version: int
 
@@ -831,3 +846,43 @@ class AiConversationSummary(BaseModel):
 
 class AiConversationOut(AiConversationSummary):
     turns: list[AiTurnOut]
+
+
+# ---------- Sections d'un projet (étape F1) ----------
+
+SectionTitle = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)
+]
+
+
+class SectionCreate(BaseModel):
+    title: SectionTitle
+    description: LongText | None = None
+
+
+class SectionUpdate(BaseModel):
+    version: int
+    title: SectionTitle | None = None
+    description: LongText | None = None
+
+
+class SectionOrder(BaseModel):
+    # Identifiants des sections actives, dans le nouvel ordre.
+    ids: Annotated[list[uuid.UUID], Field(max_length=100)]
+
+
+class SectionArchive(BaseModel):
+    # Où ranger les tâches ouvertes : une autre section, ou « sans section » (null).
+    # `keep_tasks` les laisse dans la section archivée (elles restent visibles à part).
+    move_open_tasks_to: uuid.UUID | None = None
+    keep_tasks: bool = False
+
+
+class SectionOut(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    title: str
+    description: str | None
+    position: int
+    archived: bool
+    version: int

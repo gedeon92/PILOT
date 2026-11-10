@@ -418,6 +418,24 @@ Demande de la propriétaire du produit : mettre une IA dans PILOT, capable de to
 
 **Reste à faire par la propriétaire :** créer le compte Anthropic (console.anthropic.com), fixer une limite de dépense mensuelle, créer la clé et la coller dans Render (`ANTHROPIC_API_KEY`), puis allumer l'assistant dans Paramètres.
 
+## Suite « Assistante augmentée » (cahier V2 et notes techniques du 10 nov. 2026)
+
+Documents reçus le 10 nov. 2026 (non versionnés : dossier Téléchargements de l'utilisatrice). Comparaison faite avec PILOT : base déjà couverte (structure, droits, alertes, mises à jour assistées, IA). Décision du même jour : **ordre proposé, une étape à la fois** (mise en ligne, essai, validation, puis étape suivante). Règle commune inchangée : rien d'existant ne change de comportement ; migrations par ajout seulement.
+
+1. [x] **F1** Sections dans les projets (STR02, STR04), statuts À qualifier / Bloquée / En attente de validation (TCH03), priorité et date de début (TCH01), report motivé avec échéance d'origine (TCH03) — fait le 10 nov. 2026 :
+   - Sections : « + Section » ou « Sections types » (les six du cahier) ; renommer, monter/descendre, replier (les retards et blocages restent comptés dans l'en-tête), archiver en rangeant les tâches ouvertes ailleurs (ou en les laissant, visibles à part), restaurer. Rien n'est supprimé ; journal dans l'historique du projet. Sans section, la liste reste comme avant.
+   - Statuts : À qualifier, Bloquée, En attente de validation. Passer d'En attente de validation à Terminée : un propriétaire de l'espace ou le responsable du projet seulement. Tableau : colonnes Bloquée et En validation (À qualifier rejoint À faire).
+   - Priorité (Basse, Normale, Haute, Urgente) et date de début (pas après l'échéance).
+   - Report : repousser l'échéance garde la première échéance et compte les reports ; l'écran demande un motif (gardé au journal). L'API l'accepte sans motif pour ne rien casser (assistant, mises à jour).
+   - Modèles de projet, export/import et assistant IA tiennent compte des sections et de la priorité.
+   - Tests : `tests/test_sections_statuses.py` (5), `src/components/task-sections.test.tsx` (3).
+2. [ ] **F2** Jalons (TCH04) et alerte après deux reports (CAP)
+3. [ ] **F3** Registre des décisions (DEC01–DEC05) : porteur, exécutant, échéance, critère observable, relance à mi-échéance, relevé sous 24 h, sujets sans porteur à 30 jours
+4. [ ] **F4** Champs personnalisés (CHP01–CHP04)
+5. [ ] **F5** Routines (RIT01–RIT07) et vues « Ma journée » / « Ma semaine » (VIS01)
+6. [ ] **F6** Indicateurs (VIS02–VIS03), charge et capacité (CAP02), rencontres et partenariats (REL), contrôles d'événement J−10 / J−1 / 5 jours / 10 jours
+7. [ ] **F7** Targetym, OKR et BSC (chap. 18–22) : **bloqué** tant que la documentation technique de Targetym (API, accès) n'est pas fournie
+
 ## Phase 10 — Mise en production
 
 - [ ] Changer le mot de passe de la base Neon (il a circulé pendant la mise en place)

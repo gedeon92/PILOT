@@ -158,6 +158,8 @@ function TemplateRow({
         <span className="item-row__name">{template.name}</span>
         <span className="item-row__details">
           {template.tasks_count} tâche(s)
+          {(template.sections ?? []).length > 0 &&
+            ` · ${(template.sections ?? []).length} section(s)`}
           {template.description && ` · ${template.description}`} ·{' '}
           <button
             type="button"
@@ -168,6 +170,11 @@ function TemplateRow({
             {open ? 'Masquer les tâches' : 'Voir les tâches'}
           </button>
         </span>
+        {open && (template.sections ?? []).length > 0 && (
+          <p className="template-row__sub muted">
+            Sections : {(template.sections ?? []).join(' · ')}
+          </p>
+        )}
         {open && (
           <ul className="template-row__tasks">
             {template.tasks.map((t, i) => (

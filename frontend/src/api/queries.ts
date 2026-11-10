@@ -20,6 +20,7 @@ import {
   type ProjectLink,
   type ProjectTemplate,
   type Proposal,
+  type Section,
   type Role,
   type Space,
   type SpaceSummary,
@@ -385,6 +386,9 @@ export function useUpdateTask(spaceId: string) {
         if (status === 'in_progress') return 'Tâche passée en cours'
         if (status === 'todo') return 'Tâche à faire'
         if (status === 'cancelled') return 'Tâche annulée'
+        if (status === 'blocked') return 'Tâche bloquée'
+        if (status === 'to_qualify') return 'Tâche à qualifier'
+        if (status === 'awaiting_validation') return 'Tâche envoyée en validation'
         return 'Tâche enregistrée'
       },
     },
@@ -1080,4 +1084,90 @@ export function useDecideAiAction(spaceId: string, conversationId: string) {
           : old,
       ),
   })
+}
+
+// ---------- Sections d'un projet (étape F1) ----------
+
+const sectionKey = (spaceId: string, projectId: string) =>
+  [...projectKeys.one(spaceId, projectId), 'sections'] as const
+
+export function useSections(spaceId: string, projectId: string) {
+  return useQuery({
+    queryKey: sectionKey(spaceId, projectId),
+    queryFn: () => api<Section[]>(`/spaces/${spaceId}/projects/${projectId}/sections`),
+  })
+}
+
+/** Toute écriture sur les sections recharge le projet (sections, tâches, historique). */
+function useSectionMutation<V, R>(
+  spaceId: string,
+  projectId: string,
+  success: string | null,
+  fn: (vars: V) => Promise<R>,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    meta: success ? { success } : undefined,
+    mutationFn: fn,
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: projectKeys.one(spaceId, projectId) }),
+  })
+}
+
+export function useCreateSection(spaceId: string, projectId: string) {
+  return useSectionMutation(spaceId, projectId, 'Section ajoutée', (title: string) =>
+    api<Section>(`/spaces/${spaceId}/projects/${projectId}/sections`, {
+      method: 'POST',
+      body: { title },
+    }),
+  )
+}
+
+export function useDefaultSections(spaceId: string, projectId: string) {
+  return useSectionMutation(spaceId, projectId, 'Sections types ajoutées', () =>
+    api<Section[]>(`/spaces/${spaceId}/projects/${projectId}/sections/defaults`, {
+      method: 'POST',
+    }),
+  )
+}
+
+export function useRenameSection(spaceId: string, projectId: string) {
+  return useSectionMutation(
+    spaceId,
+    projectId,
+    'Section renommée',
+    ({ section, title }: { section: Section; title: string }) =>
+      api<Section>(`/spaces/${spaceId}/sections/${section.id}`, {
+        method: 'PATCH',
+        body: { version: section.version, title },
+      }),
+  )
+}
+
+export function useReorderSections(spaceId: string, projectId: string) {
+  return useSectionMutation(spaceId, projectId, null, (ids: string[]) =>
+    api<Section[]>(`/spaces/${spaceId}/projects/${projectId}/sections/order`, {
+      method: 'PUT',
+      body: { ids },
+    }),
+  )
+}
+
+export function useArchiveSection(spaceId: string, projectId: string) {
+  return useSectionMutation(
+    spaceId,
+    projectId,
+    'Section archivée',
+    ({ id, target, keep }: { id: string; target: string | null; keep: boolean }) =>
+      api<Section>(`/spaces/${spaceId}/sections/${id}/archive`, {
+        method: 'POST',
+        body: { move_open_tasks_to: target, keep_tasks: keep },
+      }),
+  )
+}
+
+export function useRestoreSection(spaceId: string, projectId: string) {
+  return useSectionMutation(spaceId, projectId, 'Section restaurée', (id: string) =>
+    api<Section>(`/spaces/${spaceId}/sections/${id}/restore`, { method: 'POST' }),
+  )
 }

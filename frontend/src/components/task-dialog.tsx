@@ -20,6 +20,7 @@ import {
   useMembers,
   useProjects,
   useRemoveDependency,
+  useSections,
   useSpaceTasks,
   useTaskDetail,
   useUpdateTask,
@@ -29,7 +30,9 @@ import {
   formatDay,
   formatMoment,
   RECURRENCE,
+  TASK_PRIORITY,
   TASK_STATUS,
+  type TaskPriority,
   type TaskRecurrence,
   type TaskStatus,
 } from '../labels'
@@ -307,6 +310,39 @@ function TaskFields({
           )}
         </dd>
       </div>
+      {(task.postpone_count ?? 0) > 0 && (
+        <div>
+          <dt>Reports</dt>
+          <dd>
+            ↷ Reportée {task.postpone_count} fois
+            {task.original_due_date && (
+              <span className="muted">
+                {' '}
+                · échéance d’origine {formatDay(task.original_due_date)}
+              </span>
+            )}
+          </dd>
+        </div>
+      )}
+      <div>
+        <dt>Priorité</dt>
+        <dd>
+          {task.priority ? (
+            <StatusPill tone={TASK_PRIORITY[task.priority].tone}>
+              {TASK_PRIORITY[task.priority].label}
+            </StatusPill>
+          ) : (
+            <span className="muted">Non précisée</span>
+          )}
+        </dd>
+      </div>
+      {task.start_date && (
+        <div>
+          <dt>Début</dt>
+          <dd>{formatDay(task.start_date)}</dd>
+        </div>
+      )}
+      {!task.parent_id && <SectionFact spaceId={spaceId} task={task} />}
       <div>
         <dt>Livrable</dt>
         <dd>{task.deliverable ?? <span className="muted">Non précisé</span>}</dd>
@@ -354,6 +390,27 @@ function TaskFields({
   )
 }
 
+function SectionFact({ spaceId, task }: { spaceId: string; task: Task }) {
+  const sections = useSections(spaceId, task.project_id ?? '')
+  const section = (sections.data ?? []).find((s) => s.id === task.section_id)
+  if (!sections.data?.length) return null
+  return (
+    <div>
+      <dt>Section</dt>
+      <dd>
+        {section ? (
+          <>
+            {section.title}
+            {section.archived && <span className="muted"> (archivée)</span>}
+          </>
+        ) : (
+          <span className="muted">Sans section</span>
+        )}
+      </dd>
+    </div>
+  )
+}
+
 function TaskEditForm({
   spaceId,
   task,
@@ -371,6 +428,15 @@ function TaskEditForm({
   const [certainty, setCertainty] = useState<string>(task.due_certainty ?? '')
   const [assignee, setAssignee] = useState<PersonValue>(personValue(task.assignee))
   const [recurrence, setRecurrence] = useState<string>(task.recurrence ?? '')
+  const [priority, setPriority] = useState<string>(task.priority ?? '')
+  const [start, setStart] = useState(task.start_date ?? '')
+  const [section, setSection] = useState<string>(task.section_id ?? '')
+  const [reason, setReason] = useState('')
+  const sections = useSections(spaceId, task.project_id ?? '')
+  const choices = (sections.data ?? []).filter((s) => !s.archived || s.id === task.section_id)
+  // Report (cahier V2, TCH03) : repousser l'échéance demande un motif ; l'échéance d'origine
+  // est gardée par le serveur.
+  const postponing = Boolean(task.due_date && due && due > task.due_date)
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -382,7 +448,11 @@ function TaskEditForm({
           deliverable: deliverable || null,
           due_date: due || null,
           due_certainty: due && certainty ? certainty : null,
+          priority: (priority || null) as TaskPriority | null,
+          start_date: start || null,
           ...(task.parent_id ? {} : { recurrence: (recurrence || null) as TaskRecurrence | null }),
+          ...(task.parent_id || !choices.length ? {} : { section_id: section || null }),
+          ...(postponing ? { postpone_reason: reason.trim() } : {}),
           ...personPayload(assignee, 'assignee'),
         },
       },
@@ -442,6 +512,66 @@ function TaskEditForm({
           <option value="confirmed">Confirmée</option>
         </select>
       </div>
+      {postponing && (
+        <div className="field form-grid__full">
+          <label htmlFor="edit-task-reason">Motif du report *</label>
+          <input
+            id="edit-task-reason"
+            required
+            maxLength={500}
+            placeholder="Ex. : devis reçu en retard"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          <p className="field__hint">
+            L’échéance passe du {formatDay(task.original_due_date ?? task.due_date)} au{' '}
+            {formatDay(due)}. L’échéance d’origine reste visible.
+          </p>
+        </div>
+      )}
+      <div className="field">
+        <label htmlFor="edit-task-start">Date de début</label>
+        <input
+          id="edit-task-start"
+          type="date"
+          value={start}
+          max={due || undefined}
+          onChange={(e) => setStart(e.target.value)}
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="edit-task-priority">Priorité</label>
+        <select
+          id="edit-task-priority"
+          value={priority}
+          onChange={(e) => setPriority(e.target.value)}
+        >
+          <option value="">Non précisée</option>
+          {(Object.keys(TASK_PRIORITY) as TaskPriority[]).map((p) => (
+            <option key={p} value={p}>
+              {TASK_PRIORITY[p].label}
+            </option>
+          ))}
+        </select>
+      </div>
+      {!task.parent_id && choices.length > 0 && (
+        <div className="field form-grid__full">
+          <label htmlFor="edit-task-section">Section</label>
+          <select
+            id="edit-task-section"
+            value={section}
+            onChange={(e) => setSection(e.target.value)}
+          >
+            <option value="">Sans section</option>
+            {choices.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.title}
+                {s.archived ? ' (archivée)' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {!task.parent_id && (
         <div className="field form-grid__full">
           <label htmlFor="edit-task-recurrence">Répéter</label>

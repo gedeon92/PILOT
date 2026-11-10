@@ -6,16 +6,24 @@ import { Avatar } from './avatar'
 import { useOpenTask } from './task-dialog'
 import { Alert } from './ui'
 
-/** Vue « Tableau » des tâches (lot B) : trois colonnes, des cartes qu'on fait glisser.
+/** Vue « Tableau » des tâches (lot B) : une colonne par statut, des cartes qu'on fait glisser.
  * C'est une autre façon d'afficher les mêmes tâches : déplacer une carte change son statut,
  * exactement comme le menu de statut de la liste. Le menu « Colonne » de chaque carte permet
  * la même chose au clavier et sur téléphone. Les lecteurs voient le tableau sans rien déplacer. */
 
 type Column = { key: TaskStatus; label: string; statuses: TaskStatus[]; tone: string }
 
+// Étape F1 : « À qualifier » rejoint la colonne À faire ; Bloquée et En validation ont la leur.
 const COLUMNS: Column[] = [
-  { key: 'todo', label: 'À faire', statuses: ['todo'], tone: 'neutral' },
+  { key: 'todo', label: 'À faire', statuses: ['to_qualify', 'todo'], tone: 'neutral' },
   { key: 'in_progress', label: 'En cours', statuses: ['in_progress'], tone: 'info' },
+  { key: 'blocked', label: 'Bloquée', statuses: ['blocked'], tone: 'danger' },
+  {
+    key: 'awaiting_validation',
+    label: 'En validation',
+    statuses: ['awaiting_validation'],
+    tone: 'warn',
+  },
   { key: 'done', label: 'Terminé', statuses: ['done', 'cancelled'], tone: 'ok' },
 ]
 // Au-delà, la colonne Terminé ne montre que les plus récentes (la liste les garde toutes).

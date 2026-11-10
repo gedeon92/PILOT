@@ -1,7 +1,15 @@
 import { useState, type FormEvent } from 'react'
 import { errorMessage, type Task } from '../api/client'
-import { useCreateTask, useMembers, useUpdateTask } from '../api/queries'
-import { CERTAINTY, formatDay, RECURRENCE, TASK_STATUS, type TaskStatus } from '../labels'
+import { useCreateTask, useMembers, useSections, useUpdateTask } from '../api/queries'
+import {
+  CERTAINTY,
+  formatDay,
+  RECURRENCE,
+  TASK_PRIORITY,
+  TASK_STATUS,
+  type TaskPriority,
+  type TaskStatus,
+} from '../labels'
 import { personPayload } from '../person'
 import { PersonField, type PersonValue } from './person-field'
 import { Avatar } from './avatar'
@@ -30,6 +38,11 @@ export function TaskRow({
   const closed = task.status === 'done' || task.status === 'cancelled'
   const repeats = Boolean(task.recurrence) && !closed
   const status = TASK_STATUS[task.status]
+  // Seules les priorités qui demandent l'attention sont signalées dans la liste.
+  const priority =
+    task.priority === 'high' || task.priority === 'urgent' ? TASK_PRIORITY[task.priority] : null
+  const postponed = !closed && (task.postpone_count ?? 0) > 0
+  const flagged = !closed && (task.status === 'blocked' || task.status === 'awaiting_validation')
 
   return (
     <li className={closed ? 'task-row task-row--closed' : 'task-row'}>
@@ -56,8 +69,43 @@ export function TaskRow({
         >
           {task.title}
         </button>
-        {(subtasks > 0 || comments > 0 || files > 0 || repeats || (waiting && !closed)) && (
+        {(subtasks > 0 ||
+          comments > 0 ||
+          files > 0 ||
+          repeats ||
+          (waiting && !closed) ||
+          priority ||
+          postponed ||
+          flagged) && (
           <span className="task-row__badges">
+            {priority && !closed && (
+              <span className={`task-badge task-badge--${task.priority}`}>
+                {task.priority === 'urgent' ? '⚡' : '▲'} {priority.label}
+              </span>
+            )}
+            {flagged && (
+              <span
+                className={
+                  task.status === 'blocked'
+                    ? 'task-badge task-badge--blocked'
+                    : 'task-badge task-badge--validation'
+                }
+              >
+                {task.status === 'blocked' ? '⛔ Bloquée' : '✋ À valider'}
+              </span>
+            )}
+            {postponed && (
+              <span
+                className="task-badge task-badge--postponed"
+                title={
+                  task.original_due_date
+                    ? `Échéance d’origine : ${formatDay(task.original_due_date)}`
+                    : undefined
+                }
+              >
+                ↷ Reportée {task.postpone_count === 1 ? '1 fois' : `${task.postpone_count} fois`}
+              </span>
+            )}
             {waiting && !closed && (
               <span className="task-badge task-badge--waiting">En attente</span>
             )}
@@ -165,14 +213,22 @@ export function TaskRow({
 export function TaskAddForm({
   spaceId,
   projectId,
+  sectionId = null,
   onDone,
 }: {
   spaceId: string
   projectId: string
+  /** Section proposée par défaut (bouton « + Tâche » d'une section). */
+  sectionId?: string | null
   onDone: () => void
 }) {
   const create = useCreateTask(spaceId, projectId)
   const members = useMembers(spaceId)
+  const sections = useSections(spaceId, projectId)
+  const active = (sections.data ?? []).filter((s) => !s.archived)
+  const [section, setSection] = useState(sectionId ?? '')
+  const [priority, setPriority] = useState('')
+  const [start, setStart] = useState('')
   const [title, setTitle] = useState('')
   const [deliverable, setDeliverable] = useState('')
   const [due, setDue] = useState('')
@@ -188,6 +244,9 @@ export function TaskAddForm({
         due_date: due || null,
         due_certainty: due && certainty ? certainty : null,
         ...personPayload(assignee, 'assignee'),
+        ...(section ? { section_id: section } : {}),
+        ...(priority ? { priority } : {}),
+        ...(start ? { start_date: start } : {}),
       },
       { onSuccess: onDone },
     )
@@ -221,6 +280,40 @@ export function TaskAddForm({
         value={assignee}
         onChange={setAssignee}
       />
+      {active.length > 0 && (
+        <div className="field">
+          <label htmlFor="task-section">Section</label>
+          <select id="task-section" value={section} onChange={(e) => setSection(e.target.value)}>
+            <option value="">Sans section</option>
+            {active.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      <div className="field">
+        <label htmlFor="task-priority">Priorité</label>
+        <select id="task-priority" value={priority} onChange={(e) => setPriority(e.target.value)}>
+          <option value="">Non précisée</option>
+          {(Object.keys(TASK_PRIORITY) as TaskPriority[]).map((p) => (
+            <option key={p} value={p}>
+              {TASK_PRIORITY[p].label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="field">
+        <label htmlFor="task-start">Date de début</label>
+        <input
+          id="task-start"
+          type="date"
+          value={start}
+          max={due || undefined}
+          onChange={(e) => setStart(e.target.value)}
+        />
+      </div>
       <div className="field">
         <label htmlFor="task-due">Échéance</label>
         <input id="task-due" type="date" value={due} onChange={(e) => setDue(e.target.value)} />

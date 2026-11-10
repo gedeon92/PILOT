@@ -43,6 +43,7 @@ from pilot_api.models import (
     ProjectContributor,
     ProjectKind,
     ProjectLink,
+    ProjectSection,
     ProjectStatus,
     ProjectTemplate,
     ProjectType,
@@ -116,8 +117,26 @@ PROJECT_AUDIT_FIELDS = [
     "decision_options",
 ]
 EVENT_FIELDS = ["venue", "audience", "expected_attendance", "program_id", "edition_label"]
-TASK_PLAIN_FIELDS = ["title", "deliverable", "due_date", "due_certainty", "recurrence"]
-TASK_AUDIT_FIELDS = [*TASK_PLAIN_FIELDS, "status", "assignee_member_id", "assignee_label"]
+TASK_PLAIN_FIELDS = [
+    "title",
+    "deliverable",
+    "due_date",
+    "due_certainty",
+    "recurrence",
+    "priority",
+    "start_date",
+]
+TASK_AUDIT_FIELDS = [
+    *TASK_PLAIN_FIELDS,
+    "status",
+    "assignee_member_id",
+    "assignee_label",
+    "section_id",
+]
+VALIDATION_REFUSED = (
+    "Cette tâche attend une validation : seul le responsable du projet ou un propriétaire de "
+    "l'espace peut la passer à Terminée. Vous pouvez la renvoyer En cours."
+)
 
 CONFLICT = "Cet élément a été modifié entre-temps. Rechargez la page avant de réessayer."
 
@@ -398,6 +417,11 @@ def _task_out(task: Task, today: date, extras: dict | None = None) -> TaskOut:
         parent_id=task.parent_id,
         recurrence=task.recurrence,
         next_task_id=task.next_task_id,
+        section_id=task.section_id,
+        priority=task.priority,
+        start_date=task.start_date,
+        original_due_date=task.original_due_date,
+        postpone_count=task.postpone_count or 0,
         **(extras or {}).get(task.id, {}),
     )
 
@@ -441,8 +465,11 @@ def notify_followers(db: Session, membership: Membership, task: Task, detail: st
 
 
 TASK_STATUS_WORDS = {
+    TaskStatus.TO_QUALIFY: "À qualifier",
     TaskStatus.TODO: "À faire",
     TaskStatus.IN_PROGRESS: "En cours",
+    TaskStatus.BLOCKED: "Bloquée",
+    TaskStatus.AWAITING_VALIDATION: "En attente de validation",
     TaskStatus.DONE: "Terminée",
     TaskStatus.CANCELLED: "Annulée",
 }
@@ -864,6 +891,7 @@ def list_tasks(
 
 
 def _apply_task_fields(db: Session, task: Task, body: Any, sent: set[str]) -> None:
+    old_due = task.due_date
     for name in TASK_PLAIN_FIELDS:
         if name in sent:
             value = getattr(body, name)
@@ -872,6 +900,15 @@ def _apply_task_fields(db: Session, task: Task, body: Any, sent: set[str]) -> No
             if name == "title" and value is None:
                 continue
             setattr(task, name, value)
+    # Report (TCH03) : une échéance repoussée garde la première échéance et compte les reports.
+    if old_due is not None and task.due_date is not None and task.due_date > old_due:
+        if task.original_due_date is None:
+            task.original_due_date = old_due
+        task.postpone_count = (task.postpone_count or 0) + 1
+    if task.start_date and task.due_date and task.start_date > task.due_date:
+        raise HTTPException(422, "La date de début est après l'échéance : vérifiez les dates.")
+    if "section_id" in sent:
+        _set_section(db, task, body.section_id)
     if "assignee_member_id" in sent or "assignee_label" in sent:
         task.assignee_member_id, task.assignee_label = _resolve_person(
             db, task.space_id, body.assignee_member_id, body.assignee_label
@@ -886,6 +923,20 @@ def _apply_task_fields(db: Session, task: Task, body: Any, sent: set[str]) -> No
             raise HTTPException(
                 422, "Une tâche répétée a besoin d'une échéance : indiquez-la d'abord."
             )
+
+
+def _set_section(db: Session, task: Task, section_id: uuid.UUID | None) -> None:
+    if section_id is None:
+        task.section_id = None
+        return
+    if task.parent_id is not None:
+        raise HTTPException(422, "Une sous-tâche reste dans la section de sa tâche.")
+    section = db.get(ProjectSection, section_id)
+    if section is None or section.project_id != task.project_id:
+        raise HTTPException(422, "Cette section n'appartient pas au projet de la tâche.")
+    if section.archived_at is not None and task.section_id != section.id:
+        raise HTTPException(422, "Cette section est archivée : restaurez-la d'abord.")
+    task.section_id = section.id
 
 
 def create_task_in(
@@ -983,8 +1034,19 @@ def update_task(
     before = _snapshot(task, TASK_AUDIT_FIELDS)
     old_assignee = task.assignee_member_id
     was_closed = task.status in CLOSED_TASK_STATUSES
-    _apply_task_fields(db, task, body, body.model_fields_set - {"version"})
+    if (
+        task.status == TaskStatus.AWAITING_VALIDATION
+        and body.status == TaskStatus.DONE
+        and not _can_validate(db, membership, task)
+    ):
+        raise HTTPException(403, VALIDATION_REFUSED)
+    postponed_before = task.postpone_count or 0
+    _apply_task_fields(db, task, body, body.model_fields_set - {"version", "postpone_reason"})
     old, new = _diff(before, _snapshot(task, TASK_AUDIT_FIELDS))
+    if new and (task.postpone_count or 0) > postponed_before:
+        new["postponed_from"] = str(before["due_date"]) if before.get("due_date") else None
+        if body.postpone_reason:
+            new["postpone_reason"] = body.postpone_reason
     if new:
         task.version += 1
         project = db.get(Project, task.project_id) if task.project_id else None
@@ -1006,6 +1068,15 @@ def update_task(
         db.commit()
         task = _load_task(db, membership.space_id, task_id)
     return task_out(db, task, today_in(membership.space))
+
+
+def _can_validate(db: Session, membership: Membership, task: Task) -> bool:
+    """Valider une tâche (En attente de validation → Terminée) : un propriétaire de l'espace ou
+    le responsable du projet. Un droit de modification ne suffit pas (cahier V2, TCH03)."""
+    if membership.role == Role.OWNER:
+        return True
+    project = db.get(Project, task.project_id) if task.project_id else None
+    return project is not None and project.owner_member_id == membership.id
 
 
 def _repeat(db: Session, membership: Membership, task: Task, project: Project | None) -> None:
@@ -1033,6 +1104,8 @@ def _repeat(db: Session, membership: Membership, task: Task, project: Project | 
         due_date=due,
         due_certainty=task.due_certainty,
         recurrence=task.recurrence,
+        section_id=task.section_id,
+        priority=task.priority,
     )
     db.add(following)
     db.flush()

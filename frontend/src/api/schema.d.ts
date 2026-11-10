@@ -748,6 +748,112 @@ export interface paths {
         patch: operations["update_template_api_spaces__space_id__templates__template_id__patch"];
         trace?: never;
     };
+    "/api/spaces/{space_id}/projects/{project_id}/sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sections */
+        get: operations["list_sections_api_spaces__space_id__projects__project_id__sections_get"];
+        put?: never;
+        /** Create Section */
+        post: operations["create_section_api_spaces__space_id__projects__project_id__sections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/projects/{project_id}/sections/defaults": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Default Sections
+         * @description Ajoute les six sections types, seulement si le projet n'en a encore aucune.
+         */
+        post: operations["create_default_sections_api_spaces__space_id__projects__project_id__sections_defaults_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/sections/{section_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Section */
+        patch: operations["update_section_api_spaces__space_id__sections__section_id__patch"];
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/projects/{project_id}/sections/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Reorder Sections */
+        put: operations["reorder_sections_api_spaces__space_id__projects__project_id__sections_order_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/sections/{section_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive Section */
+        post: operations["archive_section_api_spaces__space_id__sections__section_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/sections/{section_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Section */
+        post: operations["restore_section_api_spaces__space_id__sections__section_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/spaces/{space_id}/projects/{project_id}/access": {
         parameters: {
             query?: never;
@@ -2520,6 +2626,60 @@ export interface components {
          * @enum {string}
          */
         Role: "owner" | "contributor" | "reader" | "guest";
+        /** SectionArchive */
+        SectionArchive: {
+            /** Move Open Tasks To */
+            move_open_tasks_to?: string | null;
+            /**
+             * Keep Tasks
+             * @default false
+             */
+            keep_tasks: boolean;
+        };
+        /** SectionCreate */
+        SectionCreate: {
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+        };
+        /** SectionOrder */
+        SectionOrder: {
+            /** Ids */
+            ids: string[];
+        };
+        /** SectionOut */
+        SectionOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string | null;
+            /** Position */
+            position: number;
+            /** Archived */
+            archived: boolean;
+            /** Version */
+            version: number;
+        };
+        /** SectionUpdate */
+        SectionUpdate: {
+            /** Version */
+            version: number;
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+        };
         /** SourceShare */
         SourceShare: {
             /**
@@ -2579,6 +2739,11 @@ export interface components {
             due_date?: string | null;
             due_certainty?: components["schemas"]["DateCertainty"] | null;
             recurrence?: components["schemas"]["TaskRecurrence"] | null;
+            /** Section Id */
+            section_id?: string | null;
+            priority?: components["schemas"]["TaskPriority"] | null;
+            /** Start Date */
+            start_date?: string | null;
             /** Title */
             title: string;
             /** @default todo */
@@ -2610,6 +2775,11 @@ export interface components {
             due_date?: string | null;
             due_certainty?: components["schemas"]["DateCertainty"] | null;
             recurrence?: components["schemas"]["TaskRecurrence"] | null;
+            /** Section Id */
+            section_id?: string | null;
+            priority?: components["schemas"]["TaskPriority"] | null;
+            /** Start Date */
+            start_date?: string | null;
             /** Title */
             title: string;
             /** @default todo */
@@ -2700,7 +2870,24 @@ export interface components {
              * @default 0
              */
             documents_count: number;
+            /** Section Id */
+            section_id?: string | null;
+            priority?: components["schemas"]["TaskPriority"] | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** Original Due Date */
+            original_due_date?: string | null;
+            /**
+             * Postpone Count
+             * @default 0
+             */
+            postpone_count: number;
         };
+        /**
+         * TaskPriority
+         * @enum {string}
+         */
+        TaskPriority: "low" | "normal" | "high" | "urgent";
         /**
          * TaskRecurrence
          * @description Rythme d'une tâche répétée : quand elle est terminée, la suivante est créée.
@@ -2726,7 +2913,7 @@ export interface components {
          * TaskStatus
          * @enum {string}
          */
-        TaskStatus: "todo" | "in_progress" | "done" | "cancelled";
+        TaskStatus: "todo" | "in_progress" | "done" | "cancelled" | "to_qualify" | "blocked" | "awaiting_validation";
         /** TaskUpdate */
         TaskUpdate: {
             /** Deliverable */
@@ -2739,11 +2926,18 @@ export interface components {
             due_date?: string | null;
             due_certainty?: components["schemas"]["DateCertainty"] | null;
             recurrence?: components["schemas"]["TaskRecurrence"] | null;
+            /** Section Id */
+            section_id?: string | null;
+            priority?: components["schemas"]["TaskPriority"] | null;
+            /** Start Date */
+            start_date?: string | null;
             /** Version */
             version: number;
             /** Title */
             title?: string | null;
             status?: components["schemas"]["TaskStatus"] | null;
+            /** Postpone Reason */
+            postpone_reason?: string | null;
         };
         /**
          * TemplateCreate
@@ -2775,6 +2969,11 @@ export interface components {
             tasks_count: number;
             /** Tasks */
             tasks: components["schemas"]["TemplateTaskOut"][];
+            /**
+             * Sections
+             * @default []
+             */
+            sections: string[];
             /**
              * Created At
              * Format: date-time
@@ -4814,6 +5013,246 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TemplateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sections_api_spaces__space_id__projects__project_id__sections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_section_api_spaces__space_id__projects__project_id__sections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_default_sections_api_spaces__space_id__projects__project_id__sections_defaults_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_section_api_spaces__space_id__sections__section_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reorder_sections_api_spaces__space_id__projects__project_id__sections_order_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionOrder"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_section_api_spaces__space_id__sections__section_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionArchive"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_section_api_spaces__space_id__sections__section_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionOut"];
                 };
             };
             /** @description Validation Error */

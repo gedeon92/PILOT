@@ -238,6 +238,17 @@ class TaskStatus(enum.StrEnum):
     IN_PROGRESS = "in_progress"
     DONE = "done"
     CANCELLED = "cancelled"
+    # Étape F1 (cahier V2, TCH03) : sujet à préciser, tâche bloquée, tâche soumise à validation.
+    TO_QUALIFY = "to_qualify"
+    BLOCKED = "blocked"
+    AWAITING_VALIDATION = "awaiting_validation"
+
+
+class TaskPriority(enum.StrEnum):
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"
+    URGENT = "urgent"
 
 
 # Une tâche annulée est clôturée, au même titre qu'une tâche terminée (CDC §8).
@@ -471,11 +482,42 @@ class Task(Base):
     next_task_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("tasks.id", ondelete="SET NULL", name="fk_tasks_next_task_id_tasks")
     )
+    # Étape F1 : section du projet (facultative), priorité, date de début, et reports :
+    # la première échéance est gardée dans `original_due_date` dès le premier report.
+    section_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("project_sections.id", ondelete="SET NULL", name="fk_tasks_section_id_sections"),
+        index=True,
+    )
+    priority: Mapped[TaskPriority | None] = mapped_column(_enum(TaskPriority, "task_priority"))
+    start_date: Mapped[date | None] = mapped_column(Date)
+    original_due_date: Mapped[date | None] = mapped_column(Date)
+    postpone_count: Mapped[int | None] = mapped_column(Integer)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     assignee_member: Mapped[Membership | None] = relationship(foreign_keys=[assignee_member_id])
+
+
+class ProjectSection(Base):
+    """Section d'un projet (cahier V2, STR02) : organise les tâches, n'est ni un statut ni une
+    phase. Archiver une section la retire de la vue active sans rien supprimer (STR04)."""
+
+    __tablename__ = "project_sections"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    title: Mapped[str] = mapped_column(String(120))
+    description: Mapped[str | None] = mapped_column(Text)
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    version: Mapped[int] = mapped_column(Integer, default=1)
 
 
 class TaskComment(Base):
@@ -589,6 +631,8 @@ class ProjectTemplate(Base):
     name: Mapped[str] = mapped_column(String(120))
     description: Mapped[str | None] = mapped_column(Text)
     tasks: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    # Étape F1 : titres des sections, dans l'ordre (les tâches citent leur section par son titre).
+    sections: Mapped[list[str] | None] = mapped_column(JSONB)
     created_by_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )

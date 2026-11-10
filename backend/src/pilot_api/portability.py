@@ -42,6 +42,7 @@ from pilot_api.models import (
     Project,
     ProjectContributor,
     ProjectLink,
+    ProjectSection,
     ProjectStatus,
     ProjectTemplate,
     ProjectType,
@@ -195,6 +196,10 @@ def build_export(db: Session, space: Space, author: User, with_files: bool) -> t
     project_ids = [p.id for p in projects]
     details = db.scalars(select(EventDetails).where(EventDetails.project_id.in_(project_ids))).all()
     data["event_details"] = [_dump(d) for d in details]
+    data["project_sections"] = [
+        _dump(x)
+        for x in db.scalars(select(ProjectSection).where(ProjectSection.space_id == sid)).all()
+    ]
     data["tasks"] = [_dump(t) for t in db.scalars(select(Task).where(Task.space_id == sid)).all()]
     data["task_comments"] = [
         _dump(c, exclude={"author_id", "mentions"})
@@ -462,6 +467,20 @@ def import_space(
         values["program_id"] = ids["programs"].get(str(program)) if program else None
         db.add(EventDetails(project_id=project_id, **values))
 
+    # Sections (étape F1) : recréées avant les tâches, qui y sont ensuite rattachées.
+    section_ids: dict[str, ProjectSection] = {}
+    for item in data.get("project_sections", []):
+        project_id = project_ids.get(str(item.get("project_id")))
+        title = str(item.get("title") or "").strip()[:120]
+        if project_id is None or not title:
+            continue
+        values = _load(ProjectSection, item, {"project_id", "title"})
+        section = ProjectSection(space_id=space.id, project_id=project_id, title=title, **values)
+        db.add(section)
+        section_ids[str(item.get("id"))] = section
+    db.flush()
+    report.counts["project_sections"] = len(section_ids)
+
     task_ids: dict[str, Task] = {}
     parents: list[tuple[Task, str]] = []
     following: list[tuple[Task, str]] = []
@@ -482,7 +501,18 @@ def import_space(
         values = _load(
             Task,
             item,
-            {"project_id", "assignee_member_id", "assignee_label", "parent_id", "next_task_id"},
+            {
+                "project_id",
+                "assignee_member_id",
+                "assignee_label",
+                "parent_id",
+                "next_task_id",
+                "section_id",
+            },
+        )
+        section = section_ids.get(str(item.get("section_id"))) if item.get("section_id") else None
+        values["section_id"] = (
+            section.id if section is not None and section.project_id == project_id else None
         )
         values["assignee_member_id"], values["assignee_label"] = person(
             item.get("assignee_member_id"), item.get("assignee_label")
@@ -674,6 +704,10 @@ def import_space(
                     else None,
                     "assignee_member_id": str(member) if member else None,
                     "assignee_label": (label or "")[:120] or None,
+                    "section": str(entry["section"])[:120] if entry.get("section") else None,
+                    "priority": entry.get("priority")
+                    if entry.get("priority") in {"low", "normal", "high", "urgent"}
+                    else None,
                 }
             )
         description = item.get("description")
@@ -683,6 +717,11 @@ def import_space(
                 name=name,
                 description=str(description)[:5000] if description else None,
                 tasks=cleaned,
+                sections=[
+                    str(x).strip()[:120] for x in item.get("sections") or [] if str(x).strip()
+                ][:50]
+                if isinstance(item.get("sections"), list)
+                else None,
                 created_by_id=user.id,
             )
         )

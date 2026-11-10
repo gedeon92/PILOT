@@ -28,11 +28,24 @@ export function isClosedProject(status: ProjectStatus) {
   return status === 'done' || status === 'cancelled'
 }
 
+// Ordre d'affichage des menus : du sujet à préciser à la tâche clôturée (cahier V2, TCH03).
 export const TASK_STATUS: Record<TaskStatus, { label: string; tone: Tone }> = {
+  to_qualify: { label: 'À qualifier', tone: 'violet' },
   todo: { label: 'À faire', tone: 'neutral' },
   in_progress: { label: 'En cours', tone: 'info' },
+  blocked: { label: 'Bloquée', tone: 'danger' },
+  awaiting_validation: { label: 'En attente de validation', tone: 'warn' },
   done: { label: 'Terminée', tone: 'ok' },
   cancelled: { label: 'Annulée', tone: 'neutral' },
+}
+
+export type TaskPriority = Schemas['TaskPriority']
+
+export const TASK_PRIORITY: Record<TaskPriority, { label: string; tone: Tone }> = {
+  low: { label: 'Basse', tone: 'neutral' },
+  normal: { label: 'Normale', tone: 'neutral' },
+  high: { label: 'Haute', tone: 'warn' },
+  urgent: { label: 'Urgente', tone: 'danger' },
 }
 
 export const CERTAINTY: Record<DateCertainty, string> = {

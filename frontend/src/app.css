@@ -5474,7 +5474,10 @@ a {
 /* ---------- Tableau des tâches (lot B) : colonnes et cartes à glisser ---------- */
 .board {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* Étape F1 : cinq colonnes ; défilement horizontal si l'écran est étroit. */
+  grid-template-columns: repeat(5, minmax(165px, 1fr));
+  overflow-x: auto;
+  padding-bottom: 4px;
   gap: 16px;
   align-items: start;
 }
@@ -6395,4 +6398,102 @@ a {
   font: inherit;
   font-size: 13px;
   cursor: pointer;
+}
+
+/* ---------- Sections, priorités, reports (étape F1) ---------- */
+.board__col--danger {
+  --col: var(--tone-danger-dot);
+}
+.board__col--warn {
+  --col: var(--tone-warn-dot);
+}
+.section-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.task-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.task-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.task-section__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--color-border);
+}
+.task-section__toggle {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 2px 0;
+  border: none;
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.task-section__chevron {
+  width: 14px;
+  color: var(--color-muted);
+}
+.task-section__title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.task-section__title--muted {
+  color: var(--color-muted);
+  font-weight: 500;
+}
+.task-section__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.task-section__archive {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px dashed var(--color-border);
+  border-radius: 10px;
+  font-size: 13.5px;
+}
+.task-section__desc {
+  margin: 2px 4px 6px;
+  font-size: 13px;
+}
+.task-section--archived {
+  opacity: 0.85;
+  margin-top: 8px;
+}
+.task-badge--high,
+.task-badge--validation,
+.task-badge--postponed {
+  border-color: rgb(234 179 8 / 0.35);
+  background: var(--tone-warn-bg);
+  color: var(--tone-warn-fg);
+}
+.task-badge--urgent,
+.task-badge--blocked,
+.task-badge--late {
+  border-color: rgb(239 68 68 / 0.35);
+  background: var(--tone-danger-bg);
+  color: var(--tone-danger-fg);
 }
