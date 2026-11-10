@@ -11,6 +11,7 @@ import {
 } from '../api/queries'
 import { BackupSection } from '../components/backup-section'
 import { TemplatesSection } from '../components/templates'
+import { AiSettingsSection } from '../components/assistant'
 import { PlusIcon } from '../components/icons'
 import { Alert, PageHeader, StatusPill, Skeleton } from '../components/ui'
 import { allTimezones } from '../timezones'
@@ -448,6 +449,7 @@ export function SettingsPage() {
         }
       />
       <SpaceSettings />
+      {canManage && <AiSettingsSection spaceId={space.id} />}
       {SECTIONS.map((config) => (
         <CatalogSection
           key={config.resource}

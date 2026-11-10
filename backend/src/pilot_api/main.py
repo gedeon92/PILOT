@@ -10,6 +10,7 @@ from pilot_api.config import get_settings
 from pilot_api.db import check_database
 from pilot_api.deps import require_csrf_header
 from pilot_api.routers import (
+    ai,
     alerts,
     auth,
     catalog,
@@ -51,6 +52,7 @@ app.include_router(updates.router)
 app.include_router(portability.router)
 app.include_router(alerts.router)
 app.include_router(alerts.cron_router)
+app.include_router(ai.router)
 
 
 @app.exception_handler(IntegrityError)

@@ -27,3 +27,7 @@ services:
       # Même valeur que le secret CRON_SECRET du dépôt GitHub.
       - key: CRON_SECRET
         sync: false
+      # Assistant IA (lot E) : clé Anthropic, à saisir dans le tableau de bord Render.
+      # Sans elle, l'assistant reste indisponible et le reste de PILOT fonctionne normalement.
+      - key: ANTHROPIC_API_KEY
+        sync: false

@@ -400,6 +400,24 @@ Mesure avant : une page mettait **0,9 s** à finir d'apparaître après un clic.
 - Petite touche de vie au repos (même jour) : dégradé qui défile doucement sur le logo, le prénom et le titre de la connexion ; cartes de chiffres qui « respirent » ; lien actif du menu qui brille ; étincelles dans le bandeau ; reflet occasionnel sur les barres d'avancement. Des animations légères : petites zones de texte, transparence et taille. Mesure inchangée : 0,28 s par page.
 - Limite qui reste (hébergement gratuit) : après 15 minutes sans visite, le serveur s'endort ; le premier accès prend alors 30 à 60 s. Elle disparaît avec l'offre Render payante (décision reportée).
 
+## Lot E — Assistant IA (10 nov. 2026)
+
+Demande de la propriétaire du produit : mettre une IA dans PILOT, capable de tout consulter, modifier ou annuler, si la personne lui en donne la permission. Placée dans la page **Mises à jour** (même logique : proposer puis valider). Décisions D8 à D10 ci-dessous ; CDC §10 (« conserver le même processus de proposition et de validation ») et §16.
+
+- [x] Fournisseur : Claude (Anthropic), modèle `claude-opus-5-5`, SDK officiel `anthropic`. Clé `ANTHROPIC_API_KEY` uniquement dans Render (jamais dans le code ni le dépôt). Sans clé, l'assistant est indisponible et rien d'autre ne change.
+- [x] Éteint par défaut ; un propriétaire l'allume dans **Paramètres → Assistant IA** (journal `space.ai_enabled` / `space.ai_disabled`).
+- [x] Onglets « ✨ Assistant IA » et « 📝 Texte ou document » dans Mises à jour. Conversations privées à chaque personne (liste, reprise, suppression).
+- [x] Lecture avec les droits de la personne (projets privés et rôles respectés) : rechercher des projets, voir un projet et ses tâches, voir une tâche (commentaires, sous-tâches, fichiers joints), lister les tâches (les miennes, en retard, 7 jours), membres et référentiels.
+- [x] Changements = **propositions** (`ai_actions`) : créer une tâche ou une sous-tâche, modifier une tâche (dont terminer ou annuler), créer un projet, modifier un projet, changer son statut (bilan pour Terminé, motif pour Annulé), commenter une tâche. Chaque carte montre « avant → après » avec **Appliquer** / **Refuser** ; « Appliquer les N propositions » les applique une par une.
+- [x] Application par les routes habituelles : mêmes droits, mêmes règles, même journal, au nom de la personne qui valide. Fiche modifiée depuis la proposition → **En conflit**, rien n'est écrasé. Double clic → appliqué une seule fois.
+- [x] « Supprimer » = statut Annulé (on ne supprime pas dans PILOT). Hors champ : membres, droits, paramètres, fichiers.
+- [x] Sécurité : les contenus lus (titres, commentaires, documents) sont des données, jamais des instructions ; un lecteur ne peut rien faire modifier ; refus du modèle géré ; modèle de secours automatique d'Anthropic si le modèle principal décline (`fallbacks: "default"`).
+- [x] Coût maîtrisé : 60 questions par personne et par jour (`AI_DAILY_LIMIT`), 10 étapes et 25 propositions au plus par message, jetons comptés (`ai_usage`). Réponse préparée en arrière-plan, l'écran interroge toutes les 1,5 s (pas de délai dépassé côté Vercel).
+- [x] Tests : `tests/test_assistant.py` (6, avec un faux client : aucun appel réel) et `src/pages/assistant.test.tsx` (2). Essai réel à l'écran avec une IA simulée : propositions, application, conflit, modes clair et sombre, téléphone.
+- Non repris dans l'export de l'espace : les conversations (personnelles). Données envoyées à Anthropic : les questions et ce que l'assistant consulte pour y répondre (indiqué dans Paramètres).
+
+**Reste à faire par la propriétaire :** créer le compte Anthropic (console.anthropic.com), fixer une limite de dépense mensuelle, créer la clé et la coller dans Render (`ANTHROPIC_API_KEY`), puis allumer l'assistant dans Paramètres.
+
 ## Phase 10 — Mise en production
 
 - [ ] Changer le mot de passe de la base Neon (il a circulé pendant la mise en place)
@@ -418,7 +436,7 @@ Décisions du 9 nov. 2026 (propriétaire du produit) :
 
 ## Après la V1 (non engagé)
 
-Chacun de ces sujets demande une décision explicite avant d'être lancé (CDC §16) : connecteur SharePoint/OneDrive, intégration Outlook ou Teams, OCR, assistant IA conversationnel.
+Chacun de ces sujets demande une décision explicite avant d'être lancé (CDC §16) : connecteur SharePoint/OneDrive, intégration Outlook ou Teams, OCR. (L'assistant IA conversationnel a été décidé le 10 nov. 2026 : lot E.)
 
 ---
 
@@ -433,3 +451,6 @@ Chacun de ces sujets demande une décision explicite avant d'être lancé (CDC �
 | D5 | Droits par projet ou par filiale | Pas en V1 : les droits s'appliquent à tout l'espace. | Décidé |
 | D6 | Canal des rappels | Alertes dans l'application + e-mail via **Brevo** (offre gratuite). Clé API Brevo stockée uniquement dans les variables d'environnement Render. Brevo servira aussi, si souhaité, aux e-mails d'invitation et de réinitialisation du mot de passe. | Décidé |
 | D7 | Style visuel | **Révisé le 6 nov. 2026 (demande du manager) : style « PILOT 2040 »** — thème sombre, verre dépoli, lueurs néon orange → magenta → violet → cyan, fond animé, polices Space Grotesk (titres) et JetBrains Mono (repères), mouvements doux (désactivés si l'utilisateur réduit les animations) ; e-mails au même style (`email_theme.py`). **Deux modes d'affichage (6 nov. 2026)** : sombre (par défaut) et clair (fond blanc, texte noir), au choix de chaque personne avec le bouton « Mode clair / Mode sombre » en bas du menu et sur les pages de connexion ; le choix est gardé sur l'appareil. Version précédente :  Inspiré de l'image de référence `4eb2950829ff621189b9d820b3e9d34c.webp` : police Plus Jakarta Sans, fond gris clair #F4F4F5, panneaux blancs à coins arrondis (16–20 px), bordures fines #ECECEE, orange #F26A1B pour la marque, #D0450A pour les boutons (contraste suffisant pour le texte blanc), statuts en pastilles (point + texte). Maquette : https://claude.ai/artifact/ReTWXj3VRy4WHS5EMBqXAL | Décidé (validé le 3 nov. 2026) |
+| D8 | Assistant IA : fournisseur | Claude (Anthropic), payé à l'usage ; clé dans Render uniquement, limite de dépense fixée sur le compte Anthropic. | Décidé (10 nov. 2026) |
+| D9 | Assistant IA : permission | Validation à chaque fois : l'assistant propose, la personne clique « Appliquer » ou « Refuser ». | Décidé (10 nov. 2026) |
+| D10 | Assistant IA : qui | Éteint par défaut, allumé par un propriétaire ; chacun l'utilise avec ses propres droits. Placé dans la page Mises à jour. | Décidé (10 nov. 2026) |

@@ -18,8 +18,10 @@ import {
   useSendUpdate,
   useSetUpdateVisibility,
   useShareSource,
+  useAiStatus,
   useUpdates,
 } from '../api/queries'
+import { AssistantPanel } from '../components/assistant'
 import { FileBadge } from '../components/documents'
 import { InboxIcon } from '../components/icons'
 import { Alert, PageHeader, StatusPill, type Tone, Skeleton } from '../components/ui'
@@ -710,15 +712,49 @@ export function UpdatesPage() {
   const projects = useProjects(space.id)
   const [filter, setFilter] = useState<'todo' | 'all'>('todo')
   const [lastId, setLastId] = useState<string | null>(null)
+  const ai = useAiStatus(space.id)
+  const aiOn = Boolean(ai.data?.available && ai.data.enabled)
+  // Onglet choisi ; par défaut l'assistant quand il est allumé (décision du 10 nov. 2026).
+  const [tab, setTab] = useState<'assistant' | 'texte' | null>(null)
+  const current = tab ?? (aiOn || !canWrite ? 'assistant' : 'texte')
+  const showTabs = canWrite && (aiOn || ai.data?.can_toggle)
 
-  if (!canWrite) {
+  const tabs = showTabs && (
+    <div className="segmented upd-tabs" role="group" aria-label="Type de mise à jour">
+      {(
+        [
+          ['assistant', '✨ Assistant IA'],
+          ['texte', '📝 Texte ou document'],
+        ] as const
+      ).map(([key, label]) => (
+        <button
+          key={key}
+          type="button"
+          aria-pressed={current === key}
+          className={current === key ? 'segmented__item segmented__item--on' : 'segmented__item'}
+          onClick={() => setTab(key)}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+
+  if (!canWrite || current === 'assistant') {
     return (
-      <div className="page-content page-content--narrow">
-        <PageHeader title="Mises à jour" />
-        <Alert tone="info">
-          Votre rôle de lecteur ne permet pas de proposer des mises à jour. Demandez à la
-          propriétaire de l’espace de vous passer contributeur.
-        </Alert>
+      <div className="page-content">
+        <PageHeader
+          title="Mises à jour"
+          subtitle="Demandez à l’assistant : il lit vos projets et prépare les changements, vous les validez."
+        />
+        {tabs}
+        {!canWrite && !aiOn && (
+          <Alert tone="info">
+            Votre rôle de lecteur ne permet pas de proposer des mises à jour. Demandez à la
+            propriétaire de l’espace de vous passer contributeur.
+          </Alert>
+        )}
+        {(canWrite || aiOn) && <AssistantPanel space={space} />}
       </div>
     )
   }
@@ -737,6 +773,7 @@ export function UpdatesPage() {
         title="Mises à jour"
         subtitle="Collez un compte rendu ou déposez un document : PILOT prépare les changements, vous les validez."
       />
+      {tabs}
       <Composer spaceId={space.id} onSent={(request) => setLastId(request.id)} />
       {last && <Summary request={last} />}
 

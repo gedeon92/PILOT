@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   api,
+  type AiAction,
+  type AiConversation,
+  type AiConversationSummary,
+  type AiStatus,
   type AlertList,
   type AlertPreferences,
   ApiError,
@@ -970,5 +974,110 @@ export function useImportSpace() {
     },
     // Le nouvel espace apparaît dans le sélecteur d'espaces.
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.me }),
+  })
+}
+
+// ---------- Assistant IA (lot E) ----------
+
+const aiKeys = {
+  status: (spaceId: string) => ['space', spaceId, 'ai', 'status'] as const,
+  list: (spaceId: string) => ['space', spaceId, 'ai', 'conversations'] as const,
+  one: (spaceId: string, id: string) => ['space', spaceId, 'ai', 'conversations', id] as const,
+}
+
+export function useAiStatus(spaceId: string) {
+  return useQuery({
+    queryKey: aiKeys.status(spaceId),
+    queryFn: () => api<AiStatus>(`/spaces/${spaceId}/ai/status`),
+  })
+}
+
+export function useToggleAi(spaceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (enabled: boolean) =>
+      api<AiStatus>(`/spaces/${spaceId}/ai/status`, { method: 'PUT', body: { enabled } }),
+    onSuccess: (data) => queryClient.setQueryData(aiKeys.status(spaceId), data),
+  })
+}
+
+export function useAiConversations(spaceId: string, enabled = true) {
+  return useQuery({
+    queryKey: aiKeys.list(spaceId),
+    queryFn: () => api<AiConversationSummary[]>(`/spaces/${spaceId}/ai/conversations`),
+    enabled,
+  })
+}
+
+/** Interroge la conversation toutes les 1,5 s tant que l'assistant prépare sa réponse. */
+export function useAiConversation(spaceId: string, id: string | null) {
+  const queryClient = useQueryClient()
+  return useQuery({
+    queryKey: aiKeys.one(spaceId, id ?? ''),
+    queryFn: async () => {
+      const data = await api<AiConversation>(`/spaces/${spaceId}/ai/conversations/${id}`)
+      if (data.status === 'idle') {
+        void queryClient.invalidateQueries({ queryKey: aiKeys.list(spaceId), exact: true })
+        void queryClient.invalidateQueries({ queryKey: aiKeys.status(spaceId) })
+      }
+      return data
+    },
+    enabled: Boolean(id),
+    refetchInterval: (query) => (query.state.data?.status === 'thinking' ? 1500 : false),
+  })
+}
+
+export function useSendAiMessage(spaceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ conversationId, text }: { conversationId: string | null; text: string }) =>
+      conversationId
+        ? api<AiConversation>(`/spaces/${spaceId}/ai/conversations/${conversationId}/messages`, {
+            method: 'POST',
+            body: { text },
+          })
+        : api<AiConversation>(`/spaces/${spaceId}/ai/conversations`, {
+            method: 'POST',
+            body: { text },
+          }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(aiKeys.one(spaceId, data.id), data)
+      void queryClient.invalidateQueries({ queryKey: aiKeys.list(spaceId), exact: true })
+    },
+  })
+}
+
+export function useDeleteAiConversation(spaceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    meta: { success: 'Conversation supprimée' },
+    mutationFn: (id: string) =>
+      api<void>(`/spaces/${spaceId}/ai/conversations/${id}`, { method: 'DELETE' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: aiKeys.list(spaceId), exact: true }),
+  })
+}
+
+export function useDecideAiAction(spaceId: string, conversationId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, decision }: { id: string; decision: 'apply' | 'reject' }) =>
+      api<AiAction>(`/spaces/${spaceId}/ai/actions/${id}/${decision}`, { method: 'POST' }),
+    onSettled: () => {
+      // Un changement appliqué peut toucher projets, tâches, tableau de bord et alertes.
+      // Sans attendre : « Appliquer tout » enchaîne aussitôt la proposition suivante.
+      void queryClient.invalidateQueries({ queryKey: keys.space(spaceId) })
+    },
+    onSuccess: (action) =>
+      queryClient.setQueryData<AiConversation>(aiKeys.one(spaceId, conversationId), (old) =>
+        old
+          ? {
+              ...old,
+              turns: old.turns.map((t) => ({
+                ...t,
+                actions: (t.actions ?? []).map((a) => (a.id === action.id ? action : a)),
+              })),
+            }
+          : old,
+      ),
   })
 }

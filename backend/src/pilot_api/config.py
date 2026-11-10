@@ -22,6 +22,13 @@ class Settings(BaseSettings):
     # Clé partagée avec la tâche planifiée GitHub qui déclenche les rappels.
     cron_secret: str | None = None
 
+    # Assistant IA (lot E). Sans clé, l'assistant reste indisponible ; la clé est collée
+    # uniquement dans les variables d'environnement de Render, jamais dans le code.
+    anthropic_api_key: str | None = None
+    ai_model: str = "claude-opus-5-5"
+    # Garde-fou de coût : nombre de questions par personne et par jour.
+    ai_daily_limit: int = 60
+
     @property
     def cookie_secure(self) -> bool:
         # En local et en test, l'API tourne en HTTP : un cookie « Secure » n'y serait pas renvoyé.

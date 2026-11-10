@@ -773,3 +773,61 @@ class ProjectAccessOut(BaseModel):
 
 
 TaskDetail.model_rebuild()  # DocumentOut est défini plus bas
+
+
+# ---------- Assistant IA (lot E) ----------
+
+
+class AiStatusOut(BaseModel):
+    # Clé Anthropic configurée sur le serveur.
+    available: bool
+    # Allumé par un propriétaire pour cet espace.
+    enabled: bool
+    can_toggle: bool
+    daily_limit: int
+    used_today: int
+
+
+class AiToggle(BaseModel):
+    enabled: bool
+
+
+class AiMessageIn(BaseModel):
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=4000)]
+
+
+class AiChange(BaseModel):
+    field: str
+    before: str
+    after: str
+
+
+class AiActionOut(BaseModel):
+    id: uuid.UUID
+    kind: str
+    summary: str
+    changes: list[AiChange]
+    state: Literal["pending", "applied", "rejected", "conflict", "failed"]
+    result: str | None
+    # Pour ouvrir la fiche concernée.
+    project_id: uuid.UUID | None = None
+    task_id: uuid.UUID | None = None
+
+
+class AiTurnOut(BaseModel):
+    role: Literal["user", "assistant"]
+    text: str
+    at: datetime | None = None
+    error: bool = False
+    actions: list[AiActionOut] = []
+
+
+class AiConversationSummary(BaseModel):
+    id: uuid.UUID
+    title: str
+    status: Literal["idle", "thinking"]
+    updated_at: datetime
+
+
+class AiConversationOut(AiConversationSummary):
+    turns: list[AiTurnOut]

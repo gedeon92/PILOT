@@ -88,6 +88,8 @@ class Space(Base):
     version: Mapped[int] = mapped_column(Integer, default=1)
     # Export dont l'espace est issu : réimporter le même fichier ne le duplique pas.
     imported_from: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), index=True)
+    # Lot E : assistant IA, éteint par défaut ; seul un propriétaire l'allume.
+    ai_enabled: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
 
 
 class Membership(Base):
@@ -592,6 +594,77 @@ class ProjectTemplate(Base):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class AiConversation(Base):
+    """Conversation privée d'une personne avec l'assistant IA (lot E).
+
+    `history` : messages échangés avec l'API d'Anthropic, conservés tels quels (on y ajoute
+    seulement). `turns` : ce qui s'affiche à l'écran, [{"role", "text", "action_ids", "at"}].
+    `status` : « idle », ou « thinking » pendant que l'assistant prépare sa réponse."""
+
+    __tablename__ = "ai_conversations"
+    __table_args__ = (Index("ix_ai_conversations_space_user", "space_id", "user_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("spaces.id", ondelete="CASCADE"))
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    title: Mapped[str] = mapped_column(String(120))
+    history: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    turns: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    status: Mapped[str] = mapped_column(String(16), default="idle")
+    error: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class AiActionState(enum.StrEnum):
+    PENDING = "pending"
+    APPLIED = "applied"
+    REJECTED = "rejected"
+    # La fiche a changé depuis la proposition : rien n'est appliqué.
+    CONFLICT = "conflict"
+    FAILED = "failed"
+
+
+class AiAction(Base):
+    """Changement proposé par l'assistant. Rien n'est appliqué sans le clic de la personne,
+    et l'application passe par les mêmes contrôles de droits que l'écran."""
+
+    __tablename__ = "ai_actions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    conversation_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("ai_conversations.id", ondelete="CASCADE"), index=True
+    )
+    space_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("spaces.id", ondelete="CASCADE"))
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    kind: Mapped[str] = mapped_column(String(40))
+    target_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    # Version de la fiche vue au moment de la proposition (conflit si elle a changé).
+    base_version: Mapped[int | None] = mapped_column(Integer)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    summary: Mapped[str] = mapped_column(Text)
+    # Lignes « champ : actuel → proposé » affichées avant validation.
+    changes: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    state: Mapped[AiActionState] = mapped_column(_enum(AiActionState, "ai_action_state"))
+    result: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AiUsage(Base):
+    """Une question posée à l'assistant, pour la limite par jour et le suivi des coûts."""
+
+    __tablename__ = "ai_usage"
+    __table_args__ = (Index("ix_ai_usage_space_at", "space_id", "at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("spaces.id", ondelete="CASCADE"))
+    user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class StoredFile(Base):
