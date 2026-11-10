@@ -39,6 +39,16 @@ export const TASK_STATUS: Record<TaskStatus, { label: string; tone: Tone }> = {
   cancelled: { label: 'Annulée', tone: 'neutral' },
 }
 
+const SIMPLE_STATUSES: TaskStatus[] = ['todo', 'in_progress', 'done', 'cancelled']
+
+/** Statuts proposés dans les menus : en mode simple, les quatre d'origine (plus le statut
+ * actuel de la tâche s'il est avancé, pour qu'il reste lisible). */
+export function taskStatusChoices(advanced: boolean, current?: TaskStatus): TaskStatus[] {
+  const all = Object.keys(TASK_STATUS) as TaskStatus[]
+  if (advanced) return all
+  return all.filter((s) => SIMPLE_STATUSES.includes(s) || s === current)
+}
+
 export type TaskPriority = Schemas['TaskPriority']
 
 export const TASK_PRIORITY: Record<TaskPriority, { label: string; tone: Tone }> = {

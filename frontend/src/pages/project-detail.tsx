@@ -8,6 +8,7 @@ import {
   useHistory,
   useMembers,
   useProject,
+  useAdvanced,
   useSections,
   useTasks,
   useUpdateProject,
@@ -498,6 +499,7 @@ function TasksSection({
   // tableau ; les sous-tâches restent dans leur tâche (fenêtre de la tâche, compteur ☑).
   const tasks = useTasks(spaceId, project.id)
   const sections = useSections(spaceId, project.id)
+  const advanced = useAdvanced(spaceId)
   const hasSections = (sections.data ?? []).length > 0
   const [adding, setAdding] = useState(false)
   const [board, setBoard] = useState(false)
@@ -538,7 +540,7 @@ function TasksSection({
           )}
         </div>
       </div>
-      {canWrite && !closed && !board && sections.isSuccess && (
+      {advanced && canWrite && !closed && !board && sections.isSuccess && (
         <SectionTools spaceId={spaceId} projectId={project.id} hasSections={hasSections} />
       )}
       {adding && (
@@ -1182,7 +1184,9 @@ export function ProjectDetailPage() {
                 )}
               </div>
             </section>
-            <MilestonesSection project={p} spaceId={space.id} canWrite={canWrite} />
+            {space.advanced_mode && (
+              <MilestonesSection project={p} spaceId={space.id} canWrite={canWrite} />
+            )}
             <TasksSection project={p} spaceId={space.id} canWrite={canWrite} />
             <DocumentsSection spaceId={space.id} projectId={p.id} canWrite={canWrite} />
           </div>

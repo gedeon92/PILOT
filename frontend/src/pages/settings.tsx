@@ -367,6 +367,48 @@ function CatalogSection({
   )
 }
 
+/** Mode simple / mode complet (décision du 10 nov. 2026) : seul l'affichage change. */
+function ModeSettings() {
+  const { space } = useOutletContext<SpaceContext>()
+  const update = useUpdateSpace(space.id)
+  const canManage = space.role === 'owner'
+  const advanced = space.advanced_mode
+  return (
+    <section className="card-panel" aria-labelledby="title-mode">
+      <div className="card-panel__head">
+        <div>
+          <h2 id="title-mode">Mode d’affichage</h2>
+          <p className="card-panel__help">
+            Le <strong>mode simple</strong> garde PILOT léger pour démarrer. Le{' '}
+            <strong>mode complet</strong> ajoute les jalons, le registre des décisions et des
+            réunions, les sections de projet, les statuts « À qualifier », « Bloquée » et « En
+            attente de validation », la priorité, la date de début et le motif des reports. Changer
+            de mode ne supprime rien : seules les fonctions affichées changent.
+          </p>
+        </div>
+      </div>
+      <div className="ai-toggle">
+        <StatusPill tone={advanced ? 'violet' : 'neutral'}>
+          {advanced ? 'Mode complet' : 'Mode simple'}
+        </StatusPill>
+        {canManage ? (
+          <button
+            type="button"
+            className={advanced ? 'button button--small' : 'button button--small button--primary'}
+            disabled={update.isPending}
+            onClick={() => update.mutate({ advanced_mode: !advanced, version: space.version })}
+          >
+            {advanced ? 'Revenir au mode simple' : 'Passer au mode complet'}
+          </button>
+        ) : (
+          <span className="muted">Seul un propriétaire de l’espace peut changer de mode.</span>
+        )}
+      </div>
+      {update.isError && <Alert>{errorMessage(update.error)}</Alert>}
+    </section>
+  )
+}
+
 function SpaceSettings() {
   const { space } = useOutletContext<SpaceContext>()
   const update = useUpdateSpace(space.id)
@@ -449,6 +491,7 @@ export function SettingsPage() {
         }
       />
       <SpaceSettings />
+      <ModeSettings />
       {canManage && <AiSettingsSection spaceId={space.id} />}
       {SECTIONS.map((config) => (
         <CatalogSection

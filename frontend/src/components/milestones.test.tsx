@@ -49,7 +49,7 @@ function milestone(extra: Record<string, unknown> = {}) {
 function routes(milestones: unknown[], extra = {}) {
   return {
     'GET /api/auth/me': () => ({ status: 200, json: meWith('owner') }),
-    [`GET ${base}`]: () => ({ status: 200, json: spaceWith('owner') }),
+    [`GET ${base}`]: () => ({ status: 200, json: { ...spaceWith('owner'), advanced_mode: true } }),
     [`GET ${base}/members`]: () => ({ status: 200, json: [OWNER_MEMBER] }),
     [`GET ${base}/portfolios`]: () => ({ status: 200, json: [] }),
     [`GET ${base}/alerts`]: () => ({ status: 200, json: { unread: 0, items: [] } }),

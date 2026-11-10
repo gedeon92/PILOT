@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from 'react'
 import { errorMessage, type Task } from '../api/client'
-import { useCreateTask, useMembers, useSections, useUpdateTask } from '../api/queries'
+import { useAdvanced, useCreateTask, useMembers, useSections, useUpdateTask } from '../api/queries'
 import {
   CERTAINTY,
   formatDay,
   RECURRENCE,
   TASK_PRIORITY,
   TASK_STATUS,
+  taskStatusChoices,
   type TaskPriority,
   type TaskStatus,
 } from '../labels'
@@ -30,6 +31,7 @@ export function TaskRow({
   projectClosed?: boolean
 }) {
   const update = useUpdateTask(spaceId)
+  const advanced = useAdvanced(spaceId)
   const openTask = useOpenTask()
   const subtasks = task.subtasks_total ?? 0
   const comments = task.comments_count ?? 0
@@ -40,8 +42,10 @@ export function TaskRow({
   const status = TASK_STATUS[task.status]
   // Seules les priorités qui demandent l'attention sont signalées dans la liste.
   const priority =
-    task.priority === 'high' || task.priority === 'urgent' ? TASK_PRIORITY[task.priority] : null
-  const postponed = !closed && (task.postpone_count ?? 0) > 0
+    advanced && (task.priority === 'high' || task.priority === 'urgent')
+      ? TASK_PRIORITY[task.priority]
+      : null
+  const postponed = advanced && !closed && (task.postpone_count ?? 0) > 0
   const flagged = !closed && (task.status === 'blocked' || task.status === 'awaiting_validation')
 
   return (
@@ -176,7 +180,7 @@ export function TaskRow({
             update.mutate({ task, changes: { status: e.target.value as TaskStatus } })
           }
         >
-          {(Object.keys(TASK_STATUS) as TaskStatus[]).map((s) => (
+          {taskStatusChoices(advanced, task.status).map((s) => (
             <option key={s} value={s}>
               {TASK_STATUS[s].label}
             </option>
@@ -224,6 +228,7 @@ export function TaskAddForm({
 }) {
   const create = useCreateTask(spaceId, projectId)
   const members = useMembers(spaceId)
+  const advanced = useAdvanced(spaceId)
   const sections = useSections(spaceId, projectId)
   const active = (sections.data ?? []).filter((s) => !s.archived)
   const [section, setSection] = useState(sectionId ?? '')
@@ -293,27 +298,35 @@ export function TaskAddForm({
           </select>
         </div>
       )}
-      <div className="field">
-        <label htmlFor="task-priority">Priorité</label>
-        <select id="task-priority" value={priority} onChange={(e) => setPriority(e.target.value)}>
-          <option value="">Non précisée</option>
-          {(Object.keys(TASK_PRIORITY) as TaskPriority[]).map((p) => (
-            <option key={p} value={p}>
-              {TASK_PRIORITY[p].label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="field">
-        <label htmlFor="task-start">Date de début</label>
-        <input
-          id="task-start"
-          type="date"
-          value={start}
-          max={due || undefined}
-          onChange={(e) => setStart(e.target.value)}
-        />
-      </div>
+      {advanced && (
+        <>
+          <div className="field">
+            <label htmlFor="task-priority">Priorité</label>
+            <select
+              id="task-priority"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+            >
+              <option value="">Non précisée</option>
+              {(Object.keys(TASK_PRIORITY) as TaskPriority[]).map((p) => (
+                <option key={p} value={p}>
+                  {TASK_PRIORITY[p].label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="task-start">Date de début</label>
+            <input
+              id="task-start"
+              type="date"
+              value={start}
+              max={due || undefined}
+              onChange={(e) => setStart(e.target.value)}
+            />
+          </div>
+        </>
+      )}
       <div className="field">
         <label htmlFor="task-due">Échéance</label>
         <input id="task-due" type="date" value={due} onChange={(e) => setDue(e.target.value)} />

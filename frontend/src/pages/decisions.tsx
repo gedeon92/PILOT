@@ -739,6 +739,19 @@ export function DecisionsPage() {
   const lateMinutes = (meetings.data ?? []).filter((m) => m.minutes_late).length
   const tab = (params.get('vue') as Tab | null) ?? (lists.todo.length ? 'todo' : 'open')
   const openCount = all.filter((d) => d.state === 'open' || d.state === 'draft').length
+  if (!space.advanced_mode) {
+    return (
+      <div className="page-content page-content--narrow">
+        <PageHeader title="Décisions" />
+        <Alert tone="info">
+          Le registre des décisions fait partie du mode complet.{' '}
+          {space.role === 'owner'
+            ? 'Vous pouvez l’activer dans Paramètres → Mode d’affichage.'
+            : 'Un propriétaire de l’espace peut l’activer dans les Paramètres.'}
+        </Alert>
+      </div>
+    )
+  }
   const TABS: [Tab, string, number][] = [
     ['todo', 'À traiter', lists.todo.length],
     ['open', 'À exécuter', lists.open.length],

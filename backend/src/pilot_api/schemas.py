@@ -71,6 +71,7 @@ class SpaceUpdate(_TimezoneMixin):
     version: int
     name: Name | None = None
     timezone: str | None = None
+    advanced_mode: bool | None = None
 
 
 class SpaceOut(BaseModel):
@@ -79,6 +80,8 @@ class SpaceOut(BaseModel):
     timezone: str
     version: int
     role: Role
+    # Mode complet (jalons, décisions, sections…) ; faux = mode simple.
+    advanced_mode: bool = False
 
 
 class MemberOut(BaseModel):

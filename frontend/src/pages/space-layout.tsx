@@ -110,10 +110,12 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
             <CalendarIcon />
             <span className="nav__label">Événements</span>
           </NavLink>
-          <NavLink to={`${base}/decisions`} className={linkClass}>
-            <ScaleIcon />
-            <span className="nav__label">Décisions</span>
-          </NavLink>
+          {space.advanced_mode && (
+            <NavLink to={`${base}/decisions`} className={linkClass}>
+              <ScaleIcon />
+              <span className="nav__label">Décisions</span>
+            </NavLink>
+          )}
           <NavLink to={`${base}/timeline`} className={linkClass}>
             <TimelineIcon />
             <span className="nav__label">Timeline</span>

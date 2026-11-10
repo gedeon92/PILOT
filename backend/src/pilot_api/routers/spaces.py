@@ -41,7 +41,12 @@ router = APIRouter(prefix="/api/spaces", tags=["espaces"])
 
 def _space_out(space: Space, role: Role) -> SpaceOut:
     return SpaceOut(
-        id=space.id, name=space.name, timezone=space.timezone, version=space.version, role=role
+        id=space.id,
+        name=space.name,
+        timezone=space.timezone,
+        version=space.version,
+        role=role,
+        advanced_mode=bool(space.advanced_mode),
     )
 
 
@@ -119,12 +124,22 @@ def update_space(body: SpaceUpdate, membership: OwnerMembership, db: DbSession) 
     # Verrou : deux enregistrements simultanés ne peuvent pas s'écraser sans conflit signalé.
     db.refresh(space, with_for_update=True)
     _check_version(space.version, body.version)
-    before = {"name": space.name, "timezone": space.timezone}
+    before = {
+        "name": space.name,
+        "timezone": space.timezone,
+        "advanced_mode": bool(space.advanced_mode),
+    }
     if body.name is not None:
         space.name = body.name
     if body.timezone is not None:
         space.timezone = body.timezone
-    after = {"name": space.name, "timezone": space.timezone}
+    if body.advanced_mode is not None:
+        space.advanced_mode = body.advanced_mode
+    after = {
+        "name": space.name,
+        "timezone": space.timezone,
+        "advanced_mode": bool(space.advanced_mode),
+    }
     if after != before:
         space.version += 1
         record(

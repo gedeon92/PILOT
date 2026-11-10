@@ -1,7 +1,7 @@
 import { useState, type DragEvent } from 'react'
 import { errorMessage, type Task } from '../api/client'
-import { useUpdateTask } from '../api/queries'
-import { formatDay, TASK_STATUS, type TaskStatus } from '../labels'
+import { useAdvanced, useUpdateTask } from '../api/queries'
+import { formatDay, TASK_STATUS, taskStatusChoices, type TaskStatus } from '../labels'
 import { Avatar } from './avatar'
 import { useOpenTask } from './task-dialog'
 import { Alert } from './ui'
@@ -39,6 +39,7 @@ export function TaskBoard({
   canWrite: boolean
 }) {
   const update = useUpdateTask(spaceId)
+  const advanced = useAdvanced(spaceId)
   // Déplacements affichés tout de suite, en attendant que la liste rechargée les confirme
   // (la version renvoyée par le serveur dit quand la liste est à jour). Une carte en cours
   // d'enregistrement n'a pas encore de version : elle ne peut pas être redéplacée.
@@ -85,11 +86,23 @@ export function TaskBoard({
     if (task && !column.statuses.includes(statusOf(task))) move(task, column.key)
   }
 
+  // Mode simple : pas de colonnes Bloquée ni En validation, sauf si des tâches y sont déjà.
+  const columns = COLUMNS.filter(
+    (c) =>
+      advanced ||
+      (c.key !== 'blocked' && c.key !== 'awaiting_validation') ||
+      tasks.some((t) => c.statuses.includes(statusOf(t))),
+  )
+
   return (
     <>
       {error !== null && <Alert>{errorMessage(error)}</Alert>}
-      <div className="board" aria-label="Tableau des tâches">
-        {COLUMNS.map((column) => {
+      <div
+        className="board"
+        aria-label="Tableau des tâches"
+        style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(165px, 1fr))` }}
+      >
+        {columns.map((column) => {
           let cards = tasks.filter((t) => column.statuses.includes(statusOf(t)))
           let hidden = 0
           if (column.key === 'done') {
@@ -138,6 +151,7 @@ export function TaskBoard({
                       setOver(null)
                     }}
                     onMove={(status) => move(task, status)}
+                    choices={taskStatusChoices(advanced, statusOf(task))}
                   />
                 ))}
               </ul>
@@ -168,6 +182,7 @@ function BoardCard({
   onDragStart,
   onDragEnd,
   onMove,
+  choices,
 }: {
   task: Task
   status: TaskStatus
@@ -177,6 +192,7 @@ function BoardCard({
   onDragStart: () => void
   onDragEnd: () => void
   onMove: (status: TaskStatus) => void
+  choices: TaskStatus[]
 }) {
   const openTask = useOpenTask()
   const closed = status === 'done' || status === 'cancelled'
@@ -260,7 +276,7 @@ function BoardCard({
             disabled={saving}
             onChange={(e) => onMove(e.target.value as TaskStatus)}
           >
-            {(Object.keys(TASK_STATUS) as TaskStatus[]).map((s) => (
+            {choices.map((s) => (
               <option key={s} value={s}>
                 {TASK_STATUS[s].label}
               </option>

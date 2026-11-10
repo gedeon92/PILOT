@@ -12117,6 +12117,11 @@
           },
           "role": {
             "$ref": "#/components/schemas/Role"
+          },
+          "advanced_mode": {
+            "type": "boolean",
+            "title": "Advanced Mode",
+            "default": false
           }
         },
         "type": "object",
@@ -12309,6 +12314,17 @@
               }
             ],
             "title": "Timezone"
+          },
+          "advanced_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Advanced Mode"
           }
         },
         "type": "object",

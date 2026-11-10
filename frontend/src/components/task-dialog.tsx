@@ -20,6 +20,7 @@ import {
   useMembers,
   useProjects,
   useRemoveDependency,
+  useAdvanced,
   useSections,
   useSpaceTasks,
   useTaskDetail,
@@ -32,6 +33,7 @@ import {
   RECURRENCE,
   TASK_PRIORITY,
   TASK_STATUS,
+  taskStatusChoices,
   type TaskPriority,
   type TaskRecurrence,
   type TaskStatus,
@@ -247,6 +249,7 @@ function TaskFields({
   canWrite: boolean
 }) {
   const update = useUpdateTask(spaceId)
+  const advanced = useAdvanced(spaceId)
   const openTask = useOpenTask()
   const [editing, setEditing] = useState(false)
   const status = TASK_STATUS[task.status]
@@ -268,7 +271,7 @@ function TaskFields({
                 update.mutate({ task, changes: { status: e.target.value as TaskStatus } })
               }
             >
-              {(Object.keys(TASK_STATUS) as TaskStatus[]).map((s) => (
+              {taskStatusChoices(advanced, task.status).map((s) => (
                 <option key={s} value={s}>
                   {TASK_STATUS[s].label}
                 </option>
@@ -310,7 +313,7 @@ function TaskFields({
           )}
         </dd>
       </div>
-      {(task.postpone_count ?? 0) > 0 && (
+      {advanced && (task.postpone_count ?? 0) > 0 && (
         <div>
           <dt>Reports</dt>
           <dd>
@@ -324,19 +327,21 @@ function TaskFields({
           </dd>
         </div>
       )}
-      <div>
-        <dt>Priorité</dt>
-        <dd>
-          {task.priority ? (
-            <StatusPill tone={TASK_PRIORITY[task.priority].tone}>
-              {TASK_PRIORITY[task.priority].label}
-            </StatusPill>
-          ) : (
-            <span className="muted">Non précisée</span>
-          )}
-        </dd>
-      </div>
-      {task.start_date && (
+      {advanced && (
+        <div>
+          <dt>Priorité</dt>
+          <dd>
+            {task.priority ? (
+              <StatusPill tone={TASK_PRIORITY[task.priority].tone}>
+                {TASK_PRIORITY[task.priority].label}
+              </StatusPill>
+            ) : (
+              <span className="muted">Non précisée</span>
+            )}
+          </dd>
+        </div>
+      )}
+      {advanced && task.start_date && (
         <div>
           <dt>Début</dt>
           <dd>{formatDay(task.start_date)}</dd>
@@ -422,6 +427,7 @@ function TaskEditForm({
 }) {
   const update = useUpdateTask(spaceId)
   const members = useMembers(spaceId)
+  const advanced = useAdvanced(spaceId)
   const [title, setTitle] = useState(task.title)
   const [deliverable, setDeliverable] = useState(task.deliverable ?? '')
   const [due, setDue] = useState(task.due_date ?? '')
@@ -436,7 +442,7 @@ function TaskEditForm({
   const choices = (sections.data ?? []).filter((s) => !s.archived || s.id === task.section_id)
   // Report (cahier V2, TCH03) : repousser l'échéance demande un motif ; l'échéance d'origine
   // est gardée par le serveur.
-  const postponing = Boolean(task.due_date && due && due > task.due_date)
+  const postponing = advanced && Boolean(task.due_date && due && due > task.due_date)
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -448,8 +454,9 @@ function TaskEditForm({
           deliverable: deliverable || null,
           due_date: due || null,
           due_certainty: due && certainty ? certainty : null,
-          priority: (priority || null) as TaskPriority | null,
-          start_date: start || null,
+          ...(advanced
+            ? { priority: (priority || null) as TaskPriority | null, start_date: start || null }
+            : {}),
           ...(task.parent_id ? {} : { recurrence: (recurrence || null) as TaskRecurrence | null }),
           ...(task.parent_id || !choices.length ? {} : { section_id: section || null }),
           ...(postponing ? { postpone_reason: reason.trim() } : {}),
@@ -529,31 +536,35 @@ function TaskEditForm({
           </p>
         </div>
       )}
-      <div className="field">
-        <label htmlFor="edit-task-start">Date de début</label>
-        <input
-          id="edit-task-start"
-          type="date"
-          value={start}
-          max={due || undefined}
-          onChange={(e) => setStart(e.target.value)}
-        />
-      </div>
-      <div className="field">
-        <label htmlFor="edit-task-priority">Priorité</label>
-        <select
-          id="edit-task-priority"
-          value={priority}
-          onChange={(e) => setPriority(e.target.value)}
-        >
-          <option value="">Non précisée</option>
-          {(Object.keys(TASK_PRIORITY) as TaskPriority[]).map((p) => (
-            <option key={p} value={p}>
-              {TASK_PRIORITY[p].label}
-            </option>
-          ))}
-        </select>
-      </div>
+      {advanced && (
+        <>
+          <div className="field">
+            <label htmlFor="edit-task-start">Date de début</label>
+            <input
+              id="edit-task-start"
+              type="date"
+              value={start}
+              max={due || undefined}
+              onChange={(e) => setStart(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="edit-task-priority">Priorité</label>
+            <select
+              id="edit-task-priority"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+            >
+              <option value="">Non précisée</option>
+              {(Object.keys(TASK_PRIORITY) as TaskPriority[]).map((p) => (
+                <option key={p} value={p}>
+                  {TASK_PRIORITY[p].label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </>
+      )}
       {!task.parent_id && choices.length > 0 && (
         <div className="field form-grid__full">
           <label htmlFor="edit-task-section">Section</label>

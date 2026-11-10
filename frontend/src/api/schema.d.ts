@@ -3346,6 +3346,11 @@ export interface components {
             /** Version */
             version: number;
             role: components["schemas"]["Role"];
+            /**
+             * Advanced Mode
+             * @default false
+             */
+            advanced_mode: boolean;
         };
         /** SpaceSummary */
         SpaceSummary: {
@@ -3396,6 +3401,8 @@ export interface components {
             name?: string | null;
             /** Timezone */
             timezone?: string | null;
+            /** Advanced Mode */
+            advanced_mode?: boolean | null;
         };
         /** TaskCreate */
         TaskCreate: {

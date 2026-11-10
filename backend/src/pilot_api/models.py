@@ -90,6 +90,10 @@ class Space(Base):
     imported_from: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), index=True)
     # Lot E : assistant IA, éteint par défaut ; seul un propriétaire l'allume.
     ai_enabled: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
+    # Mode complet (décision du 10 nov. 2026) : jalons, décisions, sections, statuts avancés,
+    # priorité et reports motivés s'affichent. Éteint par défaut : l'écran reste simple. Les
+    # données ne dépendent pas de ce réglage ; seul l'affichage change.
+    advanced_mode: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
 
 
 class Membership(Base):

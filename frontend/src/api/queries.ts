@@ -121,6 +121,12 @@ export function useSpace(spaceId: string) {
   })
 }
 
+/** Mode complet de l'espace (décision du 10 nov. 2026) : jalons, décisions, sections,
+ * statuts avancés, priorité et reports motivés. Faux = mode simple (par défaut). */
+export function useAdvanced(spaceId: string) {
+  return Boolean(useSpace(spaceId).data?.advanced_mode)
+}
+
 export function useMembers(spaceId: string) {
   return useQuery({
     queryKey: keys.members(spaceId),
@@ -254,8 +260,12 @@ export function useUpdateSpace(spaceId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     meta: { success: 'Espace enregistré' },
-    mutationFn: (body: { name: string; timezone: string; version: number }) =>
-      api<Space>(`/spaces/${spaceId}`, { method: 'PATCH', body }),
+    mutationFn: (body: {
+      name?: string
+      timezone?: string
+      advanced_mode?: boolean
+      version: number
+    }) => api<Space>(`/spaces/${spaceId}`, { method: 'PATCH', body }),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: keys.space(spaceId) })
       queryClient.invalidateQueries({ queryKey: keys.me })
