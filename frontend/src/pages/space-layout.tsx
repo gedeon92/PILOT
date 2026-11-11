@@ -34,6 +34,16 @@ export type SpaceContext = { space: Space; me: Me }
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? 'nav__link nav__link--active' : 'nav__link'
 
+const COLLAPSE_KEY = 'pilot-sidebar-collapsed'
+
+function readCollapsed() {
+  try {
+    return localStorage.getItem(COLLAPSE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
 function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void }) {
   const navigate = useNavigate()
   const logout = useLogout()
@@ -46,14 +56,62 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
   const location = useLocation()
   const [openOn, setOpenOn] = useState<string | null>(null)
   const open = openOn === location.pathname
+  // Sur ordinateur, le menu se replie en une colonne d'icônes (choix gardé sur l'appareil),
+  // pour laisser la place au contenu, par exemple à l'assistant IA.
+  const [collapsed, setCollapsed] = useState(readCollapsed)
+  function toggleCollapsed() {
+    setCollapsed((value) => {
+      try {
+        localStorage.setItem(COLLAPSE_KEY, value ? '0' : '1')
+      } catch {
+        // Stockage indisponible (navigation privée) : le choix vaut pour cette visite.
+      }
+      return !value
+    })
+  }
 
   return (
-    <nav className={open ? 'sidebar sidebar--open' : 'sidebar'} aria-label="Navigation principale">
+    <nav
+      className={['sidebar', open && 'sidebar--open', collapsed && 'sidebar--collapsed']
+        .filter(Boolean)
+        .join(' ')}
+      aria-label="Navigation principale"
+    >
       <div className="sidebar__top">
         <div className="brand">
           <Logo />
           <span className="brand__name">PILOT</span>
         </div>
+        <button
+          type="button"
+          className="sidebar__collapse"
+          aria-label={collapsed ? 'Déplier le menu' : 'Replier le menu'}
+          title={collapsed ? 'Déplier le menu' : 'Replier le menu'}
+          aria-pressed={collapsed}
+          onClick={toggleCollapsed}
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <rect
+              x="3.5"
+              y="4.5"
+              width="17"
+              height="15"
+              rx="3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            />
+            <path d="M9.5 4.5v15" stroke="currentColor" strokeWidth="1.8" />
+            <path
+              d={collapsed ? 'M13.5 10l2 2-2 2' : 'M16 10l-2 2 2 2'}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
         <button
           type="button"
           className="button button--small sidebar__toggle"
@@ -66,7 +124,7 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
       </div>
 
       <div className="sidebar__content" id="sidebar-content">
-        <button type="button" className="search-button" onClick={onSearch}>
+        <button type="button" className="search-button" onClick={onSearch} title="Rechercher">
           <SearchIcon />
           <span className="search-button__label">Rechercher</span>
           <kbd>{navigator.platform.toLowerCase().includes('mac') ? '⌘K' : 'Ctrl K'}</kbd>
@@ -94,43 +152,43 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
         <div className="sidebar__divider" />
 
         <div className="nav">
-          <NavLink to={base} end className={linkClass}>
+          <NavLink to={base} end className={linkClass} title="Vue d’ensemble">
             <DashboardIcon />
             <span className="nav__label">Vue d’ensemble</span>
           </NavLink>
-          <NavLink to={`${base}/point-hebdo`} className={linkClass}>
+          <NavLink to={`${base}/point-hebdo`} className={linkClass} title="Point hebdo">
             <ClipboardIcon />
             <span className="nav__label">Point hebdo</span>
           </NavLink>
-          <NavLink to={`${base}/projets`} className={linkClass}>
+          <NavLink to={`${base}/projets`} className={linkClass} title="Projets">
             <FolderIcon />
             <span className="nav__label">Projets</span>
           </NavLink>
-          <NavLink to={`${base}/evenements`} className={linkClass}>
+          <NavLink to={`${base}/evenements`} className={linkClass} title="Événements">
             <CalendarIcon />
             <span className="nav__label">Événements</span>
           </NavLink>
           {space.advanced_mode && (
-            <NavLink to={`${base}/decisions`} className={linkClass}>
+            <NavLink to={`${base}/decisions`} className={linkClass} title="Décisions">
               <ScaleIcon />
               <span className="nav__label">Décisions</span>
             </NavLink>
           )}
-          <NavLink to={`${base}/timeline`} className={linkClass}>
+          <NavLink to={`${base}/timeline`} className={linkClass} title="Timeline">
             <TimelineIcon />
             <span className="nav__label">Timeline</span>
           </NavLink>
-          <NavLink to={`${base}/documents`} className={linkClass}>
+          <NavLink to={`${base}/documents`} className={linkClass} title="Documents">
             <DocumentIcon />
             <span className="nav__label">Documents</span>
           </NavLink>
           {space.role !== 'guest' && (
-            <NavLink to={`${base}/mises-a-jour`} className={linkClass}>
+            <NavLink to={`${base}/mises-a-jour`} className={linkClass} title="Mises à jour">
               <InboxIcon />
               <span className="nav__label">Mises à jour</span>
             </NavLink>
           )}
-          <NavLink to={`${base}/alertes`} className={linkClass}>
+          <NavLink to={`${base}/alertes`} className={linkClass} title="Alertes">
             <BellIcon />
             <span className="nav__label">Alertes</span>
             {(alerts.data?.unread ?? 0) > 0 && (
@@ -173,7 +231,7 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
 
         <div className="nav">
           <span className="nav__section">Espace</span>
-          <NavLink to={`${base}/membres`} className={linkClass}>
+          <NavLink to={`${base}/membres`} className={linkClass} title="Accès et membres">
             <MembersIcon />
             <span className="nav__label">Accès et membres</span>
             {pending > 0 && (
@@ -182,7 +240,7 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
               </span>
             )}
           </NavLink>
-          <NavLink to={`${base}/parametres`} className={linkClass}>
+          <NavLink to={`${base}/parametres`} className={linkClass} title="Paramètres et structure">
             <SettingsIcon />
             <span className="nav__label">Paramètres et structure</span>
           </NavLink>
@@ -201,7 +259,7 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
             </span>
           </div>
           <div className="user-card__actions">
-            <NavLink to={`${base}/compte`} className={linkClass}>
+            <NavLink to={`${base}/compte`} className={linkClass} title="Mon compte">
               <SettingsIcon />
               <span className="nav__label">Mon compte</span>
             </NavLink>
@@ -209,6 +267,7 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
             <button
               type="button"
               className="nav__link"
+              title="Déconnexion"
               onClick={() => logout.mutate(undefined, { onSuccess: () => navigate('/connexion') })}
             >
               <LogoutIcon />

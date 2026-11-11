@@ -6976,3 +6976,90 @@ a {
 .purge__confirm {
   max-width: 320px;
 }
+
+/* ---------- Menu repliable (ordinateur) ---------- */
+.sidebar__collapse {
+  display: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.sidebar__collapse:hover {
+  border-color: var(--color-border);
+  color: var(--color-ink);
+}
+@media (min-width: 900px) {
+  .sidebar__collapse {
+    display: grid;
+  }
+  .sidebar {
+    transition:
+      flex-basis 0.2s var(--ease-out, ease),
+      padding 0.2s ease;
+  }
+  .sidebar--collapsed {
+    flex: 0 0 72px;
+    padding-inline: 10px;
+    overflow-x: hidden;
+  }
+  .sidebar--collapsed .sidebar__top {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .sidebar--collapsed .brand {
+    padding: 0;
+  }
+  /* Les libellés restent lisibles par les lecteurs d'écran ; une bulle d'aide les montre. */
+  .sidebar--collapsed .brand__name,
+  .sidebar--collapsed .nav__label,
+  .sidebar--collapsed .search-button__label,
+  .sidebar--collapsed .user-card__text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .sidebar--collapsed .search-button kbd,
+  .sidebar--collapsed .space-switcher,
+  .sidebar--collapsed .nav__section,
+  .sidebar--collapsed .nav__empty,
+  .sidebar--collapsed .nav__link--static {
+    display: none;
+  }
+  .sidebar--collapsed .search-button,
+  .sidebar--collapsed .nav__link {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  .sidebar--collapsed .nav__link:not(.nav__link--static):hover {
+    transform: none;
+  }
+  .sidebar--collapsed .badge--count {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 10px;
+  }
+  .sidebar--collapsed .user-card {
+    padding: 8px 4px;
+  }
+  .sidebar--collapsed .user-card__who {
+    justify-content: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
+}
