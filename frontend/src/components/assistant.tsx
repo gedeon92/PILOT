@@ -197,7 +197,7 @@ function Conversation({
           key={i}
           className={`ai-turn ai-turn--${turn.role}${turn.error ? ' ai-turn--error' : ''}`}
         >
-          {turn.role === 'assistant' && <AiAvatar size={30} />}
+          {turn.role === 'assistant' && <AiAvatar size={34} />}
           <div className="ai-turn__body">
             <div className="ai-bubble">
               <span className="visually-hidden">
@@ -227,7 +227,7 @@ function Conversation({
       ))}
       {thinking && (
         <div className="ai-turn ai-turn--assistant">
-          <AiAvatar size={30} thinking />
+          <AiAvatar size={34} thinking />
           <div className="ai-turn__body">
             <div className="ai-bubble ai-bubble--thinking" role="status">
               L’assistant réfléchit
@@ -423,7 +423,7 @@ export function AssistantPanel({ space, firstName }: { space: Space; firstName?:
 
       <div className="ai-main">
         <header className="ai-bar">
-          <AiAvatar size={28} thinking={thinking} />
+          <AiAvatar size={32} thinking={thinking} />
           <div className="ai-bar__name">
             <strong>Assistant PILOT</strong>
             <span>{thinking ? 'réfléchit…' : 'prêt'}</span>
@@ -448,7 +448,7 @@ export function AssistantPanel({ space, firstName }: { space: Space; firstName?:
           ) : (
             !currentId && (
               <div className="ai-welcome">
-                <AiAvatar size={84} />
+                <AiAvatar size={104} />
                 <h2>Bonjour{firstName ? ` ${firstName}` : ''}, que voulez-vous faire ?</h2>
                 <p className="muted">
                   Je lis vos projets et je prépare les changements. Rien ne change sans votre clic «
