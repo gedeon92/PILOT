@@ -11,7 +11,6 @@ import {
   DashboardIcon,
   DocumentIcon,
   FolderIcon,
-  InboxIcon,
   ScaleIcon,
   Logo,
   LogoutIcon,
@@ -25,6 +24,7 @@ import { CommandPalette } from '../components/command-palette'
 import { Alert, FullPageLoader, Skeleton } from '../components/ui'
 import { PortfolioMark } from '../components/portfolio-mark'
 import { Avatar } from '../components/avatar'
+import { AiAvatar } from '../components/ai-avatar'
 import { ThemeToggle } from '../components/theme-toggle'
 import { TaskDialogHost } from '../components/task-dialog'
 import { preloadPages } from '../lazy-pages'
@@ -184,7 +184,7 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
           </NavLink>
           {space.role !== 'guest' && (
             <NavLink to={`${base}/mises-a-jour`} className={linkClass} title="Mises à jour">
-              <InboxIcon />
+              <AiAvatar size={22} still />
               <span className="nav__label">Mises à jour</span>
             </NavLink>
           )}

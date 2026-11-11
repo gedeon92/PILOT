@@ -7112,3 +7112,12 @@ a {
     transition: none;
   }
 }
+
+/* Avatar immobile (icône « Mises à jour » du menu). */
+.ai-avatar--still,
+.ai-avatar--still * {
+  animation: none !important;
+}
+.nav__link .ai-avatar--still {
+  box-shadow: none;
+}

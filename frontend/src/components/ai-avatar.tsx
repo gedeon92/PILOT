@@ -4,14 +4,25 @@ import { useId } from 'react'
  * doucement, ses yeux regardent autour d'elle et clignent ; quand elle réfléchit, elle penche
  * la tête, lève les sourcils et regarde en l'air. Tout est dessiné (pas d'image à charger), et
  * les mouvements s'arrêtent si l'utilisateur réduit les animations. */
-export function AiAvatar({ size = 32, thinking = false }: { size?: number; thinking?: boolean }) {
+export function AiAvatar({
+  size = 32,
+  thinking = false,
+  still = false,
+}: {
+  size?: number
+  thinking?: boolean
+  /** Immobile (icône du menu) : pas d'animation qui distrait pendant la navigation. */
+  still?: boolean
+}) {
   const id = useId().replace(/:/g, '')
   const skin = '#9a6340'
   const skinShade = '#7d4c2f'
   const hair = '#231710'
   return (
     <span
-      className={thinking ? 'ai-avatar ai-avatar--thinking' : 'ai-avatar'}
+      className={['ai-avatar', thinking && 'ai-avatar--thinking', still && 'ai-avatar--still']
+        .filter(Boolean)
+        .join(' ')}
       style={{ width: size, height: size }}
       aria-hidden="true"
     >
