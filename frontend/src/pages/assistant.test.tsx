@@ -111,8 +111,8 @@ describe('assistant IA dans « Mises à jour »', () => {
     renderApp(`/espaces/${SPACE_ID}/mises-a-jour`)
     const user = userEvent.setup()
     // Éteint : la page s'ouvre sur la saisie de texte habituelle, avec l'onglet de l'assistant.
-    await user.click(await screen.findByRole('button', { name: '✨ Assistant IA' }))
-    expect(await screen.findByText(/L’assistant est éteint pour cet espace/)).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: 'Assistant IA' }))
+    expect(await screen.findByText(/L’assistant est en pause/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Paramètres → Assistant IA' })).toBeInTheDocument()
   })
 })

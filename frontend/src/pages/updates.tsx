@@ -706,7 +706,7 @@ function RequestCard({
 // ---------- Page ----------
 
 export function UpdatesPage() {
-  const { space } = useOutletContext<SpaceContext>()
+  const { space, me } = useOutletContext<SpaceContext>()
   const canWrite = canWriteSpace(space.role)
   const updates = useUpdates(space.id, canWrite)
   const projects = useProjects(space.id)
@@ -723,8 +723,8 @@ export function UpdatesPage() {
     <div className="segmented upd-tabs" role="group" aria-label="Type de mise à jour">
       {(
         [
-          ['assistant', '✨ Assistant IA'],
-          ['texte', '📝 Texte ou document'],
+          ['assistant', 'Assistant IA'],
+          ['texte', 'Texte ou document'],
         ] as const
       ).map(([key, label]) => (
         <button
@@ -743,18 +743,16 @@ export function UpdatesPage() {
   if (!canWrite || current === 'assistant') {
     return (
       <div className="page-content">
-        <PageHeader
-          title="Mises à jour"
-          subtitle="Demandez à l’assistant : il lit vos projets et prépare les changements, vous les validez."
-        />
-        {tabs}
+        <PageHeader title="Mises à jour" actions={tabs || undefined} />
         {!canWrite && !aiOn && (
           <Alert tone="info">
             Votre rôle de lecteur ne permet pas de proposer des mises à jour. Demandez à la
             propriétaire de l’espace de vous passer contributeur.
           </Alert>
         )}
-        {(canWrite || aiOn) && <AssistantPanel space={space} />}
+        {(canWrite || aiOn) && (
+          <AssistantPanel space={space} firstName={me.user.display_name.split(' ')[0]} />
+        )}
       </div>
     )
   }
@@ -772,8 +770,8 @@ export function UpdatesPage() {
       <PageHeader
         title="Mises à jour"
         subtitle="Collez un compte rendu ou déposez un document : PILOT prépare les changements, vous les validez."
+        actions={tabs || undefined}
       />
-      {tabs}
       <Composer spaceId={space.id} onSent={(request) => setLastId(request.id)} />
       {last && <Summary request={last} />}
 

@@ -11,6 +11,7 @@ import {
   useToggleAi,
 } from '../api/queries'
 import { formatMoment } from '../labels'
+import { AiAvatar } from './ai-avatar'
 import { Alert, Skeleton, StatusPill, type Tone } from './ui'
 
 const ACTION_STATE: Record<AiAction['state'], { label: string; tone: Tone }> = {
@@ -20,13 +21,6 @@ const ACTION_STATE: Record<AiAction['state'], { label: string; tone: Tone }> = {
   conflict: { label: 'En conflit', tone: 'danger' },
   failed: { label: 'Non appliquée', tone: 'danger' },
 }
-
-const SUGGESTIONS = [
-  'Quelles tâches sont en retard ?',
-  'Qu’est-ce que je dois faire cette semaine ?',
-  'Fais le point sur un projet',
-  'Crée une tâche dans un projet',
-]
 
 /** Texte de l'assistant : paragraphes, listes « - » et **gras**, sans HTML interprété. */
 function inline(text: string): ReactNode[] {
@@ -203,36 +197,42 @@ function Conversation({
           key={i}
           className={`ai-turn ai-turn--${turn.role}${turn.error ? ' ai-turn--error' : ''}`}
         >
-          <div className="ai-bubble">
-            <span className="visually-hidden">
-              {turn.role === 'user' ? 'Vous : ' : 'Assistant : '}
-            </span>
-            <RichText text={turn.text} />
-          </div>
-          {(turn.actions ?? []).length > 0 && (
-            <div className="ai-actions">
-              <ApplyAll
-                actions={turn.actions ?? []}
-                spaceId={spaceId}
-                conversationId={conversation.id}
-              />
-              {(turn.actions ?? []).map((a) => (
-                <ActionCard
-                  key={a.id}
-                  action={a}
+          {turn.role === 'assistant' && <AiAvatar size={30} />}
+          <div className="ai-turn__body">
+            <div className="ai-bubble">
+              <span className="visually-hidden">
+                {turn.role === 'user' ? 'Vous : ' : 'Assistant : '}
+              </span>
+              <RichText text={turn.text} />
+            </div>
+            {(turn.actions ?? []).length > 0 && (
+              <div className="ai-actions">
+                <ApplyAll
+                  actions={turn.actions ?? []}
                   spaceId={spaceId}
                   conversationId={conversation.id}
                 />
-              ))}
-            </div>
-          )}
+                {(turn.actions ?? []).map((a) => (
+                  <ActionCard
+                    key={a.id}
+                    action={a}
+                    spaceId={spaceId}
+                    conversationId={conversation.id}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       ))}
       {thinking && (
         <div className="ai-turn ai-turn--assistant">
-          <div className="ai-bubble ai-bubble--thinking" role="status">
-            L’assistant réfléchit
-            <span className="ai-dots" aria-hidden="true" />
+          <AiAvatar size={30} thinking />
+          <div className="ai-turn__body">
+            <div className="ai-bubble ai-bubble--thinking" role="status">
+              L’assistant réfléchit
+              <span className="ai-dots" aria-hidden="true" />
+            </div>
           </div>
         </div>
       )}
@@ -242,15 +242,26 @@ function Conversation({
 }
 
 function Composer({
+  text,
+  setText,
   disabled,
   pending,
   onSend,
 }: {
+  text: string
+  setText: (value: string) => void
   disabled: boolean
   pending: boolean
   onSend: (text: string) => Promise<unknown>
 }) {
-  const [text, setText] = useState('')
+  const field = useRef<HTMLTextAreaElement>(null)
+  // La zone grandit avec le texte (jusqu'à environ huit lignes), comme une messagerie.
+  useEffect(() => {
+    const el = field.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 220)}px`
+  }, [text])
   async function submit(event?: FormEvent) {
     event?.preventDefault()
     const value = text.trim()
@@ -269,9 +280,10 @@ function Composer({
       </label>
       <textarea
         id="ai-input"
-        rows={2}
+        ref={field}
+        rows={1}
         maxLength={4000}
-        placeholder="Posez une question ou demandez un changement… (Entrée pour envoyer)"
+        placeholder="Écrivez à l’assistant…"
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
@@ -281,15 +293,58 @@ function Composer({
           }
         }}
       />
-      <button className="button button--primary" type="submit" disabled={disabled || !text.trim()}>
-        {pending ? 'Envoi…' : 'Envoyer'}
+      <button
+        className="ai-send"
+        type="submit"
+        aria-label={pending ? 'Envoi…' : 'Envoyer'}
+        disabled={disabled || !text.trim()}
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path
+            d="M12 19V5M5 12l7-7 7 7"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </button>
     </form>
   )
 }
 
-/** Assistant IA dans la page « Mises à jour » (lot E). */
-export function AssistantPanel({ space }: { space: Space }) {
+/** Raccourcis de l'accueil : une question envoyée tout de suite, ou un modèle de demande à
+ * compléter dans la zone de saisie. */
+const STARTERS: { title: string; hint: string; text: string; send: boolean }[] = [
+  {
+    title: 'Ce qui est en retard',
+    hint: 'Les tâches et projets qui ont dépassé leur date',
+    text: 'Quelles tâches sont en retard ?',
+    send: true,
+  },
+  {
+    title: 'Ma semaine',
+    hint: 'Ce qui m’attend dans les 7 prochains jours',
+    text: 'Qu’est-ce que je dois faire cette semaine ?',
+    send: true,
+  },
+  {
+    title: 'Créer un événement',
+    hint: 'Lieu, date, public, participants attendus',
+    text: 'Crée l’événement « … » dans le portefeuille …, le … . Lieu : … . Public : … . Participants attendus : … .',
+    send: false,
+  },
+  {
+    title: 'Créer un projet complet',
+    hint: 'Sections, tâches, jalons et décisions en une fois',
+    text: 'Crée le projet complet « … » dans le portefeuille … . Sections : … . Tâches : … . Jalons : … .',
+    send: false,
+  },
+]
+
+/** Assistant IA dans la page « Mises à jour » (lot E), présenté comme une messagerie. */
+export function AssistantPanel({ space, firstName }: { space: Space; firstName?: string }) {
   const status = useAiStatus(space.id)
   const on = Boolean(status.data?.available && status.data.enabled)
   const list = useAiConversations(space.id, on)
@@ -297,57 +352,58 @@ export function AssistantPanel({ space }: { space: Space }) {
   const conversation = useAiConversation(space.id, currentId)
   const send = useSendAiMessage(space.id)
   const remove = useDeleteAiConversation(space.id)
+  const [text, setText] = useState('')
 
   if (status.isPending) return <Skeleton />
   if (status.isError) return <Alert>{errorMessage(status.error)}</Alert>
   const s = status.data
-  if (!s.available) {
+  if (!s.available || !s.enabled) {
     return (
-      <Alert tone="info">
-        L’assistant n’est pas encore configuré sur le serveur : la clé Anthropic doit être ajoutée
-        par l’administrateur.
-      </Alert>
-    )
-  }
-  if (!s.enabled) {
-    return (
-      <Alert tone="info">
-        L’assistant est éteint pour cet espace.{' '}
-        {s.can_toggle ? (
-          <>
-            Vous pouvez l’allumer dans{' '}
-            <Link to={`/espaces/${space.id}/parametres`}>Paramètres → Assistant IA</Link>.
-          </>
-        ) : (
-          'Seul un propriétaire de l’espace peut l’allumer.'
-        )}
-      </Alert>
+      <div className="ai-off card-panel">
+        <AiAvatar size={56} />
+        <div>
+          <h2>L’assistant est en pause</h2>
+          <p className="muted">
+            {!s.available ? (
+              'La clé Anthropic n’est pas encore ajoutée sur le serveur.'
+            ) : s.can_toggle ? (
+              <>
+                Allumez-le dans{' '}
+                <Link to={`/espaces/${space.id}/parametres`}>Paramètres → Assistant IA</Link>.
+              </>
+            ) : (
+              'Seul un propriétaire de l’espace peut l’allumer.'
+            )}
+          </p>
+        </div>
+      </div>
     )
   }
 
   const current = currentId ? conversation.data : undefined
   const thinking = current?.status === 'thinking'
   const limitReached = s.used_today >= s.daily_limit
+  const busy = send.isPending || thinking || limitReached
 
-  async function sendText(text: string) {
-    const data = await send.mutateAsync({ conversationId: currentId, text })
+  async function sendText(value: string) {
+    const data = await send.mutateAsync({ conversationId: currentId, text: value })
     setCurrentId(data.id)
   }
 
+  function startNew() {
+    setCurrentId(null)
+    setText('')
+    send.reset()
+  }
+
   return (
-    <section className="ai-panel card-panel" aria-labelledby="ai-title">
+    <section className="ai-shell" aria-label="Assistant IA">
       <aside className="ai-side" aria-label="Conversations">
-        <button
-          type="button"
-          className="button button--small"
-          onClick={() => {
-            setCurrentId(null)
-            send.reset()
-          }}
-        >
-          + Nouvelle conversation
+        <button type="button" className="ai-new" onClick={startNew}>
+          <span aria-hidden="true">＋</span> Nouvelle conversation
         </button>
         {list.isPending && <Skeleton lines={2} />}
+        {(list.data ?? []).length > 0 && <p className="ai-side__label">Récentes</p>}
         <ul className="ai-side__list">
           {(list.data ?? []).map((c) => (
             <li key={c.id}>
@@ -366,66 +422,80 @@ export function AssistantPanel({ space }: { space: Space }) {
       </aside>
 
       <div className="ai-main">
-        <div className="ai-main__head">
-          <div>
-            <h2 id="ai-title">Assistant IA</h2>
-            <p className="card-panel__help">
-              Il lit vos projets avec vos droits et prépare les changements. Rien n’est modifié tant
-              que vous n’avez pas cliqué sur « Appliquer ».
-            </p>
+        <header className="ai-bar">
+          <AiAvatar size={28} thinking={thinking} />
+          <div className="ai-bar__name">
+            <strong>Assistant PILOT</strong>
+            <span>{thinking ? 'réfléchit…' : 'prêt'}</span>
           </div>
           {current && (
             <button
               type="button"
-              className="button button--small button--ghost"
+              className="ai-bar__delete"
               disabled={remove.isPending || thinking}
-              onClick={() => remove.mutate(current.id, { onSuccess: () => setCurrentId(null) })}
+              onClick={() => remove.mutate(current.id, { onSuccess: startNew })}
             >
               Supprimer la conversation
             </button>
           )}
+        </header>
+
+        <div className="ai-scroll">
+          {currentId && conversation.isPending && <Skeleton />}
+          {conversation.isError && <Alert>{errorMessage(conversation.error)}</Alert>}
+          {current ? (
+            <Conversation conversation={current} spaceId={space.id} />
+          ) : (
+            !currentId && (
+              <div className="ai-welcome">
+                <AiAvatar size={84} />
+                <h2>Bonjour{firstName ? ` ${firstName}` : ''}, que voulez-vous faire ?</h2>
+                <p className="muted">
+                  Je lis vos projets et je prépare les changements. Rien ne change sans votre clic «
+                  Appliquer ».
+                </p>
+                <div className="ai-starters">
+                  {STARTERS.map((starter) => (
+                    <button
+                      key={starter.title}
+                      type="button"
+                      className="ai-starter"
+                      disabled={busy}
+                      onClick={() =>
+                        starter.send
+                          ? void sendText(starter.text).catch(() => undefined)
+                          : (setText(starter.text), document.getElementById('ai-input')?.focus())
+                      }
+                    >
+                      <strong>{starter.title}</strong>
+                      <span>{starter.hint}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          )}
         </div>
 
-        {currentId && conversation.isPending && <Skeleton />}
-        {conversation.isError && <Alert>{errorMessage(conversation.error)}</Alert>}
-        {current ? (
-          <Conversation conversation={current} spaceId={space.id} />
-        ) : (
-          !currentId && (
-            <div className="ai-empty">
-              <p>Exemples de demandes :</p>
-              <div className="ai-empty__chips">
-                {SUGGESTIONS.map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    className="chip"
-                    disabled={send.isPending || limitReached}
-                    onClick={() => void sendText(q).catch(() => undefined)}
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )
-        )}
-
-        {send.isError && <Alert>{errorMessage(send.error)}</Alert>}
-        {limitReached && (
-          <Alert tone="warn">
-            Limite du jour atteinte ({s.daily_limit} questions). Elle repart demain.
-          </Alert>
-        )}
-        <Composer
-          disabled={send.isPending || thinking || limitReached}
-          pending={send.isPending}
-          onSend={sendText}
-        />
-        <p className="ai-foot muted">
-          {s.used_today} / {s.daily_limit} questions aujourd’hui · Vos conversations sont privées.
-          L’assistant peut se tromper : relisez chaque proposition.
-        </p>
+        <div className="ai-dock">
+          {send.isError && <Alert>{errorMessage(send.error)}</Alert>}
+          {limitReached && (
+            <Alert tone="warn">
+              Limite du jour atteinte ({s.daily_limit} questions). Elle repart demain.
+            </Alert>
+          )}
+          <Composer
+            text={text}
+            setText={setText}
+            disabled={busy}
+            pending={send.isPending}
+            onSend={sendText}
+          />
+          <p className="ai-foot">
+            Entrée pour envoyer · Maj + Entrée pour aller à la ligne · {s.used_today}/
+            {s.daily_limit} aujourd’hui · L’assistant peut se tromper : relisez chaque proposition.
+          </p>
+        </div>
       </div>
     </section>
   )
