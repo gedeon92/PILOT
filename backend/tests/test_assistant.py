@@ -391,3 +391,48 @@ def test_a_complete_project_is_proposed_in_one_card_and_created_in_one_click(mak
     assert sorted(d["state"] for d in decisions) == ["draft", "open"]
     # La carte ouvre la fiche du projet créé.
     assert applied["project_id"] == project["id"]
+
+
+def test_the_complete_project_can_be_an_event(make_client, ai):
+    owner, _sid, b, pf, _project = _setup(make_client)
+    _enable(owner, b)
+    event_type = next(t for t in owner.get(f"{b}/project-types").json() if t["kind"] == "event")
+    fake = ai(
+        [
+            call("lister_referentiels", {}),
+            call(
+                "proposer_projet_complet",
+                {
+                    "projet": {
+                        "title": "Fête de fin d'année 2026",
+                        "portfolio_id": pf["id"],
+                        "project_type_id": event_type["id"],
+                        "due_date": "2026-12-19",
+                        "event": {
+                            "venue": "Salle des fêtes",
+                            "audience": "Équipe et partenaires",
+                            "expected_attendance": 120,
+                            "edition_label": "2026",
+                        },
+                    },
+                    "taches": [{"title": "Réserver la salle", "due_date": "2026-11-25"}],
+                },
+                "t2",
+            ),
+            reply("Je vous propose la fête : validez-la."),
+        ]
+    )
+    conv = owner.post(f"{b}/ai/conversations", json={"text": "Crée la fête"}).json()
+    refs = fake.calls[1]["messages"][-1]["content"][0]["content"]
+    assert '"nature": "event"' in refs
+    action = owner.get(f"{b}/ai/conversations/{conv['id']}").json()["turns"][1]["actions"][0]
+    event_line = next(c for c in action["changes"] if c["field"] == "Événement")
+    assert event_line["after"] == (
+        "lieu : Salle des fêtes · public : Équipe et partenaires · 120 participants attendus"
+        " · édition 2026"
+    )
+    applied = owner.post(f"{b}/ai/actions/{action['id']}/apply").json()
+    assert applied["state"] == "applied", applied
+    project = owner.get(f"{b}/projects/{applied['project_id']}").json()
+    assert project["event"]["venue"] == "Salle des fêtes"
+    assert project["event"]["expected_attendance"] == 120

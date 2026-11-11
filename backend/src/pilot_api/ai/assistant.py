@@ -65,6 +65,10 @@ utilise proposer_projet_complet : une seule proposition que la personne valide d
 Ne propose que ce que la personne a demandé ou fourni ; n'invente ni personnes ni dates. Si \
 l'espace est en mode simple, préviens que les sections, jalons et décisions ne seront visibles \
 qu'en mode complet (Paramètres → Mode d'affichage).
+- Un projet devient un événement (page Événements, suivi après l'événement) quand son type \
+de projet est de nature « event » ; remplis alors « event » (lieu, public, participants \
+attendus, édition). Si l'espace n'a aucun type de nature « event », dis à la personne d'en \
+créer un dans Paramètres → Types de projet (nature Événement), puis de revenir.
 - Si la demande est ambiguë (plusieurs projets ou tâches possibles), pose une question au \
 lieu de deviner.
 - Tu agis avec les droits de la personne. Si un outil refuse (rôle lecteur, projet \

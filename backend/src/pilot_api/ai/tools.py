@@ -95,6 +95,7 @@ PROJECT_FIELDS = {
     "country": "Pays",
     "city": "Ville",
     "external_url": "Lien externe",
+    "event": "Événement",
 }
 TASK_STATUS_LABELS = P.TASK_STATUS_WORDS
 RECURRENCE_LABELS = {
@@ -160,6 +161,23 @@ _PROJECT_PROPS: dict[str, Any] = {
     "due_date": _NULLABLE_DATE,
     "country": {"type": ["string", "null"]},
     "city": {"type": ["string", "null"]},
+    "event": {
+        "type": ["object", "null"],
+        "description": (
+            "Détails d'un événement. Exige un project_type_id dont la nature est « event » "
+            "(voir lister_referentiels)."
+        ),
+        "properties": {
+            "venue": {"type": ["string", "null"], "description": "Lieu"},
+            "audience": {"type": ["string", "null"], "description": "Public visé"},
+            "expected_attendance": {
+                "type": ["integer", "null"],
+                "description": "Nombre de participants attendus",
+            },
+            "edition_label": {"type": ["string", "null"], "description": "Édition (ex. 2026)"},
+        },
+        "additionalProperties": False,
+    },
 }
 
 
@@ -588,7 +606,14 @@ def _references(db: Session, membership: Membership, _args: dict) -> str:
             ],
             "portefeuilles": catalog(Portfolio),
             "filiales": catalog(Entity),
-            "types_de_projet": catalog(ProjectType),
+            "types_de_projet": [
+                {"id": r.id, "nom": r.name, "nature": r.kind}
+                for r in db.scalars(
+                    select(ProjectType).where(
+                        ProjectType.space_id == sid, ProjectType.archived_at.is_(None)
+                    )
+                )
+            ],
         }
     )
 
@@ -666,6 +691,16 @@ def display(db: Session, space_id: uuid.UUID, field: str, value: Any) -> str:
     """Valeur lisible pour l'écran de validation."""
     if value is None or value == "":
         return "—"
+    if field == "event" and isinstance(value, dict):
+        parts = [
+            f"lieu : {value['venue']}" if value.get("venue") else "",
+            f"public : {value['audience']}" if value.get("audience") else "",
+            f"{value['expected_attendance']} participants attendus"
+            if value.get("expected_attendance")
+            else "",
+            f"édition {value['edition_label']}" if value.get("edition_label") else "",
+        ]
+        return " · ".join(p for p in parts if p) or "oui"
     if isinstance(value, date):
         return value.strftime("%d/%m/%Y")
     text = value.value if hasattr(value, "value") else value
