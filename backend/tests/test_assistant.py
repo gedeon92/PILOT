@@ -309,3 +309,85 @@ def test_api_error_and_daily_limit(make_client, ai, monkeypatch):
     assert limited.status_code == 429
     assert owner.delete(f"{b}/ai/conversations/{conv['id']}").status_code == 204
     assert owner.get(f"{b}/ai/conversations").json() == []
+
+
+def test_a_complete_project_is_proposed_in_one_card_and_created_in_one_click(make_client, ai):
+    owner, _sid, b, pf, _project = _setup(make_client)
+    _enable(owner, b)
+    complete = {
+        "projet": {
+            "title": "Salon Agri 2027",
+            "portfolio_id": pf["id"],
+            "start_date": "2027-03-01",
+            "next_step": "Réserver la salle",
+        },
+        "sections": ["Préparation", "Exécution"],
+        "taches": [
+            {
+                "title": "Réserver la salle",
+                "section": "Préparation",
+                "due_date": "2027-02-10",
+                "priority": "urgent",
+                "assignee_label": "Mon assistante",
+                "sous_taches": ["Comparer trois devis", "Visiter la salle"],
+            },
+            {"title": "Accueillir les exposants", "section": "Exécution"},
+        ],
+        "jalons": [
+            {
+                "title": "Salle confirmée",
+                "due_date": "2027-02-15",
+                "criterion": "Contrat signé",
+                "taches": ["Réserver la salle"],
+            }
+        ],
+        "decisions": [
+            {
+                "statement": "Le salon dure deux jours",
+                "executor_label": "Mon assistante",
+                "due_date": "2027-01-15",
+                "criterion": "Dates publiées sur le site",
+            },
+            {"statement": "Choisir un traiteur local"},
+        ],
+    }
+    bad = {**complete, "taches": [{"title": "X", "section": "Inconnue"}]}
+    fake = ai(
+        [
+            call("proposer_projet_complet", bad),
+            call("proposer_projet_complet", complete, "t2"),
+            reply("Je vous propose le projet complet : validez-le ci-dessous."),
+        ]
+    )
+    conv = owner.post(f"{b}/ai/conversations", json={"text": "Crée le salon 2027 complet"}).json()
+    refused = fake.calls[1]["messages"][-1]["content"][0]
+    assert refused["is_error"] is True and "section inconnue" in refused["content"]
+
+    action = owner.get(f"{b}/ai/conversations/{conv['id']}").json()["turns"][1]["actions"][0]
+    assert action["summary"] == (
+        "Créer le projet complet « Salon Agri 2027 » "
+        "(2 section(s), 2 tâche(s), 1 jalon(s), 2 décision(s))"
+    )
+    fields = [c["field"] for c in action["changes"]]
+    assert fields.count("Tâche") == 2 and "Jalon" in fields and fields.count("Décision") == 2
+    assert all(p["title"] != "Salon Agri 2027" for p in owner.get(f"{b}/projects").json())
+
+    applied = owner.post(f"{b}/ai/actions/{action['id']}/apply").json()
+    assert applied["state"] == "applied", applied
+    assert applied["result"] == (
+        "Projet « Salon Agri 2027 » créé avec 2 sections, 2 tâches, 2 sous-tâches, 1 jalons, "
+        "2 décisions."
+    )
+    project = next(p for p in owner.get(f"{b}/projects").json() if p["title"] == "Salon Agri 2027")
+    sections = owner.get(f"{b}/projects/{project['id']}/sections").json()
+    assert [s["title"] for s in sections] == ["Préparation", "Exécution"]
+    tasks = owner.get(f"{b}/projects/{project['id']}/tasks").json()
+    room = next(t for t in tasks if t["title"] == "Réserver la salle")
+    assert room["section_id"] == sections[0]["id"] and room["priority"] == "urgent"
+    assert room["subtasks_total"] == 2
+    milestone = owner.get(f"{b}/projects/{project['id']}/milestones").json()[0]
+    assert [t["title"] for t in milestone["tasks"]] == ["Réserver la salle"]
+    decisions = owner.get(f"{b}/decisions?project_id={project['id']}").json()
+    assert sorted(d["state"] for d in decisions) == ["draft", "open"]
+    # La carte ouvre la fiche du projet créé.
+    assert applied["project_id"] == project["id"]

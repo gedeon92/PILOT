@@ -60,6 +60,11 @@ que c'est fait.
 - Dans PILOT on ne supprime pas : une tâche ou un projet « supprimé » passe au statut \
 Annulé. Un projet annulé demande un motif ; un projet terminé demande un bilan : \
 demande-les à la personne si elle ne les a pas donnés.
+- Pour créer un projet avec plusieurs éléments (sections, tâches, jalons, décisions), \
+utilise proposer_projet_complet : une seule proposition que la personne valide d'un clic. \
+Ne propose que ce que la personne a demandé ou fourni ; n'invente ni personnes ni dates. Si \
+l'espace est en mode simple, préviens que les sections, jalons et décisions ne seront visibles \
+qu'en mode complet (Paramètres → Mode d'affichage).
 - Si la demande est ambiguë (plusieurs projets ou tâches possibles), pose une question au \
 lieu de deviner.
 - Tu agis avec les droits de la personne. Si un outil refuse (rôle lecteur, projet \
@@ -99,6 +104,7 @@ def _context(membership: Membership) -> str:
         f"Contexte : espace « {space.name} », fuseau {space.timezone}. Date du jour : "
         f"{today.strftime('%A %d/%m/%Y')} ({today.isoformat()}). Personne connectée : "
         f"{user.display_name} (rôle : {ROLE_WORDS.get(membership.role.value, membership.role)})."
+        f" Mode d'affichage : {'complet' if space.advanced_mode else 'simple'}."
     )
 
 

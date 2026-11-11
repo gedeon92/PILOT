@@ -10,6 +10,7 @@ import {
   type CatalogResource,
 } from '../api/queries'
 import { BackupSection } from '../components/backup-section'
+import { PurgeSection } from '../components/purge-section'
 import { TemplatesSection } from '../components/templates'
 import { AiSettingsSection } from '../components/assistant'
 import { PlusIcon } from '../components/icons'
@@ -505,6 +506,7 @@ export function SettingsPage() {
         <TemplatesSection spaceId={space.id} canManage={canManage} />
       )}
       <BackupSection spaceId={space.id} canExport={canManage} />
+      {canManage && <PurgeSection spaceId={space.id} />}
     </div>
   )
 }

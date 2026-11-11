@@ -1122,6 +1122,23 @@ export interface paths {
         patch: operations["update_meeting_api_spaces__space_id__meetings__meeting_id__patch"];
         trace?: never;
     };
+    "/api/spaces/{space_id}/projects/purge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Purge Projects */
+        post: operations["purge_projects_api_spaces__space_id__projects_purge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/spaces/{space_id}/projects/{project_id}/access": {
         parameters: {
             query?: never;
@@ -3227,6 +3244,23 @@ export interface components {
              * Format: uuid
              */
             project_id: string;
+        };
+        /** PurgeIn */
+        PurgeIn: {
+            /** Project Ids */
+            project_ids: string[];
+            /**
+             * Confirm
+             * @constant
+             */
+            confirm: "SUPPRIMER";
+        };
+        /** PurgeOut */
+        PurgeOut: {
+            /** Deleted */
+            deleted: number;
+            /** Titles */
+            titles: string[];
         };
         /** RefOut */
         RefOut: {
@@ -6543,6 +6577,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeetingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    purge_projects_api_spaces__space_id__projects_purge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurgeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurgeOut"];
                 };
             };
             /** @description Validation Error */

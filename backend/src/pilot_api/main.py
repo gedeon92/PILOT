@@ -21,6 +21,7 @@ from pilot_api.routers import (
     portability,
     project_access,
     projects,
+    purge,
     sections,
     spaces,
     task_collab,
@@ -52,6 +53,7 @@ app.include_router(templates.router)
 app.include_router(sections.router)
 app.include_router(milestones.router)
 app.include_router(decisions.router)
+app.include_router(purge.router)
 app.include_router(project_access.router)
 app.include_router(documents.router)
 app.include_router(updates.router)

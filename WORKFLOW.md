@@ -416,6 +416,8 @@ Demande de la propriétaire du produit : mettre une IA dans PILOT, capable de to
 - [x] Tests : `tests/test_assistant.py` (6, avec un faux client : aucun appel réel) et `src/pages/assistant.test.tsx` (2). Essai réel à l'écran avec une IA simulée : propositions, application, conflit, modes clair et sombre, téléphone.
 - Non repris dans l'export de l'espace : les conversations (personnelles). Données envoyées à Anthropic : les questions et ce que l'assistant consulte pour y répondre (indiqué dans Paramètres).
 
+- [x] **Projet complet en une seule proposition** (demande du 11 nov. 2026) : outil « proposer_projet_complet » — fiche du projet, sections, tâches (section, échéance, responsable, priorité, sous-tâches), jalons (tâches liées) et décisions (validées si complètes, sinon brouillons). Une seule carte à relire, un seul clic « Appliquer » ; tout est vérifié avant la première écriture, puis créé par les routes habituelles ; la carte ouvre ensuite la fiche du projet. Limites : 12 sections, 60 tâches (10 sous-tâches chacune), 15 jalons, 10 décisions. L'assistant connaît le mode d'affichage et prévient qu'en mode simple les sections, jalons et décisions restent cachés.
+
 **Reste à faire par la propriétaire :** créer le compte Anthropic (console.anthropic.com), fixer une limite de dépense mensuelle, créer la clé et la coller dans Render (`ANTHROPIC_API_KEY`), puis allumer l'assistant dans Paramètres.
 
 ## Suite « Assistante augmentée » (cahier V2 et notes techniques du 10 nov. 2026)
@@ -453,6 +455,15 @@ Documents reçus le 10 nov. 2026 (non versionnés : dossier Téléchargements de
 5. [ ] **F5** Routines (RIT01–RIT07) et vues « Ma journée » / « Ma semaine » (VIS01)
 6. [ ] **F6** Indicateurs (VIS02–VIS03), charge et capacité (CAP02), dossiers d'arbitrage (DEC04), rencontres et partenariats (REL), contrôles d'événement J−10 / J−1 / 5 jours / 10 jours
 7. [ ] **F7** Targetym, OKR et BSC (chap. 18–22) : **bloqué** tant que la documentation technique de Targetym (API, accès) n'est pas fournie
+
+## Suppression définitive de projets (11 nov. 2026)
+
+Demande de la propriétaire du produit : vider les projets d'essai avant de créer le vrai projet avec l'assistant. Seule exception à la règle « rien ne se supprime » :
+
+- [x] **Paramètres → Zone sensible** (propriétaires seulement) : cocher des projets (ou « Tout sélectionner »), sauvegarde proposée d'abord, mot **SUPPRIMER** à taper pour confirmer.
+- [x] Supprimés avec le projet : tâches et sous-tâches, commentaires, sections, jalons, décisions du projet, documents et leurs fichiers, liens, accès, propositions, alertes et historique propre. Les réunions restent (détachées du projet). Le journal de l'espace garde une ligne « projets supprimés » avec leurs titres.
+- [x] Test : `tests/test_purge.py`, `src/components/purge-section.test.tsx`.
+- Note : depuis l'ordinateur de développement, on n'a accès qu'à la base de développement ; la base de Render n'est jamais touchée directement (pas de mot de passe échangé).
 
 ## Phase 10 — Mise en production
 

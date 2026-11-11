@@ -1367,3 +1367,19 @@ export function useUpdateMeeting(spaceId: string) {
       }),
   )
 }
+
+// ---------- Suppression définitive de projets (propriétaire) ----------
+
+export function usePurgeProjects(spaceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    meta: { success: 'Projets supprimés définitivement' },
+    mutationFn: (projectIds: string[]) =>
+      api<{ deleted: number; titles: string[] }>(`/spaces/${spaceId}/projects/purge`, {
+        method: 'POST',
+        body: { project_ids: projectIds, confirm: 'SUPPRIMER' },
+      }),
+    // Tout l'espace peut changer : projets, tâches, décisions, alertes, documents.
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.space(spaceId) }),
+  })
+}

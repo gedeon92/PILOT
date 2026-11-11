@@ -40,9 +40,12 @@ from pilot_api.routers.milestones import list_milestones
 from pilot_api.routers.task_collab import task_detail
 from pilot_api.schemas import (
     CommentCreate,
+    DecisionCreate,
+    MilestoneCreate,
     ProjectCreate,
     ProjectStatusChange,
     ProjectUpdate,
+    SectionCreate,
     TaskCreate,
     TaskUpdate,
 )
@@ -285,6 +288,88 @@ TOOLS: list[dict[str, Any]] = [
             "validation de la personne."
         ),
         "input_schema": _obj(_PROJECT_PROPS, ["title", "portfolio_id"]),
+    },
+    {
+        "name": "proposer_projet_complet",
+        "description": (
+            "Propose de créer, en UNE seule proposition, un projet complet : la fiche du "
+            "projet, ses sections, ses tâches (avec sous-tâches), ses jalons et ses décisions. "
+            "À utiliser dès que la personne décrit un projet avec plusieurs éléments. Vérifie "
+            "d'abord les portefeuilles et les membres avec lister_referentiels. Les tâches "
+            "citent leur section par son titre ; les jalons citent leurs tâches par leur titre. "
+            "Rien n'est créé avant la validation de la personne."
+        ),
+        "input_schema": _obj(
+            {
+                "projet": _obj(_PROJECT_PROPS, ["title", "portfolio_id"]),
+                "sections": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Titres des sections, dans l'ordre (12 au plus)",
+                },
+                "taches": {
+                    "type": "array",
+                    "description": "60 tâches au plus",
+                    "items": _obj(
+                        {
+                            "title": {"type": "string"},
+                            "section": {
+                                "type": ["string", "null"],
+                                "description": "Titre d'une des sections ci-dessus",
+                            },
+                            "due_date": _NULLABLE_DATE,
+                            "start_date": _NULLABLE_DATE,
+                            "assignee_member_id": {"type": ["string", "null"]},
+                            "assignee_label": {"type": ["string", "null"]},
+                            "priority": _TASK_PROPS["priority"],
+                            "deliverable": {"type": ["string", "null"]},
+                            "sous_taches": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Titres des sous-tâches (10 au plus)",
+                            },
+                        },
+                        ["title"],
+                    ),
+                },
+                "jalons": {
+                    "type": "array",
+                    "description": "15 jalons au plus ; date engagée obligatoire",
+                    "items": _obj(
+                        {
+                            "title": {"type": "string"},
+                            "due_date": {"type": "string", "description": "AAAA-MM-JJ"},
+                            "criterion": {"type": ["string", "null"]},
+                            "owner_member_id": {"type": ["string", "null"]},
+                            "owner_label": {"type": ["string", "null"]},
+                            "critical": {"type": "boolean"},
+                            "taches": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Titres des tâches dont dépend le jalon",
+                            },
+                        },
+                        ["title", "due_date"],
+                    ),
+                },
+                "decisions": {
+                    "type": "array",
+                    "description": "10 décisions au plus, rattachées au projet",
+                    "items": _obj(
+                        {
+                            "statement": {"type": "string"},
+                            "executor_member_id": {"type": ["string", "null"]},
+                            "executor_label": {"type": ["string", "null"]},
+                            "decider_label": {"type": ["string", "null"]},
+                            "due_date": _NULLABLE_DATE,
+                            "criterion": {"type": ["string", "null"]},
+                        },
+                        ["statement"],
+                    ),
+                },
+            },
+            ["projet"],
+        ),
     },
     {
         "name": "proposer_modification_projet",
@@ -816,7 +901,181 @@ def _propose_comment(db: Session, membership: Membership, args: dict) -> dict:
     }
 
 
+FULL_LIMITS = {"sections": 12, "taches": 60, "sous_taches": 10, "jalons": 15, "decisions": 10}
+
+
+def _people(db: Session, space_id: uuid.UUID, member: Any, label: Any) -> str:
+    if member:
+        return _member_name(db, space_id, member)
+    return str(label) if label else ""
+
+
+def _propose_full_project(db: Session, membership: Membership, args: dict) -> dict:
+    """Projet complet (fiche, sections, tâches, sous-tâches, jalons, décisions) en une seule
+    proposition. Tout est vérifié ici, puis de nouveau à l'application."""
+    if membership.role not in (Role.OWNER, Role.CONTRIBUTOR):
+        raise ToolError("Votre rôle ne permet pas de créer un projet.")
+    raw = args.get("projet") or {}
+    project = _check(ProjectCreate, {k: v for k, v in raw.items() if k in PROJECT_FIELDS})
+    portfolio = db.get(Portfolio, project.portfolio_id)
+    if portfolio is None or portfolio.space_id != membership.space_id:
+        raise ToolError("Portefeuille introuvable : utilisez lister_referentiels.")
+    for key, limit in FULL_LIMITS.items():
+        if key != "sous_taches" and len(args.get(key) or []) > limit:
+            raise ToolError(f"{limit} {key} au plus dans une proposition.")
+
+    sections: list[str] = []
+    for title in args.get("sections") or []:
+        body = _check(SectionCreate, {"title": title})
+        if body.title in sections:
+            raise ToolError(f"Section en double : « {body.title} ».")
+        sections.append(body.title)
+
+    tasks: list[dict] = []
+    titles: set[str] = set()
+    for item in args.get("taches") or []:
+        section = item.get("section") or None
+        if section and section not in sections:
+            raise ToolError(
+                f"La tâche « {item.get('title')} » cite une section inconnue : « {section} »."
+            )
+        fields = {
+            k: item.get(k)
+            for k in (
+                "title",
+                "due_date",
+                "start_date",
+                "assignee_member_id",
+                "assignee_label",
+                "priority",
+                "deliverable",
+            )
+            if item.get(k) is not None
+        }
+        body = _check(TaskCreate, fields)
+        if body.title in titles:
+            raise ToolError(f"Deux tâches portent le même titre : « {body.title} ».")
+        titles.add(body.title)
+        subs = []
+        for sub in (item.get("sous_taches") or [])[: FULL_LIMITS["sous_taches"]]:
+            subs.append(_check(TaskCreate, {"title": sub}).title)
+        if body.assignee_member_id:
+            member = db.get(Membership, body.assignee_member_id)
+            if member is None or member.space_id != membership.space_id:
+                raise ToolError("Responsable inconnu : utilisez lister_referentiels.")
+        tasks.append({"body": _sent(body, set()), "section": section, "subtasks": subs})
+
+    milestones: list[dict] = []
+    for item in args.get("jalons") or []:
+        linked = [str(t) for t in item.get("taches") or []]
+        unknown = [t for t in linked if t not in titles]
+        if unknown:
+            raise ToolError(
+                f"Le jalon « {item.get('title')} » cite des tâches inconnues : {unknown}."
+            )
+        body = _check(
+            MilestoneCreate,
+            {
+                k: item.get(k)
+                for k in (
+                    "title",
+                    "due_date",
+                    "criterion",
+                    "owner_member_id",
+                    "owner_label",
+                    "critical",
+                )
+                if item.get(k) is not None
+            },
+        )
+        milestones.append(
+            {
+                "body": body.model_dump(mode="json", exclude={"task_ids"}, exclude_none=True),
+                "tasks": linked,
+            }
+        )
+
+    decisions: list[dict] = []
+    for item in args.get("decisions") or []:
+        body = _check(
+            DecisionCreate,
+            {
+                k: item.get(k)
+                for k in (
+                    "statement",
+                    "executor_member_id",
+                    "executor_label",
+                    "decider_label",
+                    "due_date",
+                    "criterion",
+                )
+                if item.get(k) is not None
+            },
+        )
+        decisions.append(body.model_dump(mode="json", exclude_none=True))
+
+    sid = membership.space_id
+    project_fields = _sent(project, set())
+    changes = _changes(db, sid, PROJECT_FIELDS, None, project_fields)
+    if sections:
+        changes.append({"field": "Sections", "before": "", "after": " · ".join(sections)})
+    for t in tasks:
+        b = t["body"]
+        details = [
+            f"section « {t['section']} »" if t["section"] else "",
+            display(db, sid, "due_date", b.get("due_date")) if b.get("due_date") else "",
+            _people(db, sid, b.get("assignee_member_id"), b.get("assignee_label")),
+            display(db, sid, "priority", b.get("priority")) if b.get("priority") else "",
+            f"{len(t['subtasks'])} sous-tâche(s)" if t["subtasks"] else "",
+        ]
+        changes.append(
+            {
+                "field": "Tâche",
+                "before": "",
+                "after": b["title"] + "".join(f" · {d}" for d in details if d),
+            }
+        )
+    for m in milestones:
+        b = m["body"]
+        after = f"◆ {b['title']} · {display(db, sid, 'due_date', b['due_date'])}"
+        if b.get("criterion"):
+            after += f" · critère : {b['criterion']}"
+        if m["tasks"]:
+            after += f" · {len(m['tasks'])} tâche(s) liée(s)"
+        changes.append({"field": "Jalon", "before": "", "after": after})
+    for d in decisions:
+        who = _people(db, sid, d.get("executor_member_id"), d.get("executor_label"))
+        after = d["statement"] + (f" · {who}" if who else "")
+        if d.get("due_date"):
+            after += f" · {display(db, sid, 'due_date', d['due_date'])}"
+        changes.append({"field": "Décision", "before": "", "after": after})
+
+    counts = [
+        f"{len(sections)} section(s)" if sections else "",
+        f"{len(tasks)} tâche(s)" if tasks else "",
+        f"{len(milestones)} jalon(s)" if milestones else "",
+        f"{len(decisions)} décision(s)" if decisions else "",
+    ]
+    detail = ", ".join(c for c in counts if c)
+    return {
+        "kind": "full_project",
+        "target_id": None,
+        "base_version": None,
+        "payload": {
+            "project": project_fields,
+            "sections": sections,
+            "tasks": tasks,
+            "milestones": milestones,
+            "decisions": decisions,
+        },
+        "summary": f"Créer le projet complet « {project.title} »"
+        + (f" ({detail})" if detail else ""),
+        "changes": changes,
+    }
+
+
 PROPOSERS = {
+    "proposer_projet_complet": _propose_full_project,
     "proposer_creation_tache": _propose_task_create,
     "proposer_modification_tache": _propose_task_update,
     "proposer_creation_projet": _propose_project_create,

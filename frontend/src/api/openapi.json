@@ -4613,6 +4613,59 @@
         }
       }
     },
+    "/api/spaces/{space_id}/projects/purge": {
+      "post": {
+        "tags": [
+          "suppression définitive"
+        ],
+        "summary": "Purge Projects",
+        "operationId": "purge_projects_api_spaces__space_id__projects_purge_post",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurgeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurgeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/spaces/{space_id}/projects/{project_id}/access": {
       "get": {
         "tags": [
@@ -11838,6 +11891,52 @@
           "project_id"
         ],
         "title": "ProposalTarget"
+      },
+      "PurgeIn": {
+        "properties": {
+          "project_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Project Ids"
+          },
+          "confirm": {
+            "type": "string",
+            "const": "SUPPRIMER",
+            "title": "Confirm"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_ids",
+          "confirm"
+        ],
+        "title": "PurgeIn"
+      },
+      "PurgeOut": {
+        "properties": {
+          "deleted": {
+            "type": "integer",
+            "title": "Deleted"
+          },
+          "titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Titles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleted",
+          "titles"
+        ],
+        "title": "PurgeOut"
       },
       "RefOut": {
         "properties": {
