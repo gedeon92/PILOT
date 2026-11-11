@@ -743,7 +743,7 @@ export function UpdatesPage() {
   if (!canWrite || current === 'assistant') {
     return (
       <div className="page-content">
-        <PageHeader title="Mises à jour" actions={tabs || undefined} />
+        <PageHeader title="Assistant IA" actions={tabs || undefined} />
         {!canWrite && !aiOn && (
           <Alert tone="info">
             Votre rôle de lecteur ne permet pas de proposer des mises à jour. Demandez à la
@@ -768,7 +768,7 @@ export function UpdatesPage() {
   return (
     <div className="page-content">
       <PageHeader
-        title="Mises à jour"
+        title="Assistant IA"
         subtitle="Collez un compte rendu ou déposez un document : PILOT prépare les changements, vous les validez."
         actions={tabs || undefined}
       />

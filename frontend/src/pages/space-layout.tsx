@@ -183,9 +183,9 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
             <span className="nav__label">Documents</span>
           </NavLink>
           {space.role !== 'guest' && (
-            <NavLink to={`${base}/mises-a-jour`} className={linkClass} title="Mises à jour">
+            <NavLink to={`${base}/mises-a-jour`} className={linkClass} title="Assistant IA">
               <AiAvatar size={22} still />
-              <span className="nav__label">Mises à jour</span>
+              <span className="nav__label">Assistant IA</span>
             </NavLink>
           )}
           <NavLink to={`${base}/alertes`} className={linkClass} title="Alertes">

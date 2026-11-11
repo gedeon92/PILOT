@@ -512,7 +512,7 @@ export function AiSettingsSection({ spaceId }: { spaceId: string }) {
         <div>
           <h2 id="title-ai">Assistant IA</h2>
           <p className="card-panel__help">
-            Dans « Mises à jour », chaque membre peut poser des questions et demander des
+            Dans « Assistant IA », chaque membre peut poser des questions et demander des
             changements. L’assistant agit avec les droits de la personne (un lecteur ne peut rien
             modifier) et chaque changement attend son clic « Appliquer ». Les questions et les
             données consultées sont envoyées à Anthropic (Claude) pour préparer les réponses.
