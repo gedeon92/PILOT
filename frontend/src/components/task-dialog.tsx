@@ -21,6 +21,7 @@ import {
   useProjects,
   useRemoveDependency,
   useAdvanced,
+  useProjectFields,
   useSections,
   useSpaceTasks,
   useTaskDetail,
@@ -40,6 +41,7 @@ import {
 } from '../labels'
 import { personPayload, personValue } from '../person'
 import { Avatar } from './avatar'
+import { TaskCustomFields } from './custom-fields'
 import { TaskAttachments } from './documents'
 import { PersonField, type PersonValue } from './person-field'
 import { Alert, StatusPill } from './ui'
@@ -200,6 +202,7 @@ function TaskContent({
       )}
 
       <TaskFields spaceId={spaceId} task={task} canWrite={canWrite} />
+      <TaskFieldsBlock spaceId={spaceId} task={task} canWrite={canWrite} />
 
       {!detail.parent && <Subtasks spaceId={spaceId} detail={detail} canWrite={canWrite} />}
       <Section title="Fichiers joints" count={detail.documents?.length ?? 0}>
@@ -215,6 +218,30 @@ function TaskContent({
       <Comments spaceId={spaceId} detail={detail} canWrite={canWrite} />
       <Followers detail={detail} />
     </div>
+  )
+}
+
+/** Champs personnalisés de la tâche (étape F4), en mode complet seulement. */
+function TaskFieldsBlock({
+  spaceId,
+  task,
+  canWrite,
+}: {
+  spaceId: string
+  task: TaskDetail['task']
+  canWrite: boolean
+}) {
+  const advanced = useAdvanced(spaceId)
+  const fields = useProjectFields(spaceId, task.project_id ?? '', advanced && !!task.project_id)
+  if (!advanced || !task.project_id) return null
+  return (
+    <TaskCustomFields
+      spaceId={spaceId}
+      projectId={task.project_id}
+      taskId={task.id}
+      data={fields.data}
+      canEdit={canWrite}
+    />
   )
 }
 

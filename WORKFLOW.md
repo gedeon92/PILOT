@@ -451,7 +451,14 @@ Documents reçus le 10 nov. 2026 (non versionnés : dossier Téléchargements de
    - Historique du projet, export/import et assistant IA (outil « lister_decisions ») en tiennent compte.
    - Reporté à F6 : le dossier d'arbitrage (DEC04).
    - Tests : `tests/test_decisions.py` (7), `src/pages/decisions.test.tsx` (2).
-4. [ ] **F4** Champs personnalisés (CHP01–CHP04)
+4. [x] **F4** Champs personnalisés (CHP01–CHP04) — fait le 12 nov. 2026 (mode complet) :
+   - Catalogue géré par les propriétaires dans Paramètres → Champs personnalisés : nom, identifiant technique stable (`key`), type (texte court ou long, nombre, pourcentage, montant avec devise obligatoire, date, choix unique ou multiple, personne, oui/non, lien, calculé), description, cible (projet ou tâche), portée (tous les projets ou un seul), bornes, unité, « à compléter obligatoirement » (signalé tant qu'il est vide, sans bloquer l'enregistrement), ordre.
+   - Règles de vie (CHP03) : renommer un champ ou un choix garde l'identifiant et les valeurs ; un choix retiré n'est plus proposé mais reste lisible là où il était choisi ; un champ est archivé, jamais supprimé (refusé s'il sert à une formule). Changer de type montre d'abord un aperçu (valeurs convertibles et non convertibles) et le changement est refusé tant qu'une valeur ne peut pas être convertie : rien n'est effacé en silence.
+   - Champs calculés : A − B, A + B ou A ÷ B en % entre deux champs numériques de la même fiche ; lecture seule ; donnée manquante ou dénominateur nul = « Non calculable ».
+   - Fiche projet : carte « Champs personnalisés » (remplir, masquer dans ce projet les champs qui ne le concernent pas — sans rien effacer). Fenêtre de tâche : bloc « Champs personnalisés ». Vide ≠ faux ≠ 0.
+   - Liste des projets : filtre par champ (choix, oui/non, personne, « non renseigné »), par identifiant technique et non par libellé (CHP04). Export/import de l'espace, journal du projet (clé, avant, après) et assistant IA (lecture + outil `proposer_valeurs_champs`, validé par « Appliquer ») en tiennent compte.
+   - Non fait à ce stade : champs sur les jalons, décisions et relations ; vues enregistrées ; proposition d'un nouveau champ par un contributeur.
+   - Tests : `tests/test_custom_fields.py` (4), `tests/test_assistant.py` (+1), `src/components/custom-fields.test.tsx` (3).
 5. [ ] **F5** Routines (RIT01–RIT07) et vues « Ma journée » / « Ma semaine » (VIS01)
 6. [ ] **F6** Indicateurs (VIS02–VIS03), charge et capacité (CAP02), dossiers d'arbitrage (DEC04), rencontres et partenariats (REL), contrôles d'événement J−10 / J−1 / 5 jours / 10 jours
 7. [ ] **F7** Targetym, OKR et BSC (chap. 18–22) : **bloqué** tant que la documentation technique de Targetym (API, accès) n'est pas fournie

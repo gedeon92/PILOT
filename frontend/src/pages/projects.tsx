@@ -1,7 +1,17 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useOutletContext, useSearchParams } from 'react-router'
 import { canWriteSpace, errorMessage } from '../api/client'
-import { useCatalog, useCreateProject, useMembers, useProjects, useTemplates } from '../api/queries'
+import {
+  useAdvanced,
+  useCatalog,
+  useCreateProject,
+  useCustomFields,
+  useCustomValues,
+  useMembers,
+  useProjects,
+  useTemplates,
+} from '../api/queries'
+import { fieldFilterChoices, matchesFieldFilter } from '../components/custom-fields'
 import { FolderIcon, PlusIcon } from '../components/icons'
 import { PersonField, type PersonValue } from '../components/person-field'
 import { ProjectTable } from '../components/project-table'
@@ -28,6 +38,7 @@ const FILTER_KEYS = [
   'attention',
   'du',
   'au',
+  'champ',
 ] as const
 type FilterKey = (typeof FILTER_KEYS)[number]
 
@@ -51,6 +62,11 @@ export function ProjectsPage() {
   const canWrite = canWriteSpace(space.role)
   const today = todayIso(space.timezone)
 
+  const advanced = useAdvanced(space.id)
+  const customFields = useCustomFields(space.id, advanced).data ?? []
+  const customValues = useCustomValues(space.id, advanced && Boolean(get('champ'))).data ?? {}
+  const members = useMembers(space.id).data ?? []
+  const fieldChoices = advanced ? fieldFilterChoices(customFields, members) : []
   const all = projects.data ?? []
   const countries = [
     ...new Set(all.map((p) => p.country).filter((c): c is string => Boolean(c))),
@@ -68,7 +84,10 @@ export function ProjectsPage() {
       (!get('pays') || p.country === get('pays')) &&
       (!get('statut') || p.status === get('statut')) &&
       (!attention || matchesAttention(p, attention, today)) &&
-      (!(get('du') || get('au')) || inPeriod(p, get('du'), get('au'))),
+      (!(get('du') || get('au')) || inPeriod(p, get('du'), get('au'))) &&
+      (!get('champ') ||
+        !advanced ||
+        matchesFieldFilter(customFields, customValues[p.id] ?? {}, get('champ'))),
   )
   const active = FILTER_KEYS.filter((k) => get(k))
 
@@ -152,6 +171,24 @@ export function ProjectsPage() {
             </option>
           ))}
         </select>
+        {fieldChoices.length > 0 && (
+          <select
+            aria-label="Champ personnalisé"
+            value={get('champ')}
+            onChange={(e) => set('champ', e.target.value)}
+          >
+            <option value="">Tous les champs personnalisés</option>
+            {fieldChoices.map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.options.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        )}
         <label className="filters__date">
           Du
           <input type="date" value={get('du')} onChange={(e) => set('du', e.target.value)} />

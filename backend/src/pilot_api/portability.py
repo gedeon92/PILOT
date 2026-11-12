@@ -15,6 +15,7 @@ proposés par défaut) ; réimporter le même fichier renvoie l'espace déjà cr
 import hashlib
 import io
 import json
+import re
 import unicodedata
 import uuid
 import zipfile
@@ -32,6 +33,10 @@ from sqlalchemy.orm import Session
 from pilot_api.audit import record
 from pilot_api.models import (
     DEFAULT_PROJECT_TYPES,
+    CustomField,
+    CustomFieldTarget,
+    CustomFieldType,
+    CustomFieldValue,
     Decision,
     DecisionTask,
     Document,
@@ -225,6 +230,15 @@ def build_export(db: Session, space: Space, author: User, with_files: bool) -> t
         for link in db.scalars(
             select(MilestoneTask).where(MilestoneTask.milestone_id.in_([m.id for m in milestones]))
         ).all()
+    ]
+    # Champs personnalisés (étape F4) : définitions (clé technique, options aux identifiants
+    # stables) et valeurs des projets et des tâches.
+    data["custom_fields"] = [
+        _dump(f) for f in db.scalars(select(CustomField).where(CustomField.space_id == sid)).all()
+    ]
+    data["custom_field_values"] = [
+        _dump(v, exclude={"updated_by_id"})
+        for v in db.scalars(select(CustomFieldValue).where(CustomFieldValue.space_id == sid)).all()
     ]
     data["task_comments"] = [
         _dump(c, exclude={"author_id", "mentions"})
@@ -481,7 +495,9 @@ def import_space(
     }
     fallback_portfolio: uuid.UUID | None = None
     for item in data.get("projects", []):
-        values = _load(Project, item, set(refs) | {"owner_member_id", "owner_label"})
+        values = _load(
+            Project, item, set(refs) | {"owner_member_id", "owner_label", "hidden_field_ids"}
+        )
         for column, catalog in refs.items():
             source = item.get(column)
             values[column] = ids[catalog].get(str(source)) if source else None
@@ -742,6 +758,8 @@ def import_space(
     report.counts["meetings"] = len(meeting_ids)
     report.counts["decisions"] = len(decision_ids)
 
+    _import_custom_fields(db, space, data, project_ids, task_ids, member_ids, report)
+
     for item in data.get("contributors", []):
         project_id = project_ids.get(str(item.get("project_id")))
         if project_id is None:
@@ -905,3 +923,143 @@ def import_space(
         after={"export_id": str(export_id), **report.counts},
     )
     return report
+
+
+def _import_custom_fields(
+    db: Session,
+    space: Space,
+    data: dict[str, Any],
+    project_ids: dict[str, uuid.UUID],
+    task_ids: dict[str, Task],
+    member_ids: dict[str, uuid.UUID],
+    report: ImportReport,
+) -> None:
+    """Champs personnalisés (étape F4) : définitions, puis valeurs contrôlées comme une saisie.
+    Une valeur refusée (personne sans compte dans le nouvel espace, par exemple) n'est pas
+    reprise, et le rapport d'import le dit."""
+    from pilot_api.custom_field_rules import InvalidValue, clean_value
+    from pilot_api.routers.custom_fields import FieldConfig, _slug
+
+    field_ids: dict[str, CustomField] = {}
+    formulas: list[tuple[CustomField, dict[str, Any]]] = []
+    taken: set[str] = set()
+    for item in data.get("custom_fields", []):
+        try:
+            kind = CustomFieldType(item.get("type"))
+            target = CustomFieldTarget(item.get("target"))
+        except ValueError:
+            continue
+        label = str(item.get("label") or "").strip()[:120]
+        if not label:
+            continue
+        source_project = item.get("project_id")
+        project_id = project_ids.get(str(source_project)) if source_project else None
+        if source_project and project_id is None:
+            continue
+        key = str(item.get("key") or "")
+        if not re.fullmatch(r"[a-z][a-z0-9_]{1,59}", key) or key in taken:
+            key = _slug(label)
+            base, n = key, 2
+            while key in taken:
+                key, n = f"{base[:55]}_{n}", n + 1
+        taken.add(key)
+        options = [
+            {
+                "id": str(o["id"])[:40],
+                "label": str(o["label"])[:120],
+                "active": bool(o.get("active", True)),
+            }
+            for o in item.get("options") or []
+            if isinstance(o, dict) and o.get("id") and str(o.get("label") or "").strip()
+        ][:50]
+        try:
+            config = FieldConfig(**(item.get("config") or {})).model_dump(
+                exclude_none=True, mode="json"
+            )
+        except ValueError:
+            config = {}
+        formula = config.pop("formula", None)
+        archived = item.get("archived_at")
+        field = CustomField(
+            space_id=space.id,
+            project_id=project_id,
+            target=target,
+            key=key,
+            label=label,
+            description=str(item["description"])[:1000] if item.get("description") else None,
+            type=kind,
+            options=options
+            if kind in (CustomFieldType.CHOICE, CustomFieldType.MULTI_CHOICE)
+            else [],
+            config=config,
+            required=bool(item.get("required")),
+            position=int(item.get("position") or 0),
+            archived_at=datetime.fromisoformat(archived) if archived else None,
+        )
+        db.add(field)
+        field_ids[str(item.get("id"))] = field
+        if formula:
+            formulas.append((field, formula))
+    db.flush()
+    for field, formula in formulas:
+        a, b = field_ids.get(formula.get("a")), field_ids.get(formula.get("b"))
+        if a is not None and b is not None:
+            field.config = {
+                **field.config,
+                "formula": {"op": formula.get("op"), "a": str(a.id), "b": str(b.id)},
+            }
+    report.counts["custom_fields"] = len(field_ids)
+
+    members = set(member_ids.values())
+    kept = refused = 0
+    seen: set[tuple] = set()
+    for item in data.get("custom_field_values", []):
+        field = field_ids.get(str(item.get("field_id")))
+        project_id = project_ids.get(str(item.get("project_id")))
+        if field is None or project_id is None or field.type == CustomFieldType.COMPUTED:
+            continue
+        task = task_ids.get(str(item.get("task_id"))) if item.get("task_id") else None
+        if item.get("task_id") and (task is None or task.project_id != project_id):
+            continue
+        if (task is None) != (field.target == CustomFieldTarget.PROJECT):
+            continue
+        if field.project_id not in (None, project_id):
+            continue
+        slot = (field.id, task.id if task else project_id)
+        if slot in seen:
+            continue
+        value = item.get("value")
+        if field.type == CustomFieldType.PERSON and value is not None:
+            value = str(member_ids.get(str(value), value))
+        try:
+            value = clean_value(field, value, members, previous=value)
+        except InvalidValue:
+            refused += 1
+            continue
+        if value is None:
+            continue
+        seen.add(slot)
+        db.add(
+            CustomFieldValue(
+                space_id=space.id,
+                field_id=field.id,
+                project_id=project_id,
+                task_id=task.id if task else None,
+                value=value,
+            )
+        )
+        kept += 1
+    report.counts["custom_field_values"] = kept
+    if refused:
+        report.warnings.append(
+            f"{refused} valeur(s) de champs personnalisés n'ont pas été reprises "
+            "(par exemple une personne sans compte dans ce nouvel espace)."
+        )
+    # Champs masqués par projet : identifiants convertis vers les nouveaux champs.
+    by_new_project = {v: k for k, v in project_ids.items()}
+    hidden_source = {str(p.get("id")): p.get("hidden_field_ids") for p in data.get("projects", [])}
+    for project in db.scalars(select(Project).where(Project.id.in_(list(project_ids.values())))):
+        raw = hidden_source.get(by_new_project.get(project.id, "")) or []
+        if isinstance(raw, list):
+            hidden = [str(field_ids[str(i)].id) for i in raw if str(i) in field_ids]
+            project.hidden_field_ids = hidden or None

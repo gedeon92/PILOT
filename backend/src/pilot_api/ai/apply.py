@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from pilot_api.deps import require_writer
 from pilot_api.models import AiAction, AiActionState, Membership, Project, Task, utcnow
+from pilot_api.routers import custom_fields as CF
 from pilot_api.routers import projects as P
 from pilot_api.routers.decisions import create_decision
 from pilot_api.routers.milestones import create_milestone
@@ -81,10 +82,27 @@ def _run(db: Session, membership: Membership, action: AiAction) -> str | tuple[s
         return f"Statut du projet « {project.title} » changé."
     if action.kind == "full_project":
         return _full_project(db, membership, action.payload)  # (texte, projet créé)
+    if action.kind == "custom_values":
+        return _custom_values(db, membership, action.payload)
     if action.kind == "comment":
         add_comment(action.target_id, CommentCreate(**body), membership, db)
         return "Commentaire ajouté."
     raise HTTPException(400, "Proposition inconnue.")
+
+
+def _custom_values(db: Session, membership: Membership, payload: dict) -> str:
+    project = P.load_project(db, membership, uuid.UUID(payload["project_id"]), write=True)
+    task = None
+    if payload.get("task_id"):
+        task = P.load_task(db, membership, uuid.UUID(payload["task_id"]), write=True)
+    out = CF.project_fields_out(db, project)
+    current = out.task_values.get(str(task.id), {}) if task else out.values
+    if any(current.get(k) != v for k, v in (payload.get("before") or {}).items()):
+        raise HTTPException(409, CHANGED)
+    values = {uuid.UUID(k): v for k, v in payload["values"].items()}
+    CF.write_values(db, membership, project, task, values)
+    db.commit()
+    return "Champs personnalisés enregistrés."
 
 
 def _full_project(db: Session, membership: Membership, payload: dict) -> tuple[str, uuid.UUID]:

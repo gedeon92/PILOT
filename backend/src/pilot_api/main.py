@@ -14,6 +14,7 @@ from pilot_api.routers import (
     alerts,
     auth,
     catalog,
+    custom_fields,
     decisions,
     documents,
     invitations,
@@ -51,6 +52,7 @@ app.include_router(projects.router)
 app.include_router(task_collab.router)
 app.include_router(templates.router)
 app.include_router(sections.router)
+app.include_router(custom_fields.router)
 app.include_router(milestones.router)
 app.include_router(decisions.router)
 app.include_router(purge.router)

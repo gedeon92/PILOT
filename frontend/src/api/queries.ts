@@ -24,6 +24,9 @@ import {
   type Meeting,
   type Milestone,
   type Section,
+  type CustomField,
+  type ProjectFields,
+  type TypePreview,
   type Role,
   type Space,
   type SpaceSummary,
@@ -1382,4 +1385,126 @@ export function usePurgeProjects(spaceId: string) {
     // Tout l'espace peut changer : projets, tâches, décisions, alertes, documents.
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.space(spaceId) }),
   })
+}
+
+// ---------- Champs personnalisés (étape F4) ----------
+
+const fieldKeys = {
+  all: (spaceId: string) => ['space', spaceId, 'custom-fields'] as const,
+  values: (spaceId: string) => ['space', spaceId, 'custom-values'] as const,
+  project: (spaceId: string, projectId: string) =>
+    [...projectKeys.one(spaceId, projectId), 'custom-fields'] as const,
+}
+
+export function useCustomFields(spaceId: string, enabled = true) {
+  return useQuery({
+    queryKey: fieldKeys.all(spaceId),
+    queryFn: () => api<CustomField[]>(`/spaces/${spaceId}/custom-fields`),
+    enabled,
+  })
+}
+
+/** Valeurs des champs de projet, par projet (filtres de la liste des projets). */
+export function useCustomValues(spaceId: string, enabled = true) {
+  return useQuery({
+    queryKey: fieldKeys.values(spaceId),
+    queryFn: () => api<Record<string, Record<string, unknown>>>(`/spaces/${spaceId}/custom-values`),
+    enabled,
+  })
+}
+
+export function useProjectFields(spaceId: string, projectId: string, enabled = true) {
+  return useQuery({
+    queryKey: fieldKeys.project(spaceId, projectId),
+    queryFn: () => api<ProjectFields>(`/spaces/${spaceId}/projects/${projectId}/custom-fields`),
+    enabled,
+  })
+}
+
+function useFieldMutation<V, R>(spaceId: string, success: string | null, fn: (v: V) => Promise<R>) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    meta: success ? { success } : undefined,
+    mutationFn: fn,
+    // Catalogue, valeurs par projet et fiches concernées (pas tout l'espace).
+    onSettled: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ['space', spaceId],
+        predicate: (q) =>
+          q.queryKey.includes('custom-fields') || q.queryKey.includes('custom-values'),
+      })
+    },
+  })
+}
+
+export type FieldDraft = {
+  label: string
+  target: 'project' | 'task'
+  type: CustomField['type']
+  description?: string | null
+  required?: boolean
+  project_id?: string | null
+  options?: string[]
+  config?: Record<string, unknown>
+}
+
+export function useCreateField(spaceId: string) {
+  return useFieldMutation(spaceId, 'Champ ajouté', (body: FieldDraft) =>
+    api<CustomField>(`/spaces/${spaceId}/custom-fields`, { method: 'POST', body }),
+  )
+}
+
+export function useUpdateField(spaceId: string) {
+  return useFieldMutation(
+    spaceId,
+    'Champ enregistré',
+    ({ field, ...body }: { field: CustomField } & Record<string, unknown>) =>
+      api<CustomField>(`/spaces/${spaceId}/custom-fields/${field.id}`, {
+        method: 'PATCH',
+        body: { version: field.version, ...body },
+      }),
+  )
+}
+
+export function useArchiveField(spaceId: string) {
+  return useFieldMutation(spaceId, null, ({ id, restore }: { id: string; restore: boolean }) =>
+    api<CustomField>(`/spaces/${spaceId}/custom-fields/${id}/${restore ? 'restore' : 'archive'}`, {
+      method: 'POST',
+    }),
+  )
+}
+
+export function useReorderFields(spaceId: string) {
+  return useFieldMutation(spaceId, null, (ids: string[]) =>
+    api<CustomField[]>(`/spaces/${spaceId}/custom-fields/order`, { method: 'PUT', body: { ids } }),
+  )
+}
+
+export function previewFieldType(spaceId: string, fieldId: string, type: string) {
+  return api<TypePreview>(
+    `/spaces/${spaceId}/custom-fields/${fieldId}/type-preview?type=${encodeURIComponent(type)}`,
+  )
+}
+
+export function useSaveCustomValues(spaceId: string, projectId: string) {
+  return useFieldMutation(
+    spaceId,
+    'Champs enregistrés',
+    ({ taskId, values }: { taskId?: string | null; values: Record<string, unknown> }) =>
+      api<ProjectFields>(
+        taskId
+          ? `/spaces/${spaceId}/tasks/${taskId}/custom-values`
+          : `/spaces/${spaceId}/projects/${projectId}/custom-values`,
+        { method: 'PUT', body: { values } },
+      ),
+  )
+}
+
+export function useHideFields(spaceId: string, projectId: string) {
+  return useFieldMutation(spaceId, null, (fieldIds: string[]) =>
+    api<ProjectFields>(`/spaces/${spaceId}/projects/${projectId}/custom-fields/hidden`, {
+      method: 'PUT',
+      body: { field_ids: fieldIds },
+    }),
+  )
 }

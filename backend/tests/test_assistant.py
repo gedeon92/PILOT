@@ -436,3 +436,39 @@ def test_the_complete_project_can_be_an_event(make_client, ai):
     project = owner.get(f"{b}/projects/{applied['project_id']}").json()
     assert project["event"]["venue"] == "Salle des fêtes"
     assert project["event"]["expected_attendance"] == 120
+
+
+def test_custom_fields_are_read_and_filled_after_click(make_client, ai):
+    owner, _sid, b, _pf, project = _setup(make_client)
+    _enable(owner, b)
+    field = owner.post(
+        f"{b}/custom-fields",
+        json={
+            "label": "Type de risque",
+            "target": "project",
+            "type": "choice",
+            "options": ["Financier", "Juridique"],
+        },
+    ).json()
+    fake = ai(
+        [
+            call("voir_projet", {"projet_id": project["id"]}),
+            call(
+                "proposer_valeurs_champs",
+                {"projet_id": project["id"], "valeurs": {"type_de_risque": "juridique"}},
+                "t2",
+            ),
+            reply("Proposition prête."),
+        ]
+    )
+    r = owner.post(f"{b}/ai/conversations", json={"text": "Le risque est juridique"})
+    conv = owner.get(f"{b}/ai/conversations/{r.json()['id']}").json()
+    seen = fake.calls[1]["messages"][-1]["content"][0]["content"]
+    assert "type_de_risque" in seen and "Juridique" in seen
+    action = conv["turns"][1]["actions"][0]
+    assert action["changes"] == [{"field": "Type de risque", "before": "", "after": "Juridique"}]
+    url = f"{b}/projects/{project['id']}/custom-fields"
+    assert owner.get(url).json()["values"] == {}
+    applied = owner.post(f"{b}/ai/actions/{action['id']}/apply")
+    assert applied.status_code == 200, applied.text
+    assert owner.get(url).json()["values"] == {field["id"]: field["options"][1]["id"]}

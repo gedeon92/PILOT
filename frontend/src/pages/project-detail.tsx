@@ -9,6 +9,7 @@ import {
   useMembers,
   useProject,
   useAdvanced,
+  useProjectFields,
   useSections,
   useTasks,
   useUpdateProject,
@@ -19,6 +20,7 @@ import { TaskAddForm, TaskRow } from '../components/task-row'
 import { TaskBoard } from '../components/task-board'
 import { SectionedTasks, SectionTools } from '../components/task-sections'
 import { MilestonesSection } from '../components/milestones'
+import { ProjectCustomFields } from '../components/custom-fields'
 import { ProjectAccessDrawer } from '../components/project-access'
 import { PlusIcon } from '../components/icons'
 import { Avatar } from '../components/avatar'
@@ -985,6 +987,27 @@ function Info({ label, value }: { label: string; value: ReactNode }) {
   )
 }
 
+/** Champs personnalisés du projet (étape F4), en mode complet. */
+function ProjectFieldsCard({
+  spaceId,
+  project,
+  canWrite,
+}: {
+  spaceId: string
+  project: Project
+  canWrite: boolean
+}) {
+  const fields = useProjectFields(spaceId, project.id)
+  return (
+    <ProjectCustomFields
+      spaceId={spaceId}
+      project={project}
+      data={fields.data}
+      canEdit={canWrite && !isClosedProject(project.status)}
+    />
+  )
+}
+
 export function ProjectDetailPage() {
   const { space } = useOutletContext<SpaceContext>()
   const { projectId = '' } = useParams()
@@ -1266,6 +1289,9 @@ export function ProjectDetailPage() {
                 />
               </dl>
             </section>
+            {space.advanced_mode && (
+              <ProjectFieldsCard spaceId={space.id} project={p} canWrite={canWrite} />
+            )}
             <ProjectLinksSection spaceId={space.id} projectId={p.id} canWrite={canWrite} />
           </aside>
         </div>

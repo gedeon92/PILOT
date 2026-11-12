@@ -65,6 +65,9 @@ utilise proposer_projet_complet : une seule proposition que la personne valide d
 Ne propose que ce que la personne a demandé ou fourni ; n'invente ni personnes ni dates. Si \
 l'espace est en mode simple, préviens que les sections, jalons et décisions ne seront visibles \
 qu'en mode complet (Paramètres → Mode d'affichage).
+- Les champs personnalisés d'un projet ou d'une tâche (voir champs_personnalises) se \
+remplissent avec proposer_valeurs_champs, en utilisant leur clé. Ils ne s'affichent qu'en mode \
+complet ; seul un propriétaire crée de nouveaux champs (Paramètres → Champs personnalisés).
 - Un projet devient un événement (page Événements, suivi après l'événement) quand son type \
 de projet est de nature « event » ; remplis alors « event » (lieu, public, participants \
 attendus, édition). Si l'espace n'a aucun type de nature « event », dis à la personne d'en \

@@ -3512,6 +3512,682 @@
         }
       }
     },
+    "/api/spaces/{space_id}/custom-fields": {
+      "get": {
+        "tags": [
+          "champs personnalisés"
+        ],
+        "summary": "List Fields",
+        "operationId": "list_fields_api_spaces__space_id__custom_fields_get",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FieldOut"
+                  },
+                  "title": "Response List Fields Api Spaces  Space Id  Custom Fields Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "champs personnalisés"
+        ],
+        "summary": "Create Field",
+        "operationId": "create_field_api_spaces__space_id__custom_fields_post",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/custom-fields/{field_id}/type-preview": {
+      "get": {
+        "tags": [
+          "champs personnalisés"
+        ],
+        "summary": "Preview Type",
+        "operationId": "preview_type_api_spaces__space_id__custom_fields__field_id__type_preview_get",
+        "parameters": [
+          {
+            "name": "field_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Field Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CustomFieldType"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TypePreview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/custom-fields/{field_id}": {
+      "patch": {
+        "tags": [
+          "champs personnalisés"
+        ],
+        "summary": "Update Field",
+        "operationId": "update_field_api_spaces__space_id__custom_fields__field_id__patch",
+        "parameters": [
+          {
+            "name": "field_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Field Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/custom-fields/{field_id}/archive": {
+      "post": {
+        "tags": [
+          "champs personnalisés"
+        ],
+        "summary": "Archive Field",
+        "operationId": "archive_field_api_spaces__space_id__custom_fields__field_id__archive_post",
+        "parameters": [
+          {
+            "name": "field_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Field Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/custom-fields/{field_id}/restore": {
+      "post": {
+        "tags": [
+          "champs personnalisés"
+        ],
+        "summary": "Restore Field",
+        "operationId": "restore_field_api_spaces__space_id__custom_fields__field_id__restore_post",
+        "parameters": [
+          {
+            "name": "field_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Field Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/custom-fields/order": {
+      "put": {
+        "tags": [
+          "champs personnalisés"
+        ],
+        "summary": "Order Fields",
+        "operationId": "order_fields_api_spaces__space_id__custom_fields_order_put",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldOrder"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FieldOut"
+                  },
+                  "title": "Response Order Fields Api Spaces  Space Id  Custom Fields Order Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/projects/{project_id}/custom-fields": {
+      "get": {
+        "tags": [
+          "champs personnalisés"
+        ],
+        "summary": "Get Project Fields",
+        "operationId": "get_project_fields_api_spaces__space_id__projects__project_id__custom_fields_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectFieldsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/projects/{project_id}/custom-values": {
+      "put": {
+        "tags": [
+          "champs personnalisés"
+        ],
+        "summary": "Set Project Values",
+        "operationId": "set_project_values_api_spaces__space_id__projects__project_id__custom_values_put",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValuesIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectFieldsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/tasks/{task_id}/custom-values": {
+      "put": {
+        "tags": [
+          "champs personnalisés"
+        ],
+        "summary": "Set Task Values",
+        "operationId": "set_task_values_api_spaces__space_id__tasks__task_id__custom_values_put",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValuesIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectFieldsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/projects/{project_id}/custom-fields/hidden": {
+      "put": {
+        "tags": [
+          "champs personnalisés"
+        ],
+        "summary": "Set Hidden Fields",
+        "operationId": "set_hidden_fields_api_spaces__space_id__projects__project_id__custom_fields_hidden_put",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HiddenIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectFieldsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/custom-values": {
+      "get": {
+        "tags": [
+          "champs personnalisés"
+        ],
+        "summary": "Space Values",
+        "description": "Valeurs des champs de projet pour les projets visibles (filtres de la liste).",
+        "operationId": "space_values_api_spaces__space_id__custom_values_get",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Space Values Api Spaces  Space Id  Custom Values Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/spaces/{space_id}/projects/{project_id}/milestones": {
       "get": {
         "tags": [
@@ -7360,6 +8036,32 @@
         ],
         "title": "CommentOut"
       },
+      "CustomFieldTarget": {
+        "type": "string",
+        "enum": [
+          "project",
+          "task"
+        ],
+        "title": "CustomFieldTarget"
+      },
+      "CustomFieldType": {
+        "type": "string",
+        "enum": [
+          "text",
+          "long_text",
+          "number",
+          "percent",
+          "amount",
+          "date",
+          "choice",
+          "multi_choice",
+          "person",
+          "boolean",
+          "url",
+          "computed"
+        ],
+        "title": "CustomFieldType"
+      },
       "DateCertainty": {
         "type": "string",
         "enum": [
@@ -8415,6 +9117,358 @@
         ],
         "title": "EventOut"
       },
+      "FieldConfig": {
+        "properties": {
+          "max_length": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Length"
+          },
+          "min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min"
+          },
+          "max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "formula": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Formula"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "FieldConfig"
+      },
+      "FieldCreate": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "target": {
+            "$ref": "#/components/schemas/CustomFieldTarget"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CustomFieldType"
+          },
+          "key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{1,59}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "options": {
+            "items": {
+              "type": "string",
+              "maxLength": 120,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Options",
+            "default": []
+          },
+          "config": {
+            "$ref": "#/components/schemas/FieldConfig",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "target",
+          "type"
+        ],
+        "title": "FieldCreate"
+      },
+      "FieldOrder": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ids"
+        ],
+        "title": "FieldOrder"
+      },
+      "FieldOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "target": {
+            "$ref": "#/components/schemas/CustomFieldTarget"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CustomFieldType"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/OptionOut"
+            },
+            "type": "array",
+            "title": "Options"
+          },
+          "config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "values_count": {
+            "type": "integer",
+            "title": "Values Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "key",
+          "label",
+          "description",
+          "target",
+          "type",
+          "required",
+          "project_id",
+          "options",
+          "config",
+          "position",
+          "archived",
+          "version"
+        ],
+        "title": "FieldOut"
+      },
+      "FieldUpdate": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OptionIn"
+                },
+                "type": "array",
+                "maxItems": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          },
+          "config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FieldConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomFieldType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "FieldUpdate"
+      },
       "FollowerOut": {
         "properties": {
           "user_id": {
@@ -8433,6 +9487,36 @@
           "name"
         ],
         "title": "FollowerOut"
+      },
+      "Formula": {
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "difference",
+              "sum",
+              "ratio"
+            ],
+            "title": "Op"
+          },
+          "a": {
+            "type": "string",
+            "format": "uuid",
+            "title": "A"
+          },
+          "b": {
+            "type": "string",
+            "format": "uuid",
+            "title": "B"
+          }
+        },
+        "type": "object",
+        "required": [
+          "op",
+          "a",
+          "b"
+        ],
+        "title": "Formula"
       },
       "HTTPValidationError": {
         "properties": {
@@ -8480,6 +9564,24 @@
           "database"
         ],
         "title": "Health"
+      },
+      "HiddenIn": {
+        "properties": {
+          "field_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Field Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_ids"
+        ],
+        "title": "HiddenIn"
       },
       "HistoryEntry": {
         "properties": {
@@ -9660,6 +10762,60 @@
         ],
         "title": "MilestoneVersion"
       },
+      "OptionIn": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "label"
+        ],
+        "title": "OptionIn"
+      },
+      "OptionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "active"
+        ],
+        "title": "OptionOut"
+      },
       "PasswordChange": {
         "properties": {
           "current_password": {
@@ -10606,6 +11762,46 @@
           "portfolio_id"
         ],
         "title": "ProjectCreate"
+      },
+      "ProjectFieldsOut": {
+        "properties": {
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/FieldOut"
+            },
+            "type": "array",
+            "title": "Fields"
+          },
+          "hidden_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Hidden Ids"
+          },
+          "values": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Values"
+          },
+          "task_values": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Task Values"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fields",
+          "hidden_ids",
+          "values",
+          "task_values"
+        ],
+        "title": "ProjectFieldsOut"
       },
       "ProjectKind": {
         "type": "string",
@@ -13312,6 +14508,40 @@
         ],
         "title": "TestEmailResult"
       },
+      "TypePreview": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "convertible": {
+            "type": "integer",
+            "title": "Convertible"
+          },
+          "blocked": {
+            "type": "integer",
+            "title": "Blocked"
+          },
+          "examples": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Examples"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "convertible",
+          "blocked",
+          "examples"
+        ],
+        "title": "TypePreview"
+      },
       "UpdateRequestOut": {
         "properties": {
           "id": {
@@ -13524,6 +14754,24 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "ValuesIn": {
+        "properties": {
+          "values": {
+            "additionalProperties": true,
+            "propertyNames": {
+              "format": "uuid"
+            },
+            "type": "object",
+            "maxProperties": 100,
+            "title": "Values"
+          }
+        },
+        "type": "object",
+        "required": [
+          "values"
+        ],
+        "title": "ValuesIn"
       }
     }
   }

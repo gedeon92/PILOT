@@ -7121,3 +7121,73 @@ a {
 .nav__link .ai-avatar--still {
   box-shadow: none;
 }
+
+/* ---------- Champs personnalisés (étape F4) ---------- */
+.cf-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+.cf-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+.cf-list__row dt {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.cf-list__row dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.cf-missing {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  background: var(--tone-warn-bg);
+  color: var(--tone-warn-fg);
+}
+.cf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cf-choose,
+.cf-options,
+.cf-multi {
+  border: 0;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cf-choose legend,
+.cf-options legend {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.cf-options__row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.cf-options__row input:not([type='checkbox']) {
+  flex: 1;
+  min-width: 0;
+}
+.cf-examples {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.cf-task .cf-view {
+  margin-top: 4px;
+}

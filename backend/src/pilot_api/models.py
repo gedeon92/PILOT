@@ -15,6 +15,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy import false as sa_false
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -365,6 +366,8 @@ class Project(Base):
     contributors: Mapped[list["ProjectContributor"]] = relationship(
         cascade="all, delete-orphan", order_by="ProjectContributor.position"
     )
+    # Étape F4 : champs personnalisés masqués dans ce projet (identifiants des définitions).
+    hidden_field_ids: Mapped[list[str] | None] = mapped_column(JSONB)
 
 
 class ProjectMember(Base):
@@ -695,6 +698,104 @@ class ProjectSection(Base):
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class CustomFieldType(enum.StrEnum):
+    TEXT = "text"
+    LONG_TEXT = "long_text"
+    NUMBER = "number"
+    PERCENT = "percent"
+    AMOUNT = "amount"
+    DATE = "date"
+    CHOICE = "choice"
+    MULTI_CHOICE = "multi_choice"
+    PERSON = "person"
+    BOOLEAN = "boolean"
+    URL = "url"
+    COMPUTED = "computed"
+
+
+class CustomFieldTarget(enum.StrEnum):
+    PROJECT = "project"
+    TASK = "task"
+
+
+class CustomField(Base):
+    """Définition d'un champ personnalisé (étape F4, cahier V2 CHP01–CHP04).
+
+    Gérée par les propriétaires. `key` est l'identifiant technique stable (formules, exports,
+    filtres) : renommer le libellé ou une option ne change ni la clé ni les valeurs. Une option
+    retirée devient inactive mais reste lisible. Un champ n'est jamais supprimé : il est archivé.
+    `project_id` limite le champ à un seul projet sans toucher au catalogue des autres."""
+
+    __tablename__ = "custom_fields"
+    __table_args__ = (UniqueConstraint("space_id", "key", name="uq_custom_fields_key"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    target: Mapped[CustomFieldTarget] = mapped_column(
+        _enum(CustomFieldTarget, "custom_field_target")
+    )
+    key: Mapped[str] = mapped_column(String(60))
+    label: Mapped[str] = mapped_column(String(120))
+    description: Mapped[str | None] = mapped_column(Text)
+    type: Mapped[CustomFieldType] = mapped_column(_enum(CustomFieldType, "custom_field_type"))
+    # Choix : [{"id": "opt_…", "label": …, "active": bool}] ; les identifiants ne changent jamais.
+    options: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    # Réglages selon le type : max_length, min, max, unit, currency, formula {op, a, b}.
+    config: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    required: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class CustomFieldValue(Base):
+    """Valeur d'un champ personnalisé pour un projet (task_id vide) ou une tâche du projet.
+    Une valeur vide n'est pas enregistrée : « vide » reste distinct de « faux » ou de 0."""
+
+    __tablename__ = "custom_field_values"
+    __table_args__ = (
+        Index(
+            "uq_custom_values_project",
+            "field_id",
+            "project_id",
+            unique=True,
+            postgresql_where=text("task_id IS NULL"),
+        ),
+        Index(
+            "uq_custom_values_task",
+            "field_id",
+            "task_id",
+            unique=True,
+            postgresql_where=text("task_id IS NOT NULL"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    field_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("custom_fields.id", ondelete="CASCADE"), index=True
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    task_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tasks.id", ondelete="CASCADE"), index=True
+    )
+    value: Mapped[Any] = mapped_column(JSONB)
+    updated_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class TaskComment(Base):

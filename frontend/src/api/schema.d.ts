@@ -854,6 +854,197 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/spaces/{space_id}/custom-fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Fields */
+        get: operations["list_fields_api_spaces__space_id__custom_fields_get"];
+        put?: never;
+        /** Create Field */
+        post: operations["create_field_api_spaces__space_id__custom_fields_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/custom-fields/{field_id}/type-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview Type */
+        get: operations["preview_type_api_spaces__space_id__custom_fields__field_id__type_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/custom-fields/{field_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Field */
+        patch: operations["update_field_api_spaces__space_id__custom_fields__field_id__patch"];
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/custom-fields/{field_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive Field */
+        post: operations["archive_field_api_spaces__space_id__custom_fields__field_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/custom-fields/{field_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Field */
+        post: operations["restore_field_api_spaces__space_id__custom_fields__field_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/custom-fields/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Order Fields */
+        put: operations["order_fields_api_spaces__space_id__custom_fields_order_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/projects/{project_id}/custom-fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Project Fields */
+        get: operations["get_project_fields_api_spaces__space_id__projects__project_id__custom_fields_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/projects/{project_id}/custom-values": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Project Values */
+        put: operations["set_project_values_api_spaces__space_id__projects__project_id__custom_values_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/tasks/{task_id}/custom-values": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Task Values */
+        put: operations["set_task_values_api_spaces__space_id__tasks__task_id__custom_values_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/projects/{project_id}/custom-fields/hidden": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Hidden Fields */
+        put: operations["set_hidden_fields_api_spaces__space_id__projects__project_id__custom_fields_hidden_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/custom-values": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Space Values
+         * @description Valeurs des champs de projet pour les projets visibles (filtres de la liste).
+         */
+        get: operations["space_values_api_spaces__space_id__custom_values_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/spaces/{space_id}/projects/{project_id}/milestones": {
         parameters: {
             query?: never;
@@ -1959,6 +2150,16 @@ export interface components {
             can_delete: boolean;
         };
         /**
+         * CustomFieldTarget
+         * @enum {string}
+         */
+        CustomFieldTarget: "project" | "task";
+        /**
+         * CustomFieldType
+         * @enum {string}
+         */
+        CustomFieldType: "text" | "long_text" | "number" | "percent" | "amount" | "date" | "choice" | "multi_choice" | "person" | "boolean" | "url" | "computed";
+        /**
          * DateCertainty
          * @enum {string}
          */
@@ -2250,6 +2451,102 @@ export interface components {
             /** Follow Up Until */
             follow_up_until: string | null;
         };
+        /** FieldConfig */
+        FieldConfig: {
+            /** Max Length */
+            max_length?: number | null;
+            /** Min */
+            min?: number | null;
+            /** Max */
+            max?: number | null;
+            /** Unit */
+            unit?: string | null;
+            /** Currency */
+            currency?: string | null;
+            formula?: components["schemas"]["Formula"] | null;
+        };
+        /** FieldCreate */
+        FieldCreate: {
+            /** Label */
+            label: string;
+            target: components["schemas"]["CustomFieldTarget"];
+            type: components["schemas"]["CustomFieldType"];
+            /** Key */
+            key?: string | null;
+            /** Description */
+            description?: string | null;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Project Id */
+            project_id?: string | null;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+            /** @default {} */
+            config: components["schemas"]["FieldConfig"];
+        };
+        /** FieldOrder */
+        FieldOrder: {
+            /** Ids */
+            ids: string[];
+        };
+        /** FieldOut */
+        FieldOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description: string | null;
+            target: components["schemas"]["CustomFieldTarget"];
+            type: components["schemas"]["CustomFieldType"];
+            /** Required */
+            required: boolean;
+            /** Project Id */
+            project_id: string | null;
+            /** Options */
+            options: components["schemas"]["OptionOut"][];
+            /** Config */
+            config: {
+                [key: string]: unknown;
+            };
+            /** Position */
+            position: number;
+            /** Archived */
+            archived: boolean;
+            /** Version */
+            version: number;
+            /**
+             * Values Count
+             * @default 0
+             */
+            values_count: number;
+        };
+        /** FieldUpdate */
+        FieldUpdate: {
+            /** Version */
+            version: number;
+            /** Label */
+            label?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Required */
+            required?: boolean | null;
+            /** Options */
+            options?: components["schemas"]["OptionIn"][] | null;
+            config?: components["schemas"]["FieldConfig"] | null;
+            type?: components["schemas"]["CustomFieldType"] | null;
+        };
         /** FollowerOut */
         FollowerOut: {
             /**
@@ -2259,6 +2556,24 @@ export interface components {
             user_id: string;
             /** Name */
             name: string;
+        };
+        /** Formula */
+        Formula: {
+            /**
+             * Op
+             * @enum {string}
+             */
+            op: "difference" | "sum" | "ratio";
+            /**
+             * A
+             * Format: uuid
+             */
+            a: string;
+            /**
+             * B
+             * Format: uuid
+             */
+            b: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2281,6 +2596,11 @@ export interface components {
              * @enum {string}
              */
             database: "ok" | "unavailable" | "not_configured";
+        };
+        /** HiddenIn */
+        HiddenIn: {
+            /** Field Ids */
+            field_ids: string[];
         };
         /** HistoryEntry */
         HistoryEntry: {
@@ -2666,6 +2986,27 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** OptionIn */
+        OptionIn: {
+            /** Id */
+            id?: string | null;
+            /** Label */
+            label: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+        };
+        /** OptionOut */
+        OptionOut: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Active */
+            active: boolean;
+        };
         /** PasswordChange */
         PasswordChange: {
             /** Current Password */
@@ -2916,6 +3257,23 @@ export interface components {
             client_request_id?: string | null;
             /** Template Id */
             template_id?: string | null;
+        };
+        /** ProjectFieldsOut */
+        ProjectFieldsOut: {
+            /** Fields */
+            fields: components["schemas"]["FieldOut"][];
+            /** Hidden Ids */
+            hidden_ids: string[];
+            /** Values */
+            values: {
+                [key: string]: unknown;
+            };
+            /** Task Values */
+            task_values: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
         };
         /**
          * ProjectKind
@@ -3699,6 +4057,19 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** TypePreview */
+        TypePreview: {
+            /** Total */
+            total: number;
+            /** Convertible */
+            convertible: number;
+            /** Blocked */
+            blocked: number;
+            /** Examples */
+            examples: {
+                [key: string]: string;
+            }[];
+        };
         /** UpdateRequestOut */
         UpdateRequestOut: {
             /**
@@ -3781,6 +4152,13 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** ValuesIn */
+        ValuesIn: {
+            /** Values */
+            values: {
+                [key: string]: unknown;
+            };
         };
     };
     responses: never;
@@ -5945,6 +6323,416 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_fields_api_spaces__space_id__custom_fields_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_field_api_spaces__space_id__custom_fields_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FieldCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_type_api_spaces__space_id__custom_fields__field_id__type_preview_get: {
+        parameters: {
+            query: {
+                type: components["schemas"]["CustomFieldType"];
+            };
+            header?: never;
+            path: {
+                field_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TypePreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_field_api_spaces__space_id__custom_fields__field_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                field_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FieldUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_field_api_spaces__space_id__custom_fields__field_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                field_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_field_api_spaces__space_id__custom_fields__field_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                field_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    order_fields_api_spaces__space_id__custom_fields_order_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FieldOrder"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_project_fields_api_spaces__space_id__projects__project_id__custom_fields_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectFieldsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_project_values_api_spaces__space_id__projects__project_id__custom_values_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValuesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectFieldsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_task_values_api_spaces__space_id__tasks__task_id__custom_values_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValuesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectFieldsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_hidden_fields_api_spaces__space_id__projects__project_id__custom_fields_hidden_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HiddenIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectFieldsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    space_values_api_spaces__space_id__custom_values_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: {
+                            [key: string]: unknown;
+                        };
+                    };
                 };
             };
             /** @description Validation Error */

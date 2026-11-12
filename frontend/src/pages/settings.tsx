@@ -11,6 +11,7 @@ import {
 } from '../api/queries'
 import { BackupSection } from '../components/backup-section'
 import { PurgeSection } from '../components/purge-section'
+import { CustomFieldsSettings } from '../components/custom-fields'
 import { TemplatesSection } from '../components/templates'
 import { AiSettingsSection } from '../components/assistant'
 import { PlusIcon } from '../components/icons'
@@ -494,6 +495,7 @@ export function SettingsPage() {
       <SpaceSettings />
       <ModeSettings />
       {canManage && <AiSettingsSection spaceId={space.id} />}
+      {canManage && space.advanced_mode && <CustomFieldsSettings spaceId={space.id} />}
       {SECTIONS.map((config) => (
         <CatalogSection
           key={config.resource}

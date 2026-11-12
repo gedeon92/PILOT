@@ -17,6 +17,7 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from pilot_api import custom_field_rules as CFR
 from pilot_api.access import ensure_visible, ensure_writer
 from pilot_api.models import (
     CLOSED_PROJECT_STATUSES,
@@ -34,6 +35,7 @@ from pilot_api.models import (
     Task,
     TaskStatus,
 )
+from pilot_api.routers import custom_fields as CF
 from pilot_api.routers import projects as P
 from pilot_api.routers.decisions import list_decisions
 from pilot_api.routers.milestones import list_milestones
@@ -418,6 +420,24 @@ TOOLS: list[dict[str, Any]] = [
         ),
     },
     {
+        "name": "proposer_valeurs_champs",
+        "description": (
+            "Propose de remplir ou de vider des champs personnalisés d'un projet (sans tache_id) "
+            "ou d'une tâche. Les clés sont celles affichées par voir_projet / voir_tache "
+            "(champs_personnalises). Valeurs : texte, nombre, date AAAA-MM-JJ, true/false, "
+            "libellé d'option (liste de libellés pour un choix multiple), identifiant de membre "
+            "pour une personne, null pour vider. Les champs calculés ne se saisissent pas."
+        ),
+        "input_schema": _obj(
+            {
+                "projet_id": {"type": "string"},
+                "tache_id": {"type": ["string", "null"]},
+                "valeurs": {"type": "object"},
+            },
+            ["projet_id", "valeurs"],
+        ),
+    },
+    {
         "name": "proposer_commentaire",
         "description": "Propose d'ajouter un commentaire sur une tâche, au nom de la personne.",
         "input_schema": _obj(
@@ -552,7 +572,34 @@ def _view_project(db: Session, membership: Membership, args: dict) -> str:
         for m in list_milestones(project.id, membership, db)
     ]
     data["decisions"] = [_decision_line(d) for d in list_decisions(membership, db, project.id)]
+    data["champs_personnalises"] = _custom_lines(db, project, None)
     return _dump(data)
+
+
+def _custom_lines(db: Session, project: Project, task_id: uuid.UUID | None) -> list[dict]:
+    """Champs personnalisés actifs de la fiche, avec leur valeur lisible (étape F4)."""
+    out = CF.project_fields_out(db, project)
+    target = "task" if task_id else "project"
+    values = out.task_values.get(str(task_id), {}) if task_id else out.values
+    people = CF.people_names(db, project.space_id)
+    fields = {f.id: f for f in CF.applicable_fields(db, project)}
+    lines = []
+    for f in out.fields:
+        if f.target != target or f.archived:
+            continue
+        model = fields[f.id]
+        lines.append(
+            {
+                "cle": f.key,
+                "libelle": f.label,
+                "type": f.type,
+                "valeur": CFR.display(model, values.get(str(f.id)), people) or None,
+                "options": [o.label for o in f.options if o.active] or None,
+                "requis": f.required or None,
+                "masque_dans_ce_projet": (f.id in out.hidden_ids) or None,
+            }
+        )
+    return lines
 
 
 def _view_task(db: Session, membership: Membership, args: dict) -> str:
@@ -561,6 +608,10 @@ def _view_task(db: Session, membership: Membership, args: dict) -> str:
     for doc in data.get("documents", []):
         for key in ("storage_key", "sha256"):
             doc.pop(key, None)
+    task = P._load_task(db, membership.space_id, detail.task.id)
+    project = db.get(Project, task.project_id)
+    if project is not None:
+        data["champs_personnalises"] = _custom_lines(db, project, task.id)
     return _dump(data)
 
 
@@ -936,6 +987,72 @@ def _propose_comment(db: Session, membership: Membership, args: dict) -> dict:
     }
 
 
+def _propose_custom_values(db: Session, membership: Membership, args: dict) -> dict:
+    project = _project_for(db, membership, args["projet_id"], write=True)
+    task = None
+    if args.get("tache_id"):
+        task = P._load_task(db, membership.space_id, _uuid(args["tache_id"], "Tâche"))
+        if task.project_id != project.id:
+            raise ToolError("Cette tâche n'appartient pas à ce projet.")
+    wanted = args.get("valeurs")
+    if not isinstance(wanted, dict) or not wanted:
+        raise ToolError("Indiquez au moins une valeur (clé du champ → valeur).")
+    target = "task" if task else "project"
+    fields = {
+        f.key: f
+        for f in CF.applicable_fields(db, project)
+        if f.target == target and f.archived_at is None
+    }
+    out = CF.project_fields_out(db, project)
+    current = out.task_values.get(str(task.id), {}) if task else out.values
+    members = CF.member_ids(db, project.space_id)
+    people = CF.people_names(db, project.space_id)
+    values: dict[str, Any] = {}
+    before: dict[str, Any] = {}
+    changes = []
+    for key, raw in wanted.items():
+        field = fields.get(str(key))
+        if field is None:
+            raise ToolError(f"Champ inconnu pour cette fiche : {key}. Voir champs_personnalises.")
+        labels = {o["label"].casefold(): o["id"] for o in field.options or []}
+        if field.type == "choice" and isinstance(raw, str):
+            raw = labels.get(raw.casefold(), raw)
+        if field.type == "multi_choice" and isinstance(raw, list):
+            raw = [labels.get(str(v).casefold(), v) for v in raw]
+        previous = current.get(str(field.id))
+        try:
+            value = CFR.clean_value(field, raw, members, previous)
+        except CFR.InvalidValue as error:
+            raise ToolError(str(error)) from None
+        if value == previous:
+            continue
+        values[str(field.id)] = value
+        before[str(field.id)] = previous
+        changes.append(
+            {
+                "field": field.label,
+                "before": CFR.display(field, previous, people),
+                "after": CFR.display(field, value, people),
+            }
+        )
+    if not changes:
+        raise ToolError("Ces valeurs sont déjà enregistrées : rien à proposer.")
+    name = f"la tâche « {task.title} »" if task else f"le projet « {project.title} »"
+    return {
+        "kind": "custom_values",
+        "target_id": task.id if task else project.id,
+        "base_version": None,
+        "payload": {
+            "project_id": str(project.id),
+            "task_id": str(task.id) if task else None,
+            "values": values,
+            "before": before,
+        },
+        "summary": f"Remplir {len(changes)} champ(s) personnalisé(s) de {name}",
+        "changes": changes,
+    }
+
+
 FULL_LIMITS = {"sections": 12, "taches": 60, "sous_taches": 10, "jalons": 15, "decisions": 10}
 
 
@@ -1117,6 +1234,7 @@ PROPOSERS = {
     "proposer_modification_projet": _propose_project_update,
     "proposer_changement_statut_projet": _propose_project_status,
     "proposer_commentaire": _propose_comment,
+    "proposer_valeurs_champs": _propose_custom_values,
 }
 
 
