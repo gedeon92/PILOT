@@ -23,6 +23,7 @@ from pilot_api.routers import (
     project_access,
     projects,
     purge,
+    routines,
     sections,
     spaces,
     task_collab,
@@ -53,6 +54,7 @@ app.include_router(task_collab.router)
 app.include_router(templates.router)
 app.include_router(sections.router)
 app.include_router(custom_fields.router)
+app.include_router(routines.router)
 app.include_router(milestones.router)
 app.include_router(decisions.router)
 app.include_router(purge.router)

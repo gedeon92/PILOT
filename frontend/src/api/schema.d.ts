@@ -1045,6 +1045,245 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/spaces/{space_id}/routines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Routines */
+        get: operations["list_routines_api_spaces__space_id__routines_get"];
+        put?: never;
+        /** Create Routine */
+        post: operations["create_routine_api_spaces__space_id__routines_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/routines/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Profiles */
+        get: operations["list_profiles_api_spaces__space_id__routines_profiles_get"];
+        put?: never;
+        /** Add Profiles */
+        post: operations["add_profiles_api_spaces__space_id__routines_profiles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/routines/{routine_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Routine */
+        patch: operations["update_routine_api_spaces__space_id__routines__routine_id__patch"];
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/routines/{routine_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pause Routine */
+        post: operations["pause_routine_api_spaces__space_id__routines__routine_id__pause_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/routines/{routine_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resume Routine */
+        post: operations["resume_routine_api_spaces__space_id__routines__routine_id__resume_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/routines/{routine_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive Routine
+         * @description Annulation motivée de la série : les occurrences passées restent, les prochaines non
+         *     commencées sont annulées avec le même motif.
+         */
+        post: operations["archive_routine_api_spaces__space_id__routines__routine_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/routines/{routine_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Routine */
+        post: operations["restore_routine_api_spaces__space_id__routines__routine_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/routine-occurrences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Occurrences
+         * @description Occurrences de la période (et les occurrences en retard d'avant, toujours visibles).
+         */
+        get: operations["list_occurrences_api_spaces__space_id__routine_occurrences_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/routine-occurrences/{occurrence_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Occurrence */
+        patch: operations["update_occurrence_api_spaces__space_id__routine_occurrences__occurrence_id__patch"];
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/routine-occurrences/{occurrence_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close Occurrence */
+        post: operations["close_occurrence_api_spaces__space_id__routine_occurrences__occurrence_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/routine-occurrences/{occurrence_id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reopen Occurrence */
+        post: operations["reopen_occurrence_api_spaces__space_id__routine_occurrences__occurrence_id__reopen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/routine-occurrences/{occurrence_id}/follow-ups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Follow Up
+         * @description Transforme un constat en tâche (dans un projet) ou en décision (brouillon), avec lien.
+         */
+        post: operations["create_follow_up_api_spaces__space_id__routine_occurrences__occurrence_id__follow_ups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/agenda": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Agenda
+         * @description Ce qui revient à la personne sur la période : ses tâches, les décisions qu'elle porte ou
+         *     exécute, ses jalons et les occurrences de routines dont elle est responsable (ou sans
+         *     responsable). Ce qui est en retard reste affiché. Rien de confidentiel n'y apparaît au-delà
+         *     de ce que la personne peut déjà voir.
+         */
+        get: operations["my_agenda_api_spaces__space_id__agenda_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/spaces/{space_id}/projects/{project_id}/milestones": {
         parameters: {
             query?: never;
@@ -1906,6 +2145,53 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgendaItem */
+        AgendaItem: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "task" | "decision" | "milestone";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Project Id */
+            project_id: string | null;
+            /** Project Title */
+            project_title: string | null;
+            /** Due Date */
+            due_date: string | null;
+            /** Late */
+            late: boolean;
+            /** Detail */
+            detail: string | null;
+        };
+        /** AgendaOut */
+        AgendaOut: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /**
+             * Today
+             * Format: date
+             */
+            today: string;
+            /** Items */
+            items: components["schemas"]["AgendaItem"][];
+            /** Occurrences */
+            occurrences: components["schemas"]["OccurrenceOut"][];
+        };
         /** AiActionOut */
         AiActionOut: {
             /**
@@ -2087,6 +2373,11 @@ export interface components {
                 [key: string]: string;
             };
         };
+        /** ArchiveIn */
+        ArchiveIn: {
+            /** Reason */
+            reason: string;
+        };
         /** Body_create_update_api_spaces__space_id__updates_post */
         Body_create_update_api_spaces__space_id__updates_post: {
             /**
@@ -2120,6 +2411,27 @@ export interface components {
         Body_upload_task_document_api_spaces__space_id__tasks__task_id__documents_post: {
             /** File */
             file: string;
+        };
+        /** ChecklistItemIn */
+        ChecklistItemIn: {
+            /** Id */
+            id?: string | null;
+            /** Label */
+            label: string;
+            /**
+             * Mandatory
+             * @default true
+             */
+            mandatory: boolean;
+        };
+        /** ChecklistItemOut */
+        ChecklistItemOut: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Mandatory */
+            mandatory: boolean;
         };
         /** CommentCreate */
         CommentCreate: {
@@ -2547,6 +2859,20 @@ export interface components {
             config?: components["schemas"]["FieldConfig"] | null;
             type?: components["schemas"]["CustomFieldType"] | null;
         };
+        /** FollowUpIn */
+        FollowUpIn: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "task" | "decision";
+            /** Project Id */
+            project_id?: string | null;
+            /** Title */
+            title: string;
+            /** Due Date */
+            due_date?: string | null;
+        };
         /** FollowerOut */
         FollowerOut: {
             /**
@@ -2694,6 +3020,23 @@ export interface components {
         InvitationToken: {
             /** Token */
             token: string;
+        };
+        /** LinkOut */
+        LinkOut: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "task" | "decision";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Project Id */
+            project_id: string | null;
         };
         /** LinkedProject */
         LinkedProject: {
@@ -2986,6 +3329,115 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** NthWeekday */
+        NthWeekday: {
+            /** N */
+            n: number;
+            /** Weekday */
+            weekday: number;
+        };
+        /** OccurrenceClose */
+        OccurrenceClose: {
+            /** Version */
+            version: number;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "done" | "cancelled";
+            /** Result */
+            result?: string | null;
+            /** Exception Reason */
+            exception_reason?: string | null;
+            /** Cancel Reason */
+            cancel_reason?: string | null;
+        };
+        /** OccurrenceOut */
+        OccurrenceOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Routine Id
+             * Format: uuid
+             */
+            routine_id: string;
+            /** Routine Title */
+            routine_title: string;
+            /** Time Of Day */
+            time_of_day: string | null;
+            /** Duration Minutes */
+            duration_minutes: number | null;
+            /**
+             * Scheduled Date
+             * Format: date
+             */
+            scheduled_date: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Postponed */
+            postponed: boolean;
+            /** Postpone Reason */
+            postpone_reason: string | null;
+            state: components["schemas"]["OccurrenceState"];
+            /** Late */
+            late: boolean;
+            owner: components["schemas"]["PersonRef"];
+            /** Checklist */
+            checklist: components["schemas"]["ChecklistItemOut"][];
+            /** Checks */
+            checks: {
+                [key: string]: boolean;
+            };
+            /** Missing Mandatory */
+            missing_mandatory: string[];
+            /** Result */
+            result: string | null;
+            /** Expected Output */
+            expected_output: string | null;
+            /** Exception Reason */
+            exception_reason: string | null;
+            /** Cancel Reason */
+            cancel_reason: string | null;
+            /** Links */
+            links: components["schemas"]["LinkOut"][];
+            /** Version */
+            version: number;
+        };
+        /**
+         * OccurrenceState
+         * @enum {string}
+         */
+        OccurrenceState: "planned" | "done" | "cancelled";
+        /** OccurrenceUpdate */
+        OccurrenceUpdate: {
+            /** Version */
+            version: number;
+            /** Checks */
+            checks?: {
+                [key: string]: boolean;
+            } | null;
+            /** Result */
+            result?: string | null;
+            /** Due Date */
+            due_date?: string | null;
+            /** Postpone Reason */
+            postpone_reason?: string | null;
+            /** Owner Member Id */
+            owner_member_id?: string | null;
+            /** Owner Label */
+            owner_label?: string | null;
+        };
+        /** OccurrenceVersion */
+        OccurrenceVersion: {
+            /** Version */
+            version: number;
+        };
         /** OptionIn */
         OptionIn: {
             /** Id */
@@ -3115,10 +3567,39 @@ export interface components {
             /** Emoji */
             emoji?: string | null;
         };
+        /** ProfileOut */
+        ProfileOut: {
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+            /** Purpose */
+            purpose: string;
+            frequency: components["schemas"]["RoutineFrequency"];
+            /** Weekdays */
+            weekdays: number[];
+            /** Month Days */
+            month_days: number[];
+            /** Time Of Day */
+            time_of_day: string | null;
+            /** Duration Minutes */
+            duration_minutes: number | null;
+            /** Checklist */
+            checklist: {
+                [key: string]: unknown;
+            }[];
+            /** Already Added */
+            already_added: boolean;
+        };
         /** ProfileUpdate */
         ProfileUpdate: {
             /** Display Name */
             display_name: string;
+        };
+        /** ProfilesIn */
+        ProfilesIn: {
+            /** Keys */
+            keys: string[];
         };
         /** ProgramCreate */
         ProgramCreate: {
@@ -3652,6 +4133,132 @@ export interface components {
          * @enum {string}
          */
         Role: "owner" | "contributor" | "reader" | "guest";
+        /** RoutineCreate */
+        RoutineCreate: {
+            /** Purpose */
+            purpose?: string | null;
+            /** Weekdays */
+            weekdays?: number[] | null;
+            /** Month Days */
+            month_days?: number[] | null;
+            nth_weekday?: components["schemas"]["NthWeekday"] | null;
+            /** Workdays Only */
+            workdays_only?: boolean | null;
+            /** Time Of Day */
+            time_of_day?: string | null;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Owner Member Id */
+            owner_member_id?: string | null;
+            /** Owner Label */
+            owner_label?: string | null;
+            /** Participants */
+            participants?: string | null;
+            /** Checklist */
+            checklist?: components["schemas"]["ChecklistItemIn"][] | null;
+            /** Expected Output */
+            expected_output?: string | null;
+            /** Title */
+            title: string;
+            frequency: components["schemas"]["RoutineFrequency"];
+            /** Start Date */
+            start_date?: string | null;
+        };
+        /**
+         * RoutineFrequency
+         * @enum {string}
+         */
+        RoutineFrequency: "daily" | "weekly" | "biweekly" | "twice_monthly" | "monthly" | "quarterly";
+        /** RoutineOut */
+        RoutineOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Profile */
+            profile: string | null;
+            /** Title */
+            title: string;
+            /** Purpose */
+            purpose: string | null;
+            frequency: components["schemas"]["RoutineFrequency"];
+            /** Weekdays */
+            weekdays: number[];
+            /** Month Days */
+            month_days: number[];
+            /** Nth Weekday */
+            nth_weekday: {
+                [key: string]: number;
+            } | null;
+            /** Workdays Only */
+            workdays_only: boolean;
+            /** Time Of Day */
+            time_of_day: string | null;
+            /** Duration Minutes */
+            duration_minutes: number | null;
+            owner: components["schemas"]["PersonRef"];
+            /** Participants */
+            participants: string | null;
+            /** Checklist */
+            checklist: components["schemas"]["ChecklistItemOut"][];
+            /** Expected Output */
+            expected_output: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Paused */
+            paused: boolean;
+            /** Archived */
+            archived: boolean;
+            /** Archive Reason */
+            archive_reason: string | null;
+            /** Next Date */
+            next_date: string | null;
+            /** Late Count */
+            late_count: number;
+            /** Version */
+            version: number;
+        };
+        /** RoutineUpdate */
+        RoutineUpdate: {
+            /** Purpose */
+            purpose?: string | null;
+            /** Weekdays */
+            weekdays?: number[] | null;
+            /** Month Days */
+            month_days?: number[] | null;
+            nth_weekday?: components["schemas"]["NthWeekday"] | null;
+            /** Workdays Only */
+            workdays_only?: boolean | null;
+            /** Time Of Day */
+            time_of_day?: string | null;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Owner Member Id */
+            owner_member_id?: string | null;
+            /** Owner Label */
+            owner_label?: string | null;
+            /** Participants */
+            participants?: string | null;
+            /** Checklist */
+            checklist?: components["schemas"]["ChecklistItemIn"][] | null;
+            /** Expected Output */
+            expected_output?: string | null;
+            /** Version */
+            version: number;
+            /** Title */
+            title?: string | null;
+            frequency?: components["schemas"]["RoutineFrequency"] | null;
+            /**
+             * Scope
+             * @default model
+             * @enum {string}
+             */
+            scope: "model" | "following";
+        };
         /** SectionArchive */
         SectionArchive: {
             /** Move Open Tasks To */
@@ -6733,6 +7340,519 @@ export interface operations {
                             [key: string]: unknown;
                         };
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_routines_api_spaces__space_id__routines_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_routine_api_spaces__space_id__routines_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoutineCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_profiles_api_spaces__space_id__routines_profiles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_profiles_api_spaces__space_id__routines_profiles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfilesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_routine_api_spaces__space_id__routines__routine_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                routine_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoutineUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pause_routine_api_spaces__space_id__routines__routine_id__pause_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                routine_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resume_routine_api_spaces__space_id__routines__routine_id__resume_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                routine_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_routine_api_spaces__space_id__routines__routine_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                routine_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArchiveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_routine_api_spaces__space_id__routines__routine_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                routine_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_occurrences_api_spaces__space_id__routine_occurrences_get: {
+        parameters: {
+            query?: {
+                start?: string | null;
+                end?: string | null;
+                routine_id?: string | null;
+            };
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OccurrenceOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_occurrence_api_spaces__space_id__routine_occurrences__occurrence_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                occurrence_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OccurrenceUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OccurrenceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_occurrence_api_spaces__space_id__routine_occurrences__occurrence_id__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                occurrence_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OccurrenceClose"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OccurrenceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reopen_occurrence_api_spaces__space_id__routine_occurrences__occurrence_id__reopen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                occurrence_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OccurrenceVersion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OccurrenceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_follow_up_api_spaces__space_id__routine_occurrences__occurrence_id__follow_ups_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                occurrence_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FollowUpIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OccurrenceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_agenda_api_spaces__space_id__agenda_get: {
+        parameters: {
+            query?: {
+                start?: string | null;
+                end?: string | null;
+            };
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgendaOut"];
                 };
             };
             /** @description Validation Error */

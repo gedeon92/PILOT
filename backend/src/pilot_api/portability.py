@@ -47,6 +47,7 @@ from pilot_api.models import (
     MembershipStatus,
     Milestone,
     MilestoneTask,
+    OccurrenceLink,
     Portfolio,
     Program,
     Project,
@@ -57,6 +58,8 @@ from pilot_api.models import (
     ProjectTemplate,
     ProjectType,
     Role,
+    Routine,
+    RoutineOccurrence,
     Space,
     Task,
     TaskComment,
@@ -239,6 +242,25 @@ def build_export(db: Session, space: Space, author: User, with_files: bool) -> t
     data["custom_field_values"] = [
         _dump(v, exclude={"updated_by_id"})
         for v in db.scalars(select(CustomFieldValue).where(CustomFieldValue.space_id == sid)).all()
+    ]
+    # Routines (étape F5) : modèles, occurrences et liens vers les suites créées.
+    routines = db.scalars(select(Routine).where(Routine.space_id == sid)).all()
+    data["routines"] = [_dump(r) for r in routines]
+    occurrences = db.scalars(
+        select(RoutineOccurrence).where(RoutineOccurrence.space_id == sid)
+    ).all()
+    data["routine_occurrences"] = [_dump(o, exclude={"closed_by_id"}) for o in occurrences]
+    data["occurrence_links"] = [
+        {
+            "occurrence_id": str(link.occurrence_id),
+            "task_id": str(link.task_id) if link.task_id else None,
+            "decision_id": str(link.decision_id) if link.decision_id else None,
+        }
+        for link in db.scalars(
+            select(OccurrenceLink).where(
+                OccurrenceLink.occurrence_id.in_([o.id for o in occurrences])
+            )
+        ).all()
     ]
     data["task_comments"] = [
         _dump(c, exclude={"author_id", "mentions"})
@@ -759,6 +781,7 @@ def import_space(
     report.counts["decisions"] = len(decision_ids)
 
     _import_custom_fields(db, space, data, project_ids, task_ids, member_ids, report)
+    _import_routines(db, space, data, task_ids, decision_ids, person, report)
 
     for item in data.get("contributors", []):
         project_id = project_ids.get(str(item.get("project_id")))
@@ -1063,3 +1086,119 @@ def _import_custom_fields(
         if isinstance(raw, list):
             hidden = [str(field_ids[str(i)].id) for i in raw if str(i) in field_ids]
             project.hidden_field_ids = hidden or None
+
+
+def _import_routines(
+    db: Session,
+    space: Space,
+    data: dict[str, Any],
+    task_ids: dict[str, Task],
+    decision_ids: dict[str, Any],
+    person: Any,
+    report: ImportReport,
+) -> None:
+    """Routines (étape F5) : modèles, occurrences (mêmes dates, mêmes états) et liens."""
+    from pilot_api.models import OccurrenceState, RoutineFrequency
+
+    routine_ids: dict[str, Routine] = {}
+    for item in data.get("routines", []):
+        title = str(item.get("title") or "").strip()[:160]
+        try:
+            frequency = RoutineFrequency(item.get("frequency"))
+        except ValueError:
+            continue
+        if not title or not item.get("start_date"):
+            continue
+        values = _load(
+            Routine,
+            item,
+            {"title", "frequency", "owner_member_id", "owner_label", "weekdays", "month_days"},
+        )
+        values["owner_member_id"], values["owner_label"] = person(
+            item.get("owner_member_id"), item.get("owner_label")
+        )
+        weekdays = [d for d in item.get("weekdays") or [] if isinstance(d, int) and 0 <= d <= 6]
+        month_days = [
+            d for d in item.get("month_days") or [] if isinstance(d, int) and 1 <= d <= 31
+        ][:2]
+        checklist = [
+            {
+                "id": str(c["id"])[:40],
+                "label": str(c["label"])[:200],
+                "mandatory": bool(c.get("mandatory")),
+            }
+            for c in item.get("checklist") or []
+            if isinstance(c, dict) and c.get("id") and str(c.get("label") or "").strip()
+        ][:20]
+        values["checklist"] = checklist
+        nth = item.get("nth_weekday")
+        values["nth_weekday"] = (
+            {"n": int(nth.get("n", 1)), "weekday": int(nth.get("weekday", 0))}
+            if isinstance(nth, dict)
+            else None
+        )
+        if values.get("time_of_day") and len(str(values["time_of_day"])) != 5:
+            values["time_of_day"] = None
+        routine = Routine(
+            space_id=space.id,
+            title=title,
+            frequency=frequency,
+            weekdays=weekdays,
+            month_days=month_days,
+            **values,
+        )
+        db.add(routine)
+        routine_ids[str(item.get("id"))] = routine
+    db.flush()
+    report.counts["routines"] = len(routine_ids)
+
+    occurrence_ids: dict[str, RoutineOccurrence] = {}
+    seen: set[tuple] = set()
+    for item in data.get("routine_occurrences", []):
+        routine = routine_ids.get(str(item.get("routine_id")))
+        if routine is None or not item.get("scheduled_date") or not item.get("due_date"):
+            continue
+        try:
+            state = OccurrenceState(item.get("state"))
+        except ValueError:
+            continue
+        values = _load(
+            RoutineOccurrence,
+            item,
+            {"routine_id", "state", "owner_member_id", "owner_label", "checks", "closed_by_id"},
+        )
+        if (routine.id, values["scheduled_date"]) in seen:
+            continue
+        seen.add((routine.id, values["scheduled_date"]))
+        values["owner_member_id"], values["owner_label"] = person(
+            item.get("owner_member_id"), item.get("owner_label")
+        )
+        known = {c["id"] for c in routine.checklist}
+        checks = item.get("checks") if isinstance(item.get("checks"), dict) else {}
+        occurrence = RoutineOccurrence(
+            space_id=space.id,
+            routine_id=routine.id,
+            state=state,
+            checks={k: bool(v) for k, v in checks.items() if k in known},
+            **values,
+        )
+        db.add(occurrence)
+        occurrence_ids[str(item.get("id"))] = occurrence
+    db.flush()
+    report.counts["routine_occurrences"] = len(occurrence_ids)
+
+    for item in data.get("occurrence_links", []):
+        occurrence = occurrence_ids.get(str(item.get("occurrence_id")))
+        task = task_ids.get(str(item.get("task_id"))) if item.get("task_id") else None
+        decision = (
+            decision_ids.get(str(item.get("decision_id"))) if item.get("decision_id") else None
+        )
+        if occurrence is None or (task is None and decision is None):
+            continue
+        db.add(
+            OccurrenceLink(
+                occurrence_id=occurrence.id,
+                task_id=task.id if task else None,
+                decision_id=decision.id if decision and not task else None,
+            )
+        )

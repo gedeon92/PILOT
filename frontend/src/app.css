@@ -7191,3 +7191,187 @@ a {
 .cf-task .cf-view {
   margin-top: 4px;
 }
+
+/* ---------- Routines et « Ma journée » (étape F5) ---------- */
+.occ-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.occ {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgb(var(--fx) / 0.02);
+}
+.occ--late {
+  border-color: var(--tone-danger-fg);
+}
+.occ--done,
+.occ--cancelled {
+  opacity: 0.78;
+}
+.occ__head {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+.occ__head:focus-visible {
+  outline: 2px solid var(--color-action);
+  outline-offset: 2px;
+  border-radius: 14px;
+}
+.occ__time {
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: var(--color-muted);
+  min-width: 42px;
+}
+.occ__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.occ__title {
+  font-weight: 600;
+}
+.occ__meta {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.occ__body {
+  padding: 4px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.occ__checks {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.occ__checks legend {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.occ__mandatory {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.occ__links {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+.occ__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.occ__form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.occ__result {
+  margin: 0;
+  white-space: pre-line;
+}
+.agenda-day {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-transform: capitalize;
+}
+.agenda-items {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.agenda-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgb(var(--fx) / 0.03);
+}
+.agenda-item--late {
+  background: var(--tone-danger-bg);
+}
+.agenda-item__kind {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+  min-width: 64px;
+}
+.agenda-item__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.agenda-item__meta {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.routine-days {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.routine-days legend {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.routine-checklist,
+.routine-scope {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.routine-checklist legend,
+.routine-scope legend {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.routine-row {
+  flex-direction: column;
+  align-items: stretch;
+}
+.routine-row__line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.routine-row__line .item-row__text {
+  flex: 1;
+  min-width: 0;
+}
+.routine-profiles__item {
+  align-items: flex-start;
+}

@@ -18,6 +18,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy import false as sa_false
+from sqlalchemy import true as sa_true
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -796,6 +797,135 @@ class CustomFieldValue(Base):
         ForeignKey("users.id", ondelete="SET NULL")
     )
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class RoutineFrequency(enum.StrEnum):
+    DAILY = "daily"  # jours de la semaine choisis
+    WEEKLY = "weekly"  # chaque semaine, jours choisis
+    BIWEEKLY = "biweekly"  # toutes les deux semaines (≠ deux fois par mois)
+    TWICE_MONTHLY = "twice_monthly"  # deux jours du mois (ex. le 1er et le 15)
+    MONTHLY = "monthly"  # un jour du mois, ou le n-ième jour de semaine
+    QUARTERLY = "quarterly"  # un jour, tous les trois mois
+
+
+class Routine(Base):
+    """Modèle de routine de pilotage (étape F5, cahier V2 RIT01–RIT07).
+
+    Une routine appartient à l'espace (transversale) : elle ne crée ni projet ni copie de
+    tâches. Chaque occurrence est une ligne à part, identifiable même après changement du
+    modèle ; un report ne décale que l'occurrence concernée."""
+
+    __tablename__ = "routines"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    profile: Mapped[str | None] = mapped_column(String(60))  # routine type d'origine
+    title: Mapped[str] = mapped_column(String(160))
+    purpose: Mapped[str | None] = mapped_column(Text)
+    frequency: Mapped[RoutineFrequency] = mapped_column(
+        _enum(RoutineFrequency, "routine_frequency")
+    )
+    # 0 = lundi … 6 = dimanche (quotidienne, hebdomadaire, toutes les deux semaines).
+    weekdays: Mapped[list[int]] = mapped_column(JSONB, default=list)
+    # Jours du mois (deux fois par mois, mensuelle, trimestrielle).
+    month_days: Mapped[list[int]] = mapped_column(JSONB, default=list)
+    # Mensuelle : n-ième jour de semaine, ex. {"n": 1, "weekday": 0} = premier lundi ; n = -1
+    # pour le dernier.
+    nth_weekday: Mapped[dict[str, int] | None] = mapped_column(JSONB)
+    # Une date de week-end est ramenée au vendredi précédent (mensuelle, trimestrielle…).
+    workdays_only: Mapped[bool] = mapped_column(default=True, server_default=sa_true())
+    time_of_day: Mapped[str | None] = mapped_column(String(5))  # « 08:20 », heure locale
+    duration_minutes: Mapped[int | None] = mapped_column(Integer)
+    owner_member_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("memberships.id", ondelete="SET NULL"), index=True
+    )
+    owner_label: Mapped[str | None] = mapped_column(String(120))
+    participants: Mapped[str | None] = mapped_column(Text)
+    # [{"id": "chk_…", "label": …, "mandatory": bool}]
+    checklist: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    expected_output: Mapped[str | None] = mapped_column(Text)
+    start_date: Mapped[date] = mapped_column(Date)
+    # Après une pause, rien n'est rattrapé avant la reprise.
+    generate_from: Mapped[date | None] = mapped_column(Date)
+    paused_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    archive_reason: Mapped[str | None] = mapped_column(Text)
+    created_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+    owner_member: Mapped[Membership | None] = relationship()
+
+
+class OccurrenceState(enum.StrEnum):
+    PLANNED = "planned"
+    DONE = "done"
+    CANCELLED = "cancelled"
+
+
+class RoutineOccurrence(Base):
+    """Une occurrence datée d'une routine : sa checklist cochée, son résultat, son état.
+    `scheduled_date` est la date prévue par la série (jamais modifiée) ; `due_date` peut être
+    reportée pour cette occurrence seulement, avec un motif."""
+
+    __tablename__ = "routine_occurrences"
+    __table_args__ = (
+        UniqueConstraint("routine_id", "scheduled_date", name="uq_routine_occurrence_date"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    routine_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("routines.id", ondelete="CASCADE"), index=True
+    )
+    scheduled_date: Mapped[date] = mapped_column(Date)
+    due_date: Mapped[date] = mapped_column(Date, index=True)
+    postpone_reason: Mapped[str | None] = mapped_column(Text)
+    state: Mapped[OccurrenceState] = mapped_column(_enum(OccurrenceState, "occurrence_state"))
+    checks: Mapped[dict[str, bool]] = mapped_column(JSONB, default=dict)
+    result: Mapped[str | None] = mapped_column(Text)
+    # Clôture sans tous les contrôles obligatoires : motif visible (exception).
+    exception_reason: Mapped[str | None] = mapped_column(Text)
+    cancel_reason: Mapped[str | None] = mapped_column(Text)
+    # Remplacement temporaire du responsable, pour cette occurrence seulement.
+    owner_member_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("memberships.id", ondelete="SET NULL")
+    )
+    owner_label: Mapped[str | None] = mapped_column(String(120))
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    closed_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+    routine: Mapped[Routine] = relationship()
+    owner_member: Mapped[Membership | None] = relationship()
+
+
+class OccurrenceLink(Base):
+    """Tâche ou décision née d'une occurrence (un constat transformé en suite) : l'objet reste
+    rattaché à son projet et à ses responsables ; la routine n'en garde que le lien."""
+
+    __tablename__ = "occurrence_links"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    occurrence_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("routine_occurrences.id", ondelete="CASCADE"), index=True
+    )
+    task_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tasks.id", ondelete="CASCADE"), index=True
+    )
+    decision_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("decisions.id", ondelete="CASCADE"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class TaskComment(Base):

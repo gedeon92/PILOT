@@ -11,7 +11,9 @@ import {
   DashboardIcon,
   DocumentIcon,
   FolderIcon,
+  RepeatIcon,
   ScaleIcon,
+  TodayIcon,
   Logo,
   LogoutIcon,
   MembersIcon,
@@ -156,6 +158,12 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
             <DashboardIcon />
             <span className="nav__label">Vue d’ensemble</span>
           </NavLink>
+          {space.advanced_mode && space.role !== 'guest' && (
+            <NavLink to={`${base}/ma-journee`} className={linkClass} title="Ma journée">
+              <TodayIcon />
+              <span className="nav__label">Ma journée</span>
+            </NavLink>
+          )}
           <NavLink to={`${base}/point-hebdo`} className={linkClass} title="Point hebdo">
             <ClipboardIcon />
             <span className="nav__label">Point hebdo</span>
@@ -172,6 +180,12 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
             <NavLink to={`${base}/decisions`} className={linkClass} title="Décisions">
               <ScaleIcon />
               <span className="nav__label">Décisions</span>
+            </NavLink>
+          )}
+          {space.advanced_mode && space.role !== 'guest' && (
+            <NavLink to={`${base}/routines`} className={linkClass} title="Routines">
+              <RepeatIcon />
+              <span className="nav__label">Routines</span>
             </NavLink>
           )}
           <NavLink to={`${base}/timeline`} className={linkClass} title="Timeline">

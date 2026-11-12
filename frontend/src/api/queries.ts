@@ -27,6 +27,10 @@ import {
   type CustomField,
   type ProjectFields,
   type TypePreview,
+  type Routine,
+  type RoutineProfile,
+  type Occurrence,
+  type Agenda,
   type Role,
   type Space,
   type SpaceSummary,
@@ -1506,5 +1510,157 @@ export function useHideFields(spaceId: string, projectId: string) {
       method: 'PUT',
       body: { field_ids: fieldIds },
     }),
+  )
+}
+
+// ---------- Routines et « Ma journée / Ma semaine » (étape F5) ----------
+
+const routineKeys = {
+  all: (spaceId: string) => ['space', spaceId, 'routines'] as const,
+  profiles: (spaceId: string) => ['space', spaceId, 'routines', 'profiles'] as const,
+  occurrences: (spaceId: string, params: Record<string, string>) =>
+    ['space', spaceId, 'routines', 'occurrences', params] as const,
+  agenda: (spaceId: string, start: string, end: string) =>
+    ['space', spaceId, 'routines', 'agenda', start, end] as const,
+}
+
+export function useRoutines(spaceId: string) {
+  return useQuery({
+    queryKey: routineKeys.all(spaceId),
+    queryFn: () => api<Routine[]>(`/spaces/${spaceId}/routines`),
+  })
+}
+
+export function useRoutineProfiles(spaceId: string, enabled = true) {
+  return useQuery({
+    queryKey: routineKeys.profiles(spaceId),
+    queryFn: () => api<RoutineProfile[]>(`/spaces/${spaceId}/routines/profiles`),
+    enabled,
+  })
+}
+
+export function useOccurrences(spaceId: string, params: Record<string, string>, enabled = true) {
+  const query = new URLSearchParams(params).toString()
+  return useQuery({
+    queryKey: routineKeys.occurrences(spaceId, params),
+    queryFn: () => api<Occurrence[]>(`/spaces/${spaceId}/routine-occurrences?${query}`),
+    enabled,
+  })
+}
+
+export function useAgenda(spaceId: string, start: string, end: string) {
+  return useQuery({
+    queryKey: routineKeys.agenda(spaceId, start, end),
+    queryFn: () => api<Agenda>(`/spaces/${spaceId}/agenda?start=${start}&end=${end}`),
+  })
+}
+
+/** Toute écriture sur une routine recharge les routines, occurrences et la journée. Une suite
+ * (tâche, décision) recharge aussi le reste de l'espace. */
+function useRoutineMutation<V, R>(
+  spaceId: string,
+  success: string | null,
+  fn: (v: V) => Promise<R>,
+  everything = false,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    meta: success ? { success } : undefined,
+    mutationFn: fn,
+    onSettled: () => {
+      void queryClient.invalidateQueries({
+        queryKey: everything ? ['space', spaceId] : routineKeys.all(spaceId),
+      })
+    },
+  })
+}
+
+export function useCreateRoutine(spaceId: string) {
+  return useRoutineMutation(spaceId, 'Routine créée', (body: Record<string, unknown>) =>
+    api<Routine>(`/spaces/${spaceId}/routines`, { method: 'POST', body }),
+  )
+}
+
+export function useAddProfiles(spaceId: string) {
+  return useRoutineMutation(spaceId, 'Routines ajoutées', (keys: string[]) =>
+    api<Routine[]>(`/spaces/${spaceId}/routines/profiles`, { method: 'POST', body: { keys } }),
+  )
+}
+
+export function useUpdateRoutine(spaceId: string) {
+  return useRoutineMutation(
+    spaceId,
+    'Routine enregistrée',
+    ({ routine, ...body }: { routine: Routine } & Record<string, unknown>) =>
+      api<Routine>(`/spaces/${spaceId}/routines/${routine.id}`, {
+        method: 'PATCH',
+        body: { version: routine.version, ...body },
+      }),
+  )
+}
+
+export function useRoutineAction(spaceId: string) {
+  return useRoutineMutation(
+    spaceId,
+    null,
+    ({
+      id,
+      action,
+      reason,
+    }: {
+      id: string
+      action: 'pause' | 'resume' | 'archive' | 'restore'
+      reason?: string
+    }) =>
+      api<Routine>(`/spaces/${spaceId}/routines/${id}/${action}`, {
+        method: 'POST',
+        body: action === 'archive' ? { reason } : undefined,
+      }),
+  )
+}
+
+export function useUpdateOccurrence(spaceId: string) {
+  return useRoutineMutation(
+    spaceId,
+    null,
+    ({ occurrence, ...body }: { occurrence: Occurrence } & Record<string, unknown>) =>
+      api<Occurrence>(`/spaces/${spaceId}/routine-occurrences/${occurrence.id}`, {
+        method: 'PATCH',
+        body: { version: occurrence.version, ...body },
+      }),
+  )
+}
+
+export function useCloseOccurrence(spaceId: string) {
+  return useRoutineMutation(
+    spaceId,
+    null,
+    ({ occurrence, ...body }: { occurrence: Occurrence } & Record<string, unknown>) =>
+      api<Occurrence>(`/spaces/${spaceId}/routine-occurrences/${occurrence.id}/close`, {
+        method: 'POST',
+        body: { version: occurrence.version, ...body },
+      }),
+  )
+}
+
+export function useReopenOccurrence(spaceId: string) {
+  return useRoutineMutation(spaceId, null, (occurrence: Occurrence) =>
+    api<Occurrence>(`/spaces/${spaceId}/routine-occurrences/${occurrence.id}/reopen`, {
+      method: 'POST',
+      body: { version: occurrence.version },
+    }),
+  )
+}
+
+export function useFollowUp(spaceId: string) {
+  return useRoutineMutation(
+    spaceId,
+    'Suite créée',
+    ({ occurrenceId, ...body }: { occurrenceId: string } & Record<string, unknown>) =>
+      api<Occurrence>(`/spaces/${spaceId}/routine-occurrences/${occurrenceId}/follow-ups`, {
+        method: 'POST',
+        body,
+      }),
+    true,
   )
 }

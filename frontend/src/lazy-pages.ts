@@ -6,6 +6,7 @@ import { lazy } from 'react'
 
 const loaders = {
   account: () => import('./pages/account'),
+  agenda: () => import('./pages/agenda'),
   alerts: () => import('./pages/alerts'),
   decisions: () => import('./pages/decisions'),
   documents: () => import('./pages/documents'),
@@ -13,6 +14,7 @@ const loaders = {
   members: () => import('./pages/members'),
   projectDetail: () => import('./pages/project-detail'),
   projects: () => import('./pages/projects'),
+  routines: () => import('./pages/routines'),
   settings: () => import('./pages/settings'),
   timeline: () => import('./pages/timeline'),
   updates: () => import('./pages/updates'),
@@ -20,6 +22,10 @@ const loaders = {
 }
 
 export const AccountPage = lazy(() => loaders.account().then((m) => ({ default: m.AccountPage })))
+export const AgendaPage = lazy(() => loaders.agenda().then((m) => ({ default: m.AgendaPage })))
+export const RoutinesPage = lazy(() =>
+  loaders.routines().then((m) => ({ default: m.RoutinesPage })),
+)
 export const AlertsPage = lazy(() => loaders.alerts().then((m) => ({ default: m.AlertsPage })))
 export const DecisionsPage = lazy(() =>
   loaders.decisions().then((m) => ({ default: m.DecisionsPage })),

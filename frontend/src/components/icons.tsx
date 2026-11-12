@@ -192,3 +192,20 @@ export const ScaleIcon = () => (
     <path d="M5 7l-3 6a3 3 0 0 0 6 0zM19 7l-3 6a3 3 0 0 0 6 0z" />
   </Icon>
 )
+
+export const TodayIcon = () => (
+  <Icon size={18}>
+    <rect x="3" y="5" width="18" height="16" rx="3" />
+    <path d="M3 10h18M8 3v4M16 3v4" />
+    <circle cx="12" cy="15.5" r="2" />
+  </Icon>
+)
+
+export const RepeatIcon = () => (
+  <Icon size={18}>
+    <path d="M17 2l3 3-3 3" />
+    <path d="M4 11V9a4 4 0 0 1 4-4h12" />
+    <path d="M7 22l-3-3 3-3" />
+    <path d="M20 13v2a4 4 0 0 1-4 4H4" />
+  </Icon>
+)
