@@ -10,6 +10,7 @@ import calendar
 from datetime import date, timedelta
 from typing import Any
 
+from pilot_api.holidays import previous_workday
 from pilot_api.models import Routine, RoutineFrequency
 
 F = RoutineFrequency
@@ -19,10 +20,9 @@ BACKFILL_DAYS = 31
 AHEAD_DAYS = 42
 
 
-def _workday(day: date, enabled: bool) -> date:
-    if not enabled or day.weekday() < 5:
-        return day
-    return day - timedelta(days=day.weekday() - 4)
+def _workday(day: date, enabled: bool, holidays: frozenset[date] = frozenset()) -> date:
+    """Un jour de week-end ou férié est ramené au jour ouvré précédent."""
+    return previous_workday(day, holidays) if enabled else day
 
 
 def _month_day(year: int, month: int, day: int) -> date:
@@ -49,8 +49,11 @@ def _months(start: date, end: date):
             year, month = year + 1, 1
 
 
-def dates_between(routine: Routine, start: date, end: date) -> list[date]:
-    """Dates prévues par la série entre `start` et `end` inclus (jamais avant le début)."""
+def dates_between(
+    routine: Routine, start: date, end: date, holidays: frozenset[date] = frozenset()
+) -> list[date]:
+    """Dates prévues par la série entre `start` et `end` inclus (jamais avant le début).
+    Une routine « jours ouvrés » ne tombe ni un jour férié ni, au jour du mois, un week-end."""
     start = max(start, routine.start_date)
     if end < start:
         return []
@@ -62,7 +65,8 @@ def dates_between(routine: Routine, start: date, end: date) -> list[date]:
         anchor = routine.start_date - timedelta(days=routine.start_date.weekday())
         day = start
         while day <= end:
-            if day.weekday() in weekdays:
+            skip = routine.workdays_only and day in holidays
+            if day.weekday() in weekdays and not skip:
                 week = (day - anchor).days // 7
                 if routine.frequency != F.BIWEEKLY or week % 2 == 0:
                     result.add(day)
@@ -80,12 +84,14 @@ def dates_between(routine: Routine, start: date, end: date) -> list[date]:
                 int(routine.nth_weekday.get("n", 1)),
                 int(routine.nth_weekday.get("weekday", 0)),
             )
-            candidates = [nth] if nth else []
+            candidates = [_workday(nth, routine.workdays_only, holidays)] if nth else []
         else:
             days = routine.month_days or [routine.start_date.day]
             if routine.frequency in (F.MONTHLY, F.QUARTERLY):
                 days = days[:1]
-            candidates = [_workday(_month_day(year, month, d), routine.workdays_only) for d in days]
+            candidates = [
+                _workday(_month_day(year, month, d), routine.workdays_only, holidays) for d in days
+            ]
         result.update(d for d in candidates if start <= d <= end)
     return sorted(result)
 

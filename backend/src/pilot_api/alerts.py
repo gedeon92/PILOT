@@ -429,6 +429,7 @@ def compute_alerts(db: Session, space: Space, today: date) -> int:
 
     # Étape F6 : contrôles d'événement (J−10, veille, contacts sous 5 jours ouvrés, bilan
     # sous 10 jours) dus la veille, le jour même ou dépassés.
+    from pilot_api.holidays import holiday_set
     from pilot_api.routers.pilotage import event_controls, event_projects
 
     for project, details in event_projects(db, space.id):
@@ -437,7 +438,7 @@ def compute_alerts(db: Session, space: Space, today: date) -> int:
         if project.status == ProjectStatus.CANCELLED:
             continue
         responsible = user_of.get(project.owner_member_id) if project.owner_member_id else None
-        for control in event_controls(project, details, today):
+        for control in event_controls(project, details, today, holiday_set(space.holidays)):
             if control.done_at is not None or control.due_date is None:
                 continue
             days = (control.due_date - today).days

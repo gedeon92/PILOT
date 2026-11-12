@@ -1406,6 +1406,79 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/spaces/{space_id}/holidays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Holidays */
+        get: operations["get_holidays_api_spaces__space_id__holidays_get"];
+        /** Set Holidays */
+        put: operations["set_holidays_api_spaces__space_id__holidays_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/holidays/presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Holiday Presets */
+        get: operations["holiday_presets_api_spaces__space_id__holidays_presets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/time-entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Time
+         * @description Son propre temps seulement : le détail de chacun reste personnel.
+         */
+        get: operations["my_time_api_spaces__space_id__time_entries_get"];
+        put?: never;
+        /** Add Time */
+        post: operations["add_time_api_spaces__space_id__time_entries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/time-entries/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Time */
+        delete: operations["delete_time_api_spaces__space_id__time_entries__entry_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/spaces/{space_id}/relations": {
         parameters: {
             query?: never;
@@ -3483,6 +3556,30 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /** HolidayItem */
+        HolidayItem: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Label */
+            label: string;
+        };
+        /** HolidaysIn */
+        HolidaysIn: {
+            /** Holidays */
+            holidays: components["schemas"]["HolidayItem"][];
+        };
+        /** HolidaysOut */
+        HolidaysOut: {
+            /** Holidays */
+            holidays: components["schemas"]["HolidayItem"][];
+            /** Countries */
+            countries: {
+                [key: string]: string;
+            };
+        };
         /** ImportResult */
         ImportResult: {
             /**
@@ -3917,6 +4014,25 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** MyTimeOut */
+        MyTimeOut: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Entries */
+            entries: components["schemas"]["TimeEntryOut"][];
+            /** Total Minutes */
+            total_minutes: number;
+            /** Strategic Minutes */
+            strategic_minutes: number;
+        };
         /** NthWeekday */
         NthWeekday: {
             /** N */
@@ -4175,6 +4291,17 @@ export interface components {
             color?: ("orange" | "blue" | "violet" | "green" | "teal" | "pink" | "gray") | null;
             /** Emoji */
             emoji?: string | null;
+        };
+        /** PresetOut */
+        PresetOut: {
+            /** Country */
+            country: string;
+            /** Year */
+            year: number;
+            /** Holidays */
+            holidays: components["schemas"]["HolidayItem"][];
+            /** Note */
+            note: string | null;
         };
         /** ProfileOut */
         ProfileOut: {
@@ -5392,6 +5519,46 @@ export interface components {
             sent: boolean;
             /** Message */
             message: string;
+        };
+        /**
+         * TimeCategory
+         * @enum {string}
+         */
+        TimeCategory: "strategic" | "coordination" | "operational" | "admin";
+        /** TimeEntryIn */
+        TimeEntryIn: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Minutes */
+            minutes: number;
+            category: components["schemas"]["TimeCategory"];
+            /** Note */
+            note?: string | null;
+            /** Project Id */
+            project_id?: string | null;
+        };
+        /** TimeEntryOut */
+        TimeEntryOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Minutes */
+            minutes: number;
+            category: components["schemas"]["TimeCategory"];
+            /** Note */
+            note: string | null;
+            /** Project Id */
+            project_id: string | null;
         };
         /** TypePreview */
         TypePreview: {
@@ -8825,6 +8992,207 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_holidays_api_spaces__space_id__holidays_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolidaysOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_holidays_api_spaces__space_id__holidays_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HolidaysIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolidaysOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    holiday_presets_api_spaces__space_id__holidays_presets_get: {
+        parameters: {
+            query: {
+                country: string;
+                year: number;
+            };
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PresetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_time_api_spaces__space_id__time_entries_get: {
+        parameters: {
+            query?: {
+                start?: string | null;
+                end?: string | null;
+            };
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTimeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_time_api_spaces__space_id__time_entries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeEntryIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTimeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_time_api_spaces__space_id__time_entries__entry_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTimeOut"];
                 };
             };
             /** @description Validation Error */

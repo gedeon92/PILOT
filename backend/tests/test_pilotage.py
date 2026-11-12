@@ -5,7 +5,7 @@ from datetime import UTC, date, datetime, timedelta
 
 from conftest import create_space, invite_and_join, register
 
-from pilot_api.routers.pilotage import add_workdays
+from pilot_api.holidays import add_workdays
 
 
 def _setup(make_client):
@@ -93,7 +93,7 @@ def test_indicators_are_transparent(make_client):
     )
     # Aucun cas : non calculable, pas 100 %.
     assert by_key["minutes_24h"]["status"] == "na" and by_key["minutes_24h"]["value"] is None
-    assert by_key["strategic_time"]["na_reason"].startswith("Non mesuré")
+    assert by_key["strategic_time"]["na_reason"].startswith("Non calculable : aucun temps déclaré")
     assert by_key["monthly_report"]["status"] == "na"
     assert by_key["orphan_subjects"]["value"] == 0 and by_key["orphan_subjects"]["status"] == "ok"
 

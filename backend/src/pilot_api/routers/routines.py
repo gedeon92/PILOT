@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session, selectinload
 from pilot_api.access import visible_project_ids
 from pilot_api.audit import record
 from pilot_api.deps import CurrentMembership, DbSession
+from pilot_api.holidays import holiday_set
 from pilot_api.models import (
     CLOSED_TASK_STATUSES,
     Decision,
@@ -38,6 +39,7 @@ from pilot_api.models import (
     Routine,
     RoutineFrequency,
     RoutineOccurrence,
+    Space,
     Task,
     utcnow,
 )
@@ -344,11 +346,15 @@ def _load_routine(db: Session, membership: Membership, routine_id: uuid.UUID) ->
 def generate(db: Session, routines: list[Routine], today: date, until: date | None = None) -> int:
     """Crée les occurrences manquantes (une seule fois par date). Renvoie le nombre créé."""
     created = 0
+    calendars: dict[uuid.UUID, frozenset[date]] = {}
     for routine in routines:
         if routine.archived_at is not None or routine.paused_at is not None:
             continue
         first, last = generation_window(routine, today, until)
-        wanted = dates_between(routine, first, last)
+        if routine.space_id not in calendars:
+            space = db.get(Space, routine.space_id)
+            calendars[routine.space_id] = holiday_set(space.holidays if space else None)
+        wanted = dates_between(routine, first, last, calendars[routine.space_id])
         if not wanted:
             continue
         existing = set(

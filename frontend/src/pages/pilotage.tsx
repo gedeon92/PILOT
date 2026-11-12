@@ -156,6 +156,7 @@ function IndicatorsView({
                   {targetText(i)}
                   {i.denominator !== null &&
                     i.unit === '%' &&
+                    i.key !== 'strategic_time' &&
                     ` · ${i.numerator} sur ${i.denominator} cas`}
                   {i.cancelled > 0 && ` · ${i.cancelled} annulé(s), comptés à part`}
                 </p>

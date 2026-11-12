@@ -7534,3 +7534,16 @@ a {
 .arbitration-form {
   margin: 8px 0;
 }
+
+/* ---------- Mon temps ---------- */
+.my-time__total {
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+.my-time__form {
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.my-time__form input[type='number'] {
+  width: 80px;
+}

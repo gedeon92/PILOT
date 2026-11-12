@@ -12,6 +12,7 @@ import {
 import { BackupSection } from '../components/backup-section'
 import { PurgeSection } from '../components/purge-section'
 import { CustomFieldsSettings } from '../components/custom-fields'
+import { HolidaysSettings } from '../components/holidays'
 import { TemplatesSection } from '../components/templates'
 import { AiSettingsSection } from '../components/assistant'
 import { PlusIcon } from '../components/icons'
@@ -496,6 +497,7 @@ export function SettingsPage() {
       <ModeSettings />
       {canManage && <AiSettingsSection spaceId={space.id} />}
       {canManage && space.advanced_mode && <CustomFieldsSettings spaceId={space.id} />}
+      {space.advanced_mode && <HolidaysSettings spaceId={space.id} canManage={canManage} />}
       {SECTIONS.map((config) => (
         <CatalogSection
           key={config.resource}

@@ -36,6 +36,9 @@ import {
   type EventControl,
   type Relation,
   type Encounter,
+  type Holidays,
+  type HolidayPreset,
+  type MyTime,
   type Role,
   type Space,
   type SpaceSummary,
@@ -1811,4 +1814,49 @@ export function useSaveArbitration(spaceId: string) {
       void queryClient.invalidateQueries({ queryKey: decisionKeys.all(spaceId) })
     },
   })
+}
+
+// ---------- Jours fériés et temps déclaré ----------
+
+export function useHolidays(spaceId: string) {
+  return useQuery({
+    queryKey: ['space', spaceId, 'holidays'] as const,
+    queryFn: () => api<Holidays>(`/spaces/${spaceId}/holidays`),
+  })
+}
+
+export function holidayPreset(spaceId: string, country: string, year: number) {
+  return api<HolidayPreset>(`/spaces/${spaceId}/holidays/presets?country=${country}&year=${year}`)
+}
+
+export function useSaveHolidays(spaceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    meta: { success: 'Jours fériés enregistrés' },
+    mutationFn: (holidays: { date: string; label: string }[]) =>
+      api<Holidays>(`/spaces/${spaceId}/holidays`, { method: 'PUT', body: { holidays } }),
+    // Les dates des routines et des contrôles d'événement en dépendent.
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['space', spaceId] })
+    },
+  })
+}
+
+export function useMyTime(spaceId: string, start: string, end: string) {
+  return useQuery({
+    queryKey: ['space', spaceId, 'pilotage', 'time', start, end] as const,
+    queryFn: () => api<MyTime>(`/spaces/${spaceId}/time-entries?start=${start}&end=${end}`),
+  })
+}
+
+export function useAddTime(spaceId: string) {
+  return usePilotMutation(spaceId, 'Temps enregistré', (body: Record<string, unknown>) =>
+    api<MyTime>(`/spaces/${spaceId}/time-entries`, { method: 'POST', body }),
+  )
+}
+
+export function useDeleteTime(spaceId: string) {
+  return usePilotMutation(spaceId, null, (id: string) =>
+    api<MyTime>(`/spaces/${spaceId}/time-entries/${id}`, { method: 'DELETE' }),
+  )
 }

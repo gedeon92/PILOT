@@ -1,6 +1,7 @@
 import { Link, useOutletContext, useSearchParams } from 'react-router'
 import { canWriteSpace, errorMessage, type Agenda } from '../api/client'
 import { useAgenda, useProjects } from '../api/queries'
+import { MyTimeCard } from '../components/my-time'
 import { OccurrenceCard } from '../components/occurrence-card'
 import { useOpenTask } from '../components/task-dialog'
 import { Alert, PageHeader, Skeleton, StatusPill } from '../components/ui'
@@ -129,6 +130,9 @@ export function AgendaPage() {
                 Mettre en place mes routines
               </Link>
             </section>
+          )}
+          {space.role !== 'guest' && (
+            <MyTimeCard spaceId={space.id} start={start} end={end} today={data.today} />
           )}
           {late.length > 0 && (
             <section className="card-panel card-panel--warn" aria-labelledby="agenda-late">

@@ -99,6 +99,8 @@ class Space(Base):
     advanced_mode: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
     # Étape F6 (VIS02) : cibles des indicateurs choisies par l'espace (sinon celles du cahier).
     indicator_targets: Mapped[dict[str, float] | None] = mapped_column(JSONB)
+    # Jours fériés de l'espace : [{"date": "AAAA-MM-JJ", "label": …}] (voir holidays.py).
+    holidays: Mapped[list[dict[str, str]] | None] = mapped_column(JSONB)
 
 
 class Membership(Base):
@@ -1070,6 +1072,36 @@ class Encounter(Base):
     follow_owner_member: Mapped[Membership | None] = relationship(
         foreign_keys=[follow_owner_member_id]
     )
+
+
+class TimeCategory(enum.StrEnum):
+    STRATEGIC = "strategic"
+    COORDINATION = "coordination"
+    OPERATIONAL = "operational"
+    ADMIN = "admin"
+
+
+class TimeEntry(Base):
+    """Temps déclaré par une personne (cahier V2, VIS02 « temps stratégique » et CAP04) :
+    jamais déduit des connexions. Le détail est personnel ; seuls les totaux sont partagés."""
+
+    __tablename__ = "time_entries"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    member_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("memberships.id", ondelete="CASCADE"), index=True
+    )
+    day: Mapped[date] = mapped_column(Date, index=True)
+    minutes: Mapped[int] = mapped_column(Integer)
+    category: Mapped[TimeCategory] = mapped_column(_enum(TimeCategory, "time_category"))
+    note: Mapped[str | None] = mapped_column(String(300))
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("projects.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class TaskComment(Base):

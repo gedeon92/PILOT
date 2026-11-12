@@ -184,7 +184,12 @@ def build_export(db: Session, space: Space, author: User, with_files: bool) -> t
         "exported_at": utcnow().isoformat(),
         "exported_by": author.display_name,
         "files_included": with_files,
-        "space": {"name": space.name, "timezone": space.timezone},
+        "space": {
+            "name": space.name,
+            "timezone": space.timezone,
+            "holidays": space.holidays or [],
+            "indicator_targets": space.indicator_targets or {},
+        },
     }
     for key, model in CATALOGS.items():
         rows = db.scalars(select(model).where(model.space_id == sid)).all()
@@ -465,6 +470,26 @@ def import_space(
     if timezone not in available_timezones():
         timezone = "UTC"
     space = Space(name=name, timezone=timezone, imported_from=export_id)
+    from pilot_api.holidays import holiday_set
+
+    raw_holidays = source_space.get("holidays")
+    if isinstance(raw_holidays, list):
+        labels = {
+            str(h.get("date")): str(h.get("label") or "Jour férié")[:80]
+            for h in raw_holidays
+            if isinstance(h, dict)
+        }
+        space.holidays = [
+            {"date": d.isoformat(), "label": labels.get(d.isoformat(), "Jour férié")}
+            for d in sorted(holiday_set(raw_holidays))
+        ][:400] or None
+    targets = source_space.get("indicator_targets")
+    if isinstance(targets, dict):
+        space.indicator_targets = {
+            str(k)[:40]: float(v)
+            for k, v in targets.items()
+            if isinstance(v, int | float) and 0 <= v <= 100
+        } or None
     db.add(space)
     db.flush()
     me = Membership(

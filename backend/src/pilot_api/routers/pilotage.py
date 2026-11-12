@@ -28,6 +28,7 @@ from pilot_api.access import ensure_writer, visible_project_ids
 from pilot_api.audit import record
 from pilot_api.decision_rules import accepted, missing_fields, orphan_age
 from pilot_api.deps import CurrentMembership, DbSession, OwnerMembership
+from pilot_api.holidays import COUNTRIES, LUNAR_NOTE, add_workdays, holiday_set, presets
 from pilot_api.models import (
     CLOSED_TASK_STATUSES,
     Decision,
@@ -48,6 +49,8 @@ from pilot_api.models import (
     RoutineOccurrence,
     Space,
     Task,
+    TimeCategory,
+    TimeEntry,
     utcnow,
 )
 from pilot_api.routers.decisions import _load as load_decision
@@ -70,15 +73,8 @@ def local_day(moment: datetime, space: Space) -> date:
     return moment.astimezone(ZoneInfo(space.timezone)).date()
 
 
-def add_workdays(day: date, count: int) -> date:
-    """`count` jours ouvrés (lundi–vendredi) après `day`. Les jours fériés ne sont pas
-    encore pris en compte."""
-    current = day
-    while count > 0:
-        current += timedelta(days=1)
-        if current.weekday() < 5:
-            count -= 1
-    return current
+def space_holidays(space: Space) -> frozenset[date]:
+    return holiday_set(space.holidays)
 
 
 # ---------- Indicateurs (VIS02, VIS03) ----------
@@ -143,7 +139,7 @@ INDICATORS: dict[str, dict[str, Any]] = {
     },
     "strategic_time": {
         "label": "Temps stratégique",
-        "measure": "Temps catégorisé stratégique sur temps mesuré",
+        "measure": "Temps déclaré « stratégique » sur l'ensemble du temps déclaré",
         "target": 70,
         "comparator": ">=",
         "unit": "%",
@@ -364,7 +360,7 @@ def compute_indicators(
         if not project_ok(project.id):
             continue
         end_day = project.end_date or project.start_date
-        deadline = add_workdays(end_day, 5)
+        deadline = add_workdays(end_day, 5, space_holidays(space))
         if start <= end_day <= end and deadline <= today:
             done_at = ((details.controls or {}).get("contacts_5") or {}).get("done_at")
             due_events.append(done_at is not None and date.fromisoformat(done_at[:10]) <= deadline)
@@ -407,16 +403,40 @@ def compute_indicators(
             cursor = date(cursor.year + cursor.month // 12, cursor.month % 12 + 1, 1)
         results.append(_result(space, "monthly_report", ok, months))
 
-    results.append(
-        _result(
-            space,
+    results.append(_strategic_time(db, membership, start, end))
+    return results
+
+
+def _strategic_time(db: Session, membership: Membership, start: date, end: date) -> IndicatorOut:
+    """Temps stratégique : uniquement le temps déclaré (« Mon temps »), jamais les connexions.
+    Un propriétaire voit le total de l'espace ; les autres, leur propre temps."""
+    query = select(TimeEntry).where(
+        TimeEntry.space_id == membership.space_id, TimeEntry.day.between(start, end)
+    )
+    if membership.role != Role.OWNER:
+        query = query.where(TimeEntry.member_id == membership.id)
+    entries = list(db.scalars(query))
+    total = sum(e.minutes for e in entries)
+    strategic = sum(e.minutes for e in entries if e.category == TimeCategory.STRATEGIC)
+    who = "de l'espace" if membership.role == Role.OWNER else "que vous avez déclaré"
+    if not total:
+        return _result(
+            membership.space,
             "strategic_time",
             None,
             None,
-            na="Non mesuré : PILOT ne suit pas le temps passé (rien n'est déduit des connexions).",
+            na="Non calculable : aucun temps déclaré sur la période (Ma journée → Mon temps).",
         )
+    people = len({e.member_id for e in entries})
+    return _result(
+        membership.space,
+        "strategic_time",
+        strategic,
+        total,
+        note=f"{strategic / 60:.1f} h stratégiques sur {total / 60:.1f} h de temps {who}"
+        + (f" ({people} personne(s))" if membership.role == Role.OWNER else "")
+        + ". Seul le temps déclaré compte, jamais les connexions.",
     )
-    return results
 
 
 @router.get("/indicators")
@@ -682,7 +702,7 @@ class EventControlIn(BaseModel):
     note: Text | None = None
 
 
-def control_due(key: str, project: Project) -> date | None:
+def control_due(key: str, project: Project, holidays: frozenset[date] = frozenset()) -> date | None:
     if project.start_date is None:
         return None
     for k, _label, anchor, offset in EVENT_CONTROLS:
@@ -692,19 +712,24 @@ def control_due(key: str, project: Project) -> date | None:
             return project.start_date + timedelta(days=offset)
         end_day = project.end_date or project.start_date
         return (
-            add_workdays(end_day, offset)
+            add_workdays(end_day, offset, holidays)
             if key == "contacts_5"
             else end_day + timedelta(days=offset)
         )
     return None
 
 
-def event_controls(project: Project, details: EventDetails, today: date) -> list[EventControlOut]:
+def event_controls(
+    project: Project,
+    details: EventDetails,
+    today: date,
+    holidays: frozenset[date] = frozenset(),
+) -> list[EventControlOut]:
     stored = details.controls or {}
     out = []
     for key, label, _anchor, _offset in EVENT_CONTROLS:
         entry = stored.get(key) or {}
-        due = control_due(key, project)
+        due = control_due(key, project, holidays)
         done_at = datetime.fromisoformat(entry["done_at"]) if entry.get("done_at") else None
         out.append(
             EventControlOut(
@@ -739,7 +764,9 @@ def get_event_controls(
     project_id: uuid.UUID, membership: CurrentMembership, db: DbSession
 ) -> list[EventControlOut]:
     project, details = _event(db, membership, project_id, write=False)
-    return event_controls(project, details, today_in(membership.space))
+    return event_controls(
+        project, details, today_in(membership.space), space_holidays(membership.space)
+    )
 
 
 @router.put("/projects/{project_id}/event-controls/{key}")
@@ -771,7 +798,9 @@ def set_event_control(
         after={"control": key, "done": body.done, "note": body.note},
     )
     db.commit()
-    return event_controls(project, details, today_in(membership.space))
+    return event_controls(
+        project, details, today_in(membership.space), space_holidays(membership.space)
+    )
 
 
 # ---------- Dossier d'arbitrage (DEC04) ----------
@@ -863,3 +892,186 @@ def _encounter_actor(encounter: Encounter, membership: Membership) -> bool:
         )
         or encounter.created_by_id == membership.user_id
     )
+
+
+# ---------- Jours fériés de l'espace ----------
+
+
+class HolidayItem(BaseModel):
+    date: date
+    label: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
+
+
+class HolidaysIn(BaseModel):
+    holidays: Annotated[list[HolidayItem], Field(max_length=400)]
+
+
+class HolidaysOut(BaseModel):
+    holidays: list[HolidayItem]
+    countries: dict[str, str]
+
+
+class PresetOut(BaseModel):
+    country: str
+    year: int
+    holidays: list[HolidayItem]
+    note: str | None
+
+
+@router.get("/holidays")
+def get_holidays(membership: CurrentMembership) -> HolidaysOut:
+    items = sorted(membership.space.holidays or [], key=lambda h: h.get("date", ""))
+    return HolidaysOut(holidays=[HolidayItem(**h) for h in items], countries=COUNTRIES)
+
+
+@router.get("/holidays/presets")
+def holiday_presets(country: str, year: int, membership: CurrentMembership) -> PresetOut:
+    if country not in COUNTRIES or not 2000 <= year <= 2100:
+        raise HTTPException(422, "Pays ou année non pris en charge.")
+    return PresetOut(
+        country=country,
+        year=year,
+        holidays=[HolidayItem(**h) for h in presets(country, year)],
+        note=LUNAR_NOTE.get(country),
+    )
+
+
+@router.put("/holidays")
+def set_holidays(body: HolidaysIn, membership: OwnerMembership, db: DbSession) -> HolidaysOut:
+    space = db.get(Space, membership.space_id, with_for_update=True)
+    before = space.holidays or []
+    unique = {h.date: h for h in body.holidays}
+    space.holidays = [
+        {"date": d.isoformat(), "label": h.label} for d, h in sorted(unique.items())
+    ] or None
+    record(
+        db,
+        action="space.holidays",
+        actor_id=membership.user_id,
+        space_id=space.id,
+        target_type="space",
+        target_id=space.id,
+        before={"count": len(before)},
+        after={"count": len(space.holidays or [])},
+    )
+    db.commit()
+    return HolidaysOut(
+        holidays=[HolidayItem(**h) for h in space.holidays or []], countries=COUNTRIES
+    )
+
+
+# ---------- Mon temps (temps déclaré) ----------
+
+
+class TimeEntryIn(BaseModel):
+    day: date
+    minutes: Annotated[int, Field(ge=5, le=1440)]
+    category: TimeCategory
+    note: Annotated[str, StringConstraints(strip_whitespace=True, max_length=300)] | None = None
+    project_id: uuid.UUID | None = None
+
+
+class TimeEntryOut(BaseModel):
+    id: uuid.UUID
+    day: date
+    minutes: int
+    category: TimeCategory
+    note: str | None
+    project_id: uuid.UUID | None
+
+
+class MyTimeOut(BaseModel):
+    start: date
+    end: date
+    entries: list[TimeEntryOut]
+    total_minutes: int
+    strategic_minutes: int
+
+
+def _my_time(db: Session, membership: Membership, start: date, end: date) -> MyTimeOut:
+    entries = list(
+        db.scalars(
+            select(TimeEntry)
+            .where(
+                TimeEntry.member_id == membership.id,
+                TimeEntry.day.between(start, end),
+            )
+            .order_by(TimeEntry.day, TimeEntry.created_at)
+        )
+    )
+    return MyTimeOut(
+        start=start,
+        end=end,
+        entries=[
+            TimeEntryOut(
+                id=e.id,
+                day=e.day,
+                minutes=e.minutes,
+                category=e.category,
+                note=e.note,
+                project_id=e.project_id,
+            )
+            for e in entries
+        ],
+        total_minutes=sum(e.minutes for e in entries),
+        strategic_minutes=sum(e.minutes for e in entries if e.category == TimeCategory.STRATEGIC),
+    )
+
+
+@router.get("/time-entries")
+def my_time(
+    membership: CurrentMembership,
+    db: DbSession,
+    start: date | None = None,
+    end: date | None = None,
+) -> MyTimeOut:
+    """Son propre temps seulement : le détail de chacun reste personnel."""
+    today = today_in(membership.space)
+    start = start or today
+    end = end or start
+    if end < start or (end - start).days > 92:
+        raise HTTPException(422, "Période de 92 jours au plus.")
+    return _my_time(db, membership, start, end)
+
+
+@router.post("/time-entries", status_code=201)
+def add_time(body: TimeEntryIn, membership: CurrentMembership, db: DbSession) -> MyTimeOut:
+    if membership.role == Role.GUEST:
+        raise HTTPException(403, "La saisie du temps n'est pas ouverte aux invités.")
+    if body.day > today_in(membership.space):
+        raise HTTPException(422, "On déclare le temps déjà passé, pas le temps à venir.")
+    if body.project_id is not None:
+        load_project(db, membership, body.project_id)
+    already = sum(
+        db.scalars(
+            select(TimeEntry.minutes).where(
+                TimeEntry.member_id == membership.id, TimeEntry.day == body.day
+            )
+        )
+    )
+    if already + body.minutes > 1440:
+        raise HTTPException(422, "Plus de 24 heures déclarées pour cette journée.")
+    db.add(
+        TimeEntry(
+            space_id=membership.space_id,
+            member_id=membership.id,
+            day=body.day,
+            minutes=body.minutes,
+            category=body.category,
+            note=body.note or None,
+            project_id=body.project_id,
+        )
+    )
+    db.commit()
+    return _my_time(db, membership, body.day, body.day)
+
+
+@router.delete("/time-entries/{entry_id}")
+def delete_time(entry_id: uuid.UUID, membership: CurrentMembership, db: DbSession) -> MyTimeOut:
+    entry = db.get(TimeEntry, entry_id)
+    if entry is None or entry.member_id != membership.id:
+        raise HTTPException(404, "Saisie introuvable.")
+    day = entry.day
+    db.delete(entry)
+    db.commit()
+    return _my_time(db, membership, day, day)

@@ -5547,6 +5547,343 @@
         }
       }
     },
+    "/api/spaces/{space_id}/holidays": {
+      "get": {
+        "tags": [
+          "pilotage"
+        ],
+        "summary": "Get Holidays",
+        "operationId": "get_holidays_api_spaces__space_id__holidays_get",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidaysOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "pilotage"
+        ],
+        "summary": "Set Holidays",
+        "operationId": "set_holidays_api_spaces__space_id__holidays_put",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HolidaysIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidaysOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/holidays/presets": {
+      "get": {
+        "tags": [
+          "pilotage"
+        ],
+        "summary": "Holiday Presets",
+        "operationId": "holiday_presets_api_spaces__space_id__holidays_presets_get",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          },
+          {
+            "name": "country",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Country"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Year"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresetOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/time-entries": {
+      "get": {
+        "tags": [
+          "pilotage"
+        ],
+        "summary": "My Time",
+        "description": "Son propre temps seulement : le détail de chacun reste personnel.",
+        "operationId": "my_time_api_spaces__space_id__time_entries_get",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyTimeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "pilotage"
+        ],
+        "summary": "Add Time",
+        "operationId": "add_time_api_spaces__space_id__time_entries_post",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeEntryIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyTimeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/spaces/{space_id}/time-entries/{entry_id}": {
+      "delete": {
+        "tags": [
+          "pilotage"
+        ],
+        "summary": "Delete Time",
+        "operationId": "delete_time_api_spaces__space_id__time_entries__entry_id__delete",
+        "parameters": [
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entry Id"
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Space Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyTimeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/spaces/{space_id}/relations": {
       "get": {
         "tags": [
@@ -13000,6 +13337,68 @@
         ],
         "title": "HistoryEntry"
       },
+      "HolidayItem": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "label"
+        ],
+        "title": "HolidayItem"
+      },
+      "HolidaysIn": {
+        "properties": {
+          "holidays": {
+            "items": {
+              "$ref": "#/components/schemas/HolidayItem"
+            },
+            "type": "array",
+            "maxItems": 400,
+            "title": "Holidays"
+          }
+        },
+        "type": "object",
+        "required": [
+          "holidays"
+        ],
+        "title": "HolidaysIn"
+      },
+      "HolidaysOut": {
+        "properties": {
+          "holidays": {
+            "items": {
+              "$ref": "#/components/schemas/HolidayItem"
+            },
+            "type": "array",
+            "title": "Holidays"
+          },
+          "countries": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Countries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "holidays",
+          "countries"
+        ],
+        "title": "HolidaysOut"
+      },
       "ImportResult": {
         "properties": {
           "space_id": {
@@ -14312,6 +14711,44 @@
         ],
         "title": "MilestoneVersion"
       },
+      "MyTimeOut": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "title": "End"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/TimeEntryOut"
+            },
+            "type": "array",
+            "title": "Entries"
+          },
+          "total_minutes": {
+            "type": "integer",
+            "title": "Total Minutes"
+          },
+          "strategic_minutes": {
+            "type": "integer",
+            "title": "Strategic Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "entries",
+          "total_minutes",
+          "strategic_minutes"
+        ],
+        "title": "MyTimeOut"
+      },
       "NthWeekday": {
         "properties": {
           "n": {
@@ -15199,6 +15636,44 @@
           "version"
         ],
         "title": "PortfolioUpdate"
+      },
+      "PresetOut": {
+        "properties": {
+          "country": {
+            "type": "string",
+            "title": "Country"
+          },
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "holidays": {
+            "items": {
+              "$ref": "#/components/schemas/HolidayItem"
+            },
+            "type": "array",
+            "title": "Holidays"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "country",
+          "year",
+          "holidays",
+          "note"
+        ],
+        "title": "PresetOut"
       },
       "ProfileOut": {
         "properties": {
@@ -19802,6 +20277,119 @@
           "message"
         ],
         "title": "TestEmailResult"
+      },
+      "TimeCategory": {
+        "type": "string",
+        "enum": [
+          "strategic",
+          "coordination",
+          "operational",
+          "admin"
+        ],
+        "title": "TimeCategory"
+      },
+      "TimeEntryIn": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "minutes": {
+            "type": "integer",
+            "maximum": 1440.0,
+            "minimum": 5.0,
+            "title": "Minutes"
+          },
+          "category": {
+            "$ref": "#/components/schemas/TimeCategory"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "minutes",
+          "category"
+        ],
+        "title": "TimeEntryIn"
+      },
+      "TimeEntryOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "minutes": {
+            "type": "integer",
+            "title": "Minutes"
+          },
+          "category": {
+            "$ref": "#/components/schemas/TimeCategory"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "day",
+          "minutes",
+          "category",
+          "note",
+          "project_id"
+        ],
+        "title": "TimeEntryOut"
       },
       "TypePreview": {
         "properties": {
