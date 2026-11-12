@@ -127,6 +127,7 @@ TASK_PLAIN_FIELDS = [
     "recurrence",
     "priority",
     "start_date",
+    "estimate_hours",
 ]
 TASK_AUDIT_FIELDS = [
     *TASK_PLAIN_FIELDS,
@@ -421,6 +422,7 @@ def _task_out(task: Task, today: date, extras: dict | None = None) -> TaskOut:
         next_task_id=task.next_task_id,
         section_id=task.section_id,
         priority=task.priority,
+        estimate_hours=task.estimate_hours,
         start_date=task.start_date,
         original_due_date=task.original_due_date,
         postpone_count=task.postpone_count or 0,
@@ -1122,6 +1124,7 @@ def _repeat(db: Session, membership: Membership, task: Task, project: Project | 
         recurrence=task.recurrence,
         section_id=task.section_id,
         priority=task.priority,
+        estimate_hours=task.estimate_hours,
     )
     db.add(following)
     db.flush()

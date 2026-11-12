@@ -374,6 +374,18 @@ function TaskFields({
           <dd>{formatDay(task.start_date)}</dd>
         </div>
       )}
+      {advanced && (
+        <div>
+          <dt>Charge estimée</dt>
+          <dd>
+            {task.estimate_hours ? (
+              `${task.estimate_hours.toLocaleString('fr-FR')} h`
+            ) : (
+              <span className="muted">Non estimée</span>
+            )}
+          </dd>
+        </div>
+      )}
       {!task.parent_id && <SectionFact spaceId={spaceId} task={task} />}
       <div>
         <dt>Livrable</dt>
@@ -463,6 +475,7 @@ function TaskEditForm({
   const [recurrence, setRecurrence] = useState<string>(task.recurrence ?? '')
   const [priority, setPriority] = useState<string>(task.priority ?? '')
   const [start, setStart] = useState(task.start_date ?? '')
+  const [estimate, setEstimate] = useState(task.estimate_hours ? String(task.estimate_hours) : '')
   const [section, setSection] = useState<string>(task.section_id ?? '')
   const [reason, setReason] = useState('')
   const sections = useSections(spaceId, task.project_id ?? '')
@@ -482,7 +495,11 @@ function TaskEditForm({
           due_date: due || null,
           due_certainty: due && certainty ? certainty : null,
           ...(advanced
-            ? { priority: (priority || null) as TaskPriority | null, start_date: start || null }
+            ? {
+                priority: (priority || null) as TaskPriority | null,
+                start_date: start || null,
+                estimate_hours: estimate ? Number(estimate) : null,
+              }
             : {}),
           ...(task.parent_id ? {} : { recurrence: (recurrence || null) as TaskRecurrence | null }),
           ...(task.parent_id || !choices.length ? {} : { section_id: section || null }),
@@ -589,6 +606,18 @@ function TaskEditForm({
                 </option>
               ))}
             </select>
+          </div>
+          <div className="field">
+            <label htmlFor="edit-task-estimate">Charge estimée (heures)</label>
+            <input
+              id="edit-task-estimate"
+              type="number"
+              min={0.25}
+              max={2000}
+              step="any"
+              value={estimate}
+              onChange={(e) => setEstimate(e.target.value)}
+            />
           </div>
         </>
       )}

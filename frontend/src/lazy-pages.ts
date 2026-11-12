@@ -13,7 +13,9 @@ const loaders = {
   events: () => import('./pages/events'),
   members: () => import('./pages/members'),
   projectDetail: () => import('./pages/project-detail'),
+  pilotage: () => import('./pages/pilotage'),
   projects: () => import('./pages/projects'),
+  relations: () => import('./pages/relations'),
   routines: () => import('./pages/routines'),
   settings: () => import('./pages/settings'),
   timeline: () => import('./pages/timeline'),
@@ -25,6 +27,12 @@ export const AccountPage = lazy(() => loaders.account().then((m) => ({ default: 
 export const AgendaPage = lazy(() => loaders.agenda().then((m) => ({ default: m.AgendaPage })))
 export const RoutinesPage = lazy(() =>
   loaders.routines().then((m) => ({ default: m.RoutinesPage })),
+)
+export const PilotagePage = lazy(() =>
+  loaders.pilotage().then((m) => ({ default: m.PilotagePage })),
+)
+export const RelationsPage = lazy(() =>
+  loaders.relations().then((m) => ({ default: m.RelationsPage })),
 )
 export const AlertsPage = lazy(() => loaders.alerts().then((m) => ({ default: m.AlertsPage })))
 export const DecisionsPage = lazy(() =>

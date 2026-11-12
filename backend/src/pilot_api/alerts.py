@@ -80,6 +80,8 @@ RULES: dict[AlertRule, str] = {
     AlertRule.MINUTES_OVERDUE: "Relevé à diffuser",
     AlertRule.DECISION_REMINDER: "Relance de décision",
     AlertRule.ORPHAN_SUBJECT: "Sujet sans porteur",
+    AlertRule.EVENT_CONTROL: "Contrôle d'événement",
+    AlertRule.ENCOUNTER_FOLLOW_UP: "Rencontre à suivre",
 }
 RULE_ORDER = list(RULES)
 
@@ -425,6 +427,69 @@ def compute_alerts(db: Session, space: Space, today: date) -> int:
                 " jours : attribution formelle requise",
             )
 
+    # Étape F6 : contrôles d'événement (J−10, veille, contacts sous 5 jours ouvrés, bilan
+    # sous 10 jours) dus la veille, le jour même ou dépassés.
+    from pilot_api.routers.pilotage import event_controls, event_projects
+
+    for project, details in event_projects(db, space.id):
+        # Un événement terminé garde ses contrôles d'après (contacts, bilan) ; un événement
+        # annulé n'en a plus.
+        if project.status == ProjectStatus.CANCELLED:
+            continue
+        responsible = user_of.get(project.owner_member_id) if project.owner_member_id else None
+        for control in event_controls(project, details, today):
+            if control.done_at is not None or control.due_date is None:
+                continue
+            days = (control.due_date - today).days
+            if days > 1 or days < -30:
+                continue
+            add(
+                [responsible] if responsible else owners,
+                AlertRule.EVENT_CONTROL,
+                "project",
+                project.id,
+                project,
+                project.title,
+                f"{control.label} : "
+                + ("en retard depuis le " if days < 0 else "à faire pour le ")
+                + short_date(control.due_date),
+            )
+
+    # Rencontres : dossier à préparer 48 h avant ; rencontre passée sans compte rendu ou sans
+    # action suivante datée (REL03).
+    from pilot_api.models import Encounter, EncounterTriage
+
+    for e in db.scalars(
+        select(Encounter).where(
+            Encounter.space_id == space.id,
+            Encounter.closed_at.is_(None),
+            Encounter.triage == EncounterTriage.ACCEPT,
+            Encounter.starts_on.is_not(None),
+        )
+    ).all():
+        target = user_of.get(e.owner_member_id) if e.owner_member_id else e.created_by_id
+        end = e.ends_on or e.starts_on
+        if e.dossier_ready_at is None and 0 <= (e.starts_on - today).days <= 2:
+            add(
+                [target],
+                AlertRule.ENCOUNTER_FOLLOW_UP,
+                "encounter",
+                e.id,
+                None,
+                e.title,
+                "Dossier à préparer avant le " + short_date(e.starts_on),
+            )
+        elif end < today and not (e.report and e.next_action and e.next_action_date):
+            add(
+                [target],
+                AlertRule.ENCOUNTER_FOLLOW_UP,
+                "encounter",
+                e.id,
+                None,
+                e.title,
+                "Rencontre du " + short_date(end) + " sans compte rendu ou sans suite datée",
+            )
+
     # Propositions de la boîte de mise à jour restées sans décision : rappel à leur auteur.
     pending = db.execute(
         select(Proposal, UpdateRequest.author_id)
@@ -609,6 +674,8 @@ RULE_COLORS: dict[AlertRule, str] = {
     AlertRule.MINUTES_OVERDUE: "#fcd56a",
     AlertRule.DECISION_REMINDER: "#c4b5fd",
     AlertRule.ORPHAN_SUBJECT: "#ff8fa3",
+    AlertRule.EVENT_CONTROL: "#fcd56a",
+    AlertRule.ENCOUNTER_FOLLOW_UP: "#7dd3fc",
 }
 
 

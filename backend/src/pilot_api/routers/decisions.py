@@ -201,6 +201,8 @@ def decisions_out(
                     )
                     for t in links.get(d.id, [])
                 ],
+                arbitration=d.arbitration,
+                arbitration_submitted_at=d.arbitration_submitted_at,
                 version=d.version,
             )
         )

@@ -406,6 +406,8 @@ class _TaskFields(BaseModel):
     section_id: uuid.UUID | None = None
     priority: TaskPriority | None = None
     start_date: date | None = None
+    # Étape F6 : charge estimée en heures (vide = non estimée).
+    estimate_hours: Annotated[float, Field(gt=0, le=2000)] | None = None
 
 
 class TaskCreate(_TaskFields):
@@ -457,6 +459,7 @@ class TaskOut(BaseModel):
     # Première échéance, gardée dès le premier report ; nombre de reports.
     original_due_date: date | None = None
     postpone_count: int = 0
+    estimate_hours: float | None = None
 
 
 class TaskRef(BaseModel):
@@ -1053,6 +1056,9 @@ class DecisionOut(BaseModel):
     is_executor: bool
     can_write: bool
     tasks: list[DecisionTaskRef]
+    # Étape F6 (DEC04) : dossier d'arbitrage et date de soumission.
+    arbitration: dict | None = None
+    arbitration_submitted_at: datetime | None = None
     version: int
 
 

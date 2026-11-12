@@ -40,9 +40,11 @@ from pilot_api.models import (
     Decision,
     DecisionTask,
     Document,
+    Encounter,
     Entity,
     EventDetails,
     Meeting,
+    MemberCapacity,
     Membership,
     MembershipStatus,
     Milestone,
@@ -57,6 +59,7 @@ from pilot_api.models import (
     ProjectStatus,
     ProjectTemplate,
     ProjectType,
+    Relation,
     Role,
     Routine,
     RoutineOccurrence,
@@ -261,6 +264,17 @@ def build_export(db: Session, space: Space, author: User, with_files: bool) -> t
                 OccurrenceLink.occurrence_id.in_([o.id for o in occurrences])
             )
         ).all()
+    ]
+    # Étape F6 : relations, rencontres et capacités déclarées.
+    data["relations"] = [
+        _dump(r) for r in db.scalars(select(Relation).where(Relation.space_id == sid)).all()
+    ]
+    data["encounters"] = [
+        _dump(e) for e in db.scalars(select(Encounter).where(Encounter.space_id == sid)).all()
+    ]
+    data["member_capacities"] = [
+        _dump(c, exclude={"updated_by_id"})
+        for c in db.scalars(select(MemberCapacity).where(MemberCapacity.space_id == sid)).all()
     ]
     data["task_comments"] = [
         _dump(c, exclude={"author_id", "mentions"})
@@ -782,6 +796,7 @@ def import_space(
 
     _import_custom_fields(db, space, data, project_ids, task_ids, member_ids, report)
     _import_routines(db, space, data, task_ids, decision_ids, person, report)
+    _import_relations(db, space, data, project_ids, member_ids, person, report)
 
     for item in data.get("contributors", []):
         project_id = project_ids.get(str(item.get("project_id")))
@@ -1200,5 +1215,103 @@ def _import_routines(
                 occurrence_id=occurrence.id,
                 task_id=task.id if task else None,
                 decision_id=decision.id if decision and not task else None,
+            )
+        )
+
+
+def _import_relations(
+    db: Session,
+    space: Space,
+    data: dict[str, Any],
+    project_ids: dict[str, uuid.UUID],
+    member_ids: dict[str, uuid.UUID],
+    person: Any,
+    report: ImportReport,
+) -> None:
+    """Relations, rencontres (étape F6) et capacité de la personne qui importe."""
+    from pilot_api.models import EncounterTriage, RelationKind
+
+    relation_ids: dict[str, Relation] = {}
+    for item in data.get("relations", []):
+        name = str(item.get("name") or "").strip()[:200]
+        if not name:
+            continue
+        try:
+            kind = RelationKind(item.get("kind"))
+        except ValueError:
+            kind = RelationKind.OTHER
+        values = _load(Relation, item, {"name", "kind", "owner_member_id", "owner_label"})
+        values["owner_member_id"], values["owner_label"] = person(
+            item.get("owner_member_id"), item.get("owner_label")
+        )
+        if values.get("potential") not in {"low", "medium", "high", None}:
+            values["potential"] = None
+        if not isinstance(values.get("partnership"), dict | None):
+            values["partnership"] = None
+        relation = Relation(space_id=space.id, name=name, kind=kind, **values)
+        db.add(relation)
+        relation_ids[str(item.get("id"))] = relation
+    db.flush()
+    report.counts["relations"] = len(relation_ids)
+
+    count = 0
+    for item in data.get("encounters", []):
+        title = str(item.get("title") or "").strip()[:200]
+        if not title:
+            continue
+        try:
+            triage = EncounterTriage(item.get("triage"))
+        except ValueError:
+            triage = EncounterTriage.TO_TRIAGE
+        values = _load(
+            Encounter,
+            item,
+            {
+                "title",
+                "triage",
+                "relation_id",
+                "project_id",
+                "owner_member_id",
+                "owner_label",
+                "follow_owner_member_id",
+                "follow_owner_label",
+            },
+        )
+        values["owner_member_id"], values["owner_label"] = person(
+            item.get("owner_member_id"), item.get("owner_label")
+        )
+        values["follow_owner_member_id"], values["follow_owner_label"] = person(
+            item.get("follow_owner_member_id"), item.get("follow_owner_label")
+        )
+        if not isinstance(values.get("dossier"), dict | None):
+            values["dossier"] = None
+        relation = (
+            relation_ids.get(str(item.get("relation_id"))) if item.get("relation_id") else None
+        )
+        source_project = item.get("project_id")
+        db.add(
+            Encounter(
+                space_id=space.id,
+                title=title,
+                triage=triage,
+                relation_id=relation.id if relation else None,
+                project_id=project_ids.get(str(source_project)) if source_project else None,
+                **values,
+            )
+        )
+        count += 1
+    report.counts["encounters"] = count
+
+    for item in data.get("member_capacities", []):
+        member = member_ids.get(str(item.get("member_id")))
+        hours = item.get("hours_per_week")
+        if member is None or not isinstance(hours, int | float) or not 0 <= hours <= 168:
+            continue
+        db.add(
+            MemberCapacity(
+                member_id=member,
+                space_id=space.id,
+                hours_per_week=float(hours),
+                note=str(item["note"])[:300] if item.get("note") else None,
             )
         )

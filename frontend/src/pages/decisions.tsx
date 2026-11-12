@@ -12,6 +12,7 @@ import {
   useUpdateDecision,
   useUpdateMeeting,
 } from '../api/queries'
+import { ArbitrationForm, ArbitrationSummary } from '../components/arbitration'
 import { PersonField, type PersonValue } from '../components/person-field'
 import { Alert, PageHeader, Skeleton, StatusPill, type Tone } from '../components/ui'
 import { formatDay, formatMoment, isClosedProject } from '../labels'
@@ -235,7 +236,7 @@ function DecisionForm({
 
 function DecisionCard({ decision, spaceId }: { decision: Decision; spaceId: string }) {
   const act = useDecisionAction(spaceId, 'Décision enregistrée')
-  const [mode, setMode] = useState<null | 'edit' | 'done' | 'cancelled'>(null)
+  const [mode, setMode] = useState<null | 'edit' | 'done' | 'cancelled' | 'arbitration'>(null)
   const [note, setNote] = useState('')
   const state = STATE[decision.state]
   const active = decision.state === 'draft' || decision.state === 'open'
@@ -347,6 +348,11 @@ function DecisionCard({ decision, spaceId }: { decision: Decision; spaceId: stri
           </div>
         )}
       </dl>
+      {mode === 'arbitration' ? (
+        <ArbitrationForm spaceId={spaceId} decision={decision} onDone={() => setMode(null)} />
+      ) : (
+        <ArbitrationSummary decision={decision} />
+      )}
       {decision.missing.length > 0 && (
         <p className="decision__missing">
           Pour valider, il manque : {decision.missing.join(', ')}.
@@ -444,6 +450,13 @@ function DecisionCard({ decision, spaceId }: { decision: Decision; spaceId: stri
               onClick={() => setMode('cancelled')}
             >
               Caduque
+            </button>
+            <button
+              type="button"
+              className="button button--small button--ghost"
+              onClick={() => setMode('arbitration')}
+            >
+              Dossier d’arbitrage
             </button>
           </>
         )}

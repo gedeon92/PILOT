@@ -29,6 +29,8 @@ const RULE_TONE: Record<string, string> = {
   minutes_overdue: 'warn',
   decision_reminder: 'violet',
   orphan_subject: 'danger',
+  event_control: 'warn',
+  encounter_follow_up: 'info',
 }
 
 function AlertRow({ alert, spaceId }: { alert: AlertItem; spaceId: string }) {
@@ -47,9 +49,11 @@ function AlertRow({ alert, spaceId }: { alert: AlertItem; spaceId: string }) {
               ? `/espaces/${spaceId}/decisions?vue=todo`
               : alert.target_type === 'meeting'
                 ? `/espaces/${spaceId}/decisions?vue=meetings`
-                : !alert.project_id
-                  ? `/espaces/${spaceId}`
-                  : `/espaces/${spaceId}/projets/${alert.project_id}`) +
+                : alert.target_type === 'encounter'
+                  ? `/espaces/${spaceId}/relations`
+                  : !alert.project_id
+                    ? `/espaces/${spaceId}`
+                    : `/espaces/${spaceId}/projets/${alert.project_id}`) +
           (alert.target_type === 'task' && alert.target_id ? `?tache=${alert.target_id}` : '')
         }
         onClick={() => !alert.read && markRead.mutate(alert.id)}

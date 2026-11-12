@@ -8,6 +8,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     Enum,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -96,6 +97,8 @@ class Space(Base):
     # priorité et reports motivés s'affichent. Éteint par défaut : l'écran reste simple. Les
     # données ne dépendent pas de ce réglage ; seul l'affichage change.
     advanced_mode: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
+    # Étape F6 (VIS02) : cibles des indicateurs choisies par l'espace (sinon celles du cahier).
+    indicator_targets: Mapped[dict[str, float] | None] = mapped_column(JSONB)
 
 
 class Membership(Base):
@@ -446,6 +449,9 @@ class EventDetails(Base):
     expected_attendance: Mapped[int | None] = mapped_column(Integer)
     program_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("programs.id"), index=True)
     edition_label: Mapped[str | None] = mapped_column(String(40))
+    # Étape F6 : contrôles de l'événement (J−10, veille, contacts sous 5 jours ouvrés, bilan
+    # sous 10 jours) : {clé: {"done_at": …, "by": …, "note": …}}.
+    controls: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
     project: Mapped[Project] = relationship(back_populates="event_details")
     program: Mapped[Program | None] = relationship()
@@ -500,6 +506,8 @@ class Task(Base):
     start_date: Mapped[date | None] = mapped_column(Date)
     original_due_date: Mapped[date | None] = mapped_column(Date)
     postpone_count: Mapped[int | None] = mapped_column(Integer)
+    # Étape F6 (CAP02) : charge estimée en heures. Vide = non estimée (jamais comptée zéro).
+    estimate_hours: Mapped[float | None] = mapped_column(Float)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     version: Mapped[int] = mapped_column(Integer, default=1)
@@ -659,6 +667,10 @@ class Decision(Base):
         ForeignKey("users.id", ondelete="SET NULL")
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # Étape F6 (DEC04) : dossier d'arbitrage (contexte, faits, impacts, options,
+    # recommandation, risques, décision attendue) et date de soumission.
+    arbitration: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    arbitration_submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     version: Mapped[int] = mapped_column(Integer, default=1)
 
     decider_member: Mapped[Membership | None] = relationship(foreign_keys=[decider_member_id])
@@ -928,6 +940,138 @@ class OccurrenceLink(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class MemberCapacity(Base):
+    """Capacité d'une personne en heures par semaine (étape F6, CAP02), saisie et datée.
+    Sans capacité saisie, l'écran affiche « Capacité à vérifier » : rien n'est supposé."""
+
+    __tablename__ = "member_capacities"
+
+    member_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("memberships.id", ondelete="CASCADE"), primary_key=True
+    )
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    hours_per_week: Mapped[float] = mapped_column(Float)
+    note: Mapped[str | None] = mapped_column(String(300))
+    updated_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class RelationKind(enum.StrEnum):
+    PARTNER = "partner"
+    CLIENT = "client"
+    INSTITUTION = "institution"
+    SUPPLIER = "supplier"
+    OTHER = "other"
+
+
+class Relation(Base):
+    """Relation ou partenariat suivi (étape F6, REL04). Le CRM reste la référence du pipeline
+    quand il existe : PILOT n'en garde qu'une référence et le suivi des actions."""
+
+    __tablename__ = "relations"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String(200))
+    organization: Mapped[str | None] = mapped_column(String(200))
+    kind: Mapped[RelationKind] = mapped_column(_enum(RelationKind, "relation_kind"))
+    potential: Mapped[str | None] = mapped_column(String(10))  # low | medium | high
+    last_contact: Mapped[date | None] = mapped_column(Date)
+    next_action: Mapped[str | None] = mapped_column(Text)
+    next_action_date: Mapped[date | None] = mapped_column(Date)
+    owner_member_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("memberships.id", ondelete="SET NULL")
+    )
+    owner_label: Mapped[str | None] = mapped_column(String(120))
+    crm_ref: Mapped[str | None] = mapped_column(String(200))
+    notes: Mapped[str | None] = mapped_column(Text)
+    # Partenariat : proposition de valeur réciproque, modèle économique, risques, instruction
+    # juridique et financière, effort, obligations de chaque partie, renouvellement.
+    partnership: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    private: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+    owner_member: Mapped[Membership | None] = relationship()
+
+
+class EncounterTriage(enum.StrEnum):
+    TO_TRIAGE = "to_triage"
+    ACCEPT = "accept"
+    DELEGATE = "delegate"
+    IN_WRITING = "in_writing"
+    INVESTIGATE = "investigate"
+    REFUSE = "refuse"
+
+
+class Encounter(Base):
+    """Sollicitation, rendez-vous ou déplacement (étape F6, REL01–REL03) : tri de la demande,
+    dossier préparé (48 h avant), compte rendu, responsable et action suivante datée. La séance
+    seule ne clôture pas le dossier."""
+
+    __tablename__ = "encounters"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    space_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spaces.id", ondelete="CASCADE"), index=True
+    )
+    relation_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("relations.id", ondelete="SET NULL"), index=True
+    )
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("projects.id", ondelete="SET NULL"), index=True
+    )
+    title: Mapped[str] = mapped_column(String(200))
+    objective: Mapped[str | None] = mapped_column(Text)
+    expected_decision: Mapped[str | None] = mapped_column(Text)
+    priority_account: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
+    urgent: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
+    triage: Mapped[EncounterTriage] = mapped_column(_enum(EncounterTriage, "encounter_triage"))
+    triage_note: Mapped[str | None] = mapped_column(Text)
+    is_trip: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
+    starts_on: Mapped[date | None] = mapped_column(Date)
+    ends_on: Mapped[date | None] = mapped_column(Date)
+    # Dossier : objectif, contexte, interlocuteurs, derniers échanges, options, risques…
+    dossier: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    dossier_ready_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    report: Mapped[str | None] = mapped_column(Text)
+    report_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    follow_owner_member_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("memberships.id", ondelete="SET NULL")
+    )
+    follow_owner_label: Mapped[str | None] = mapped_column(String(120))
+    next_action: Mapped[str | None] = mapped_column(Text)
+    next_action_date: Mapped[date | None] = mapped_column(Date)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    close_reason: Mapped[str | None] = mapped_column(Text)
+    private: Mapped[bool] = mapped_column(default=False, server_default=sa_false())
+    owner_member_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("memberships.id", ondelete="SET NULL")
+    )
+    owner_label: Mapped[str | None] = mapped_column(String(120))
+    created_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+    relation: Mapped[Relation | None] = relationship()
+    owner_member: Mapped[Membership | None] = relationship(foreign_keys=[owner_member_id])
+    follow_owner_member: Mapped[Membership | None] = relationship(
+        foreign_keys=[follow_owner_member_id]
+    )
+
+
 class TaskComment(Base):
     """Commentaire sur une tâche. Le nom de l'auteur est gardé en copie (lisible après un
     départ) ; `mentions` liste les membres cités avec @nom, prévenus dans leurs alertes."""
@@ -1150,6 +1294,10 @@ class AlertRule(enum.StrEnum):
     MINUTES_OVERDUE = "minutes_overdue"
     DECISION_REMINDER = "decision_reminder"
     ORPHAN_SUBJECT = "orphan_subject"
+    # Étape F6 : contrôle d'événement dû (J−10, veille, contacts, bilan) ; rencontre passée
+    # sans compte rendu ou sans action suivante ; dossier de rendez-vous à préparer (48 h).
+    EVENT_CONTROL = "event_control"
+    ENCOUNTER_FOLLOW_UP = "encounter_follow_up"
 
 
 class Alert(Base):

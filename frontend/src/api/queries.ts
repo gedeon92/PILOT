@@ -31,6 +31,11 @@ import {
   type RoutineProfile,
   type Occurrence,
   type Agenda,
+  type Indicators,
+  type Capacity,
+  type EventControl,
+  type Relation,
+  type Encounter,
   type Role,
   type Space,
   type SpaceSummary,
@@ -1663,4 +1668,147 @@ export function useFollowUp(spaceId: string) {
       }),
     true,
   )
+}
+
+// ---------- Pilotage, relations et contrôles d'événement (étape F6) ----------
+
+const pilotKeys = {
+  indicators: (spaceId: string, start: string, end: string) =>
+    ['space', spaceId, 'pilotage', 'indicators', start, end] as const,
+  capacity: (spaceId: string) => ['space', spaceId, 'pilotage', 'capacity'] as const,
+  relations: (spaceId: string) => ['space', spaceId, 'pilotage', 'relations'] as const,
+  encounters: (spaceId: string) => ['space', spaceId, 'pilotage', 'encounters'] as const,
+  controls: (spaceId: string, projectId: string) =>
+    [...projectKeys.one(spaceId, projectId), 'event-controls'] as const,
+}
+
+export function useIndicators(spaceId: string, start: string, end: string) {
+  return useQuery({
+    queryKey: pilotKeys.indicators(spaceId, start, end),
+    queryFn: () => api<Indicators>(`/spaces/${spaceId}/indicators?start=${start}&end=${end}`),
+  })
+}
+
+function usePilotMutation<V, R>(spaceId: string, success: string | null, fn: (v: V) => Promise<R>) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    meta: success ? { success } : undefined,
+    mutationFn: fn,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['space', spaceId, 'pilotage'] })
+    },
+  })
+}
+
+export function useSetTargets(spaceId: string) {
+  return usePilotMutation(spaceId, 'Cibles enregistrées', (targets: Record<string, number>) =>
+    api<Indicators>(`/spaces/${spaceId}/indicators/targets`, { method: 'PUT', body: { targets } }),
+  )
+}
+
+export function useCapacity(spaceId: string) {
+  return useQuery({
+    queryKey: pilotKeys.capacity(spaceId),
+    queryFn: () => api<Capacity>(`/spaces/${spaceId}/capacity?weeks=6`),
+  })
+}
+
+export function useSetCapacity(spaceId: string) {
+  return usePilotMutation(
+    spaceId,
+    'Capacité enregistrée',
+    ({ memberId, hours, note }: { memberId: string; hours: number | null; note?: string | null }) =>
+      api<Capacity>(`/spaces/${spaceId}/capacity/${memberId}`, {
+        method: 'PUT',
+        body: { hours_per_week: hours, note: note ?? null },
+      }),
+  )
+}
+
+export function useRelations(spaceId: string) {
+  return useQuery({
+    queryKey: pilotKeys.relations(spaceId),
+    queryFn: () => api<Relation[]>(`/spaces/${spaceId}/relations`),
+  })
+}
+
+export function useSaveRelation(spaceId: string) {
+  return usePilotMutation(
+    spaceId,
+    'Relation enregistrée',
+    ({ relation, ...body }: { relation?: Relation } & Record<string, unknown>) =>
+      relation
+        ? api<Relation>(`/spaces/${spaceId}/relations/${relation.id}`, {
+            method: 'PATCH',
+            body: { version: relation.version, ...body },
+          })
+        : api<Relation>(`/spaces/${spaceId}/relations`, { method: 'POST', body }),
+  )
+}
+
+export function useEncounters(spaceId: string) {
+  return useQuery({
+    queryKey: pilotKeys.encounters(spaceId),
+    queryFn: () => api<Encounter[]>(`/spaces/${spaceId}/encounters`),
+  })
+}
+
+export function useSaveEncounter(spaceId: string) {
+  return usePilotMutation(
+    spaceId,
+    null,
+    ({ encounter, ...body }: { encounter?: Encounter } & Record<string, unknown>) =>
+      encounter
+        ? api<Encounter>(`/spaces/${spaceId}/encounters/${encounter.id}`, {
+            method: 'PATCH',
+            body: { version: encounter.version, ...body },
+          })
+        : api<Encounter>(`/spaces/${spaceId}/encounters`, { method: 'POST', body }),
+  )
+}
+
+export function useCloseEncounter(spaceId: string) {
+  return usePilotMutation(
+    spaceId,
+    null,
+    ({ encounter, reopen, reason }: { encounter: Encounter; reopen?: boolean; reason?: string }) =>
+      api<Encounter>(
+        `/spaces/${spaceId}/encounters/${encounter.id}/${reopen ? 'reopen' : 'close'}`,
+        { method: 'POST', body: { version: encounter.version, reason: reason || null } },
+      ),
+  )
+}
+
+export function useEventControls(spaceId: string, projectId: string, enabled = true) {
+  return useQuery({
+    queryKey: pilotKeys.controls(spaceId, projectId),
+    queryFn: () => api<EventControl[]>(`/spaces/${spaceId}/projects/${projectId}/event-controls`),
+    enabled,
+  })
+}
+
+export function useSetEventControl(spaceId: string, projectId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ key, done, note }: { key: string; done: boolean; note?: string | null }) =>
+      api<EventControl[]>(`/spaces/${spaceId}/projects/${projectId}/event-controls/${key}`, {
+        method: 'PUT',
+        body: { done, note: note ?? null },
+      }),
+    onSuccess: (data) => queryClient.setQueryData(pilotKeys.controls(spaceId, projectId), data),
+  })
+}
+
+export function useSaveArbitration(spaceId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ decision, ...body }: { decision: Decision } & Record<string, unknown>) =>
+      api<Decision>(`/spaces/${spaceId}/decisions/${decision.id}/arbitration`, {
+        method: 'PUT',
+        body: { version: decision.version, ...body },
+      }),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: decisionKeys.all(spaceId) })
+    },
+  })
 }

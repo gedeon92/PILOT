@@ -21,6 +21,7 @@ import { TaskBoard } from '../components/task-board'
 import { SectionedTasks, SectionTools } from '../components/task-sections'
 import { MilestonesSection } from '../components/milestones'
 import { ProjectCustomFields } from '../components/custom-fields'
+import { EventControls } from '../components/event-controls'
 import { ProjectAccessDrawer } from '../components/project-access'
 import { PlusIcon } from '../components/icons'
 import { Avatar } from '../components/avatar'
@@ -1216,6 +1217,14 @@ export function ProjectDetailPage() {
 
           <aside className="detail-columns__side">
             {p.event && <EventCard project={p} today={today} />}
+            {p.event && space.advanced_mode && p.start_date && (
+              <EventControls
+                spaceId={space.id}
+                projectId={p.id}
+                canWrite={canWrite}
+                today={today}
+              />
+            )}
             <section className="card-panel" aria-labelledby="info-title">
               <h2 id="info-title">Informations</h2>
               <dl className="infos">

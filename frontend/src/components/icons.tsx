@@ -209,3 +209,16 @@ export const RepeatIcon = () => (
     <path d="M20 13v2a4 4 0 0 1-4 4H4" />
   </Icon>
 )
+
+export const ChartIcon = () => (
+  <Icon size={18}>
+    <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+  </Icon>
+)
+
+export const HandshakeIcon = () => (
+  <Icon size={18}>
+    <path d="M2 12l4-4 4 2 4-3 4 3 4 2" />
+    <path d="M6 8v6l4 4 2-2 2 2 4-4v-6" />
+  </Icon>
+)

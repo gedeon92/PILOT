@@ -1284,6 +1284,232 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/spaces/{space_id}/indicators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Indicators */
+        get: operations["get_indicators_api_spaces__space_id__indicators_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/indicators/targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Targets */
+        put: operations["set_targets_api_spaces__space_id__indicators_targets_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/capacity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Capacity */
+        get: operations["get_capacity_api_spaces__space_id__capacity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/capacity/{member_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Capacity
+         * @description Un propriétaire saisit la capacité de chacun ; chacun peut saisir la sienne.
+         */
+        put: operations["set_capacity_api_spaces__space_id__capacity__member_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/projects/{project_id}/event-controls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Event Controls */
+        get: operations["get_event_controls_api_spaces__space_id__projects__project_id__event_controls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/projects/{project_id}/event-controls/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Event Control */
+        put: operations["set_event_control_api_spaces__space_id__projects__project_id__event_controls__key__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/decisions/{decision_id}/arbitration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Arbitration */
+        put: operations["set_arbitration_api_spaces__space_id__decisions__decision_id__arbitration_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/relations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Relations */
+        get: operations["list_relations_api_spaces__space_id__relations_get"];
+        put?: never;
+        /** Create Relation */
+        post: operations["create_relation_api_spaces__space_id__relations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/relations/{relation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Relation */
+        patch: operations["update_relation_api_spaces__space_id__relations__relation_id__patch"];
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/encounters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Encounters */
+        get: operations["list_encounters_api_spaces__space_id__encounters_get"];
+        put?: never;
+        /** Create Encounter */
+        post: operations["create_encounter_api_spaces__space_id__encounters_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/encounters/{encounter_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Encounter */
+        patch: operations["update_encounter_api_spaces__space_id__encounters__encounter_id__patch"];
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/encounters/{encounter_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close Encounter */
+        post: operations["close_encounter_api_spaces__space_id__encounters__encounter_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}/encounters/{encounter_id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reopen Encounter */
+        post: operations["reopen_encounter_api_spaces__space_id__encounters__encounter_id__reopen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/spaces/{space_id}/projects/{project_id}/milestones": {
         parameters: {
             query?: never;
@@ -2373,6 +2599,44 @@ export interface components {
                 [key: string]: string;
             };
         };
+        /** ArbitrationIn */
+        ArbitrationIn: {
+            /** Version */
+            version: number;
+            /** Context */
+            context?: string | null;
+            /** Facts */
+            facts?: string | null;
+            /** Impact Delay */
+            impact_delay?: string | null;
+            /** Impact Cost */
+            impact_cost?: string | null;
+            /** Impact Capacity */
+            impact_capacity?: string | null;
+            /**
+             * Options
+             * @default []
+             */
+            options: components["schemas"]["ArbitrationOption"][];
+            /** Recommendation */
+            recommendation?: string | null;
+            /** Risks */
+            risks?: string | null;
+            /** Expected Decision */
+            expected_decision?: string | null;
+            /**
+             * Submit
+             * @default false
+             */
+            submit: boolean;
+        };
+        /** ArbitrationOption */
+        ArbitrationOption: {
+            /** Label */
+            label: string;
+            /** Consequence */
+            consequence?: string | null;
+        };
         /** ArchiveIn */
         ArchiveIn: {
             /** Reason */
@@ -2411,6 +2675,66 @@ export interface components {
         Body_upload_task_document_api_spaces__space_id__tasks__task_id__documents_post: {
             /** File */
             file: string;
+        };
+        /** CapacityIn */
+        CapacityIn: {
+            /** Hours Per Week */
+            hours_per_week?: number | null;
+            /** Note */
+            note?: string | null;
+        };
+        /** CapacityOut */
+        CapacityOut: {
+            /** Weeks */
+            weeks: string[];
+            /** People */
+            people: components["schemas"]["CapacityPerson"][];
+            /** Note */
+            note: string;
+        };
+        /** CapacityPerson */
+        CapacityPerson: {
+            /**
+             * Member Id
+             * Format: uuid
+             */
+            member_id: string;
+            /** Name */
+            name: string;
+            /** Capacity */
+            capacity: number | null;
+            /** Capacity Note */
+            capacity_note: string | null;
+            /** Capacity Updated At */
+            capacity_updated_at: string | null;
+            /** Late Hours */
+            late_hours: number;
+            /** Late Unestimated */
+            late_unestimated: number;
+            /** Undated Hours */
+            undated_hours: number;
+            /** Undated Unestimated */
+            undated_unestimated: number;
+            /** Weeks */
+            weeks: components["schemas"]["CapacityWeek"][];
+            /** Sustained Overload */
+            sustained_overload: boolean;
+        };
+        /** CapacityWeek */
+        CapacityWeek: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /** Hours */
+            hours: number;
+            /** Unestimated */
+            unestimated: number;
+            /** Tasks */
+            tasks: number;
+            /** Over */
+            over: boolean | null;
         };
         /** ChecklistItemIn */
         ChecklistItemIn: {
@@ -2578,6 +2902,12 @@ export interface components {
             can_write: boolean;
             /** Tasks */
             tasks: components["schemas"]["DecisionTaskRef"][];
+            /** Arbitration */
+            arbitration?: {
+                [key: string]: unknown;
+            } | null;
+            /** Arbitration Submitted At */
+            arbitration_submitted_at?: string | null;
             /** Version */
             version: number;
         };
@@ -2682,6 +3012,25 @@ export interface components {
             /** Task Title */
             task_title?: string | null;
         };
+        /** Dossier */
+        Dossier: {
+            /** Objective */
+            objective?: string | null;
+            /** Context */
+            context?: string | null;
+            /** People */
+            people?: string | null;
+            /** Last Exchanges */
+            last_exchanges?: string | null;
+            /** Options */
+            options?: string | null;
+            /** Risks */
+            risks?: string | null;
+            /** Expected Decision */
+            expected_decision?: string | null;
+            /** Desired Follow Up */
+            desired_follow_up?: string | null;
+        };
         /** EmailChangeRequest */
         EmailChangeRequest: {
             /**
@@ -2698,6 +3047,161 @@ export interface components {
             sent_to: string;
             /** Expires Hours */
             expires_hours: number;
+        };
+        /** EncounterClose */
+        EncounterClose: {
+            /** Version */
+            version: number;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** EncounterCreate */
+        EncounterCreate: {
+            /** Relation Id */
+            relation_id?: string | null;
+            /** Project Id */
+            project_id?: string | null;
+            /** Objective */
+            objective?: string | null;
+            /** Expected Decision */
+            expected_decision?: string | null;
+            /** Priority Account */
+            priority_account?: boolean | null;
+            /** Urgent */
+            urgent?: boolean | null;
+            /** Is Trip */
+            is_trip?: boolean | null;
+            /** Starts On */
+            starts_on?: string | null;
+            /** Ends On */
+            ends_on?: string | null;
+            /** Owner Member Id */
+            owner_member_id?: string | null;
+            /** Owner Label */
+            owner_label?: string | null;
+            /** Private */
+            private?: boolean | null;
+            /** Title */
+            title: string;
+        };
+        /** EncounterOut */
+        EncounterOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Relation */
+            relation: {
+                [key: string]: unknown;
+            } | null;
+            /** Project */
+            project: {
+                [key: string]: unknown;
+            } | null;
+            /** Objective */
+            objective: string | null;
+            /** Expected Decision */
+            expected_decision: string | null;
+            /** Priority Account */
+            priority_account: boolean;
+            /** Urgent */
+            urgent: boolean;
+            triage: components["schemas"]["EncounterTriage"];
+            /** Triage Note */
+            triage_note: string | null;
+            /** Is Trip */
+            is_trip: boolean;
+            /** Starts On */
+            starts_on: string | null;
+            /** Ends On */
+            ends_on: string | null;
+            /** Dossier */
+            dossier: {
+                [key: string]: unknown;
+            } | null;
+            /** Dossier Ready At */
+            dossier_ready_at: string | null;
+            /** Dossier Due */
+            dossier_due: boolean;
+            /** Report */
+            report: string | null;
+            /** Report At */
+            report_at: string | null;
+            /** Report Due On */
+            report_due_on: string | null;
+            follow_owner: components["schemas"]["PersonRef"];
+            /** Next Action */
+            next_action: string | null;
+            /** Next Action Date */
+            next_action_date: string | null;
+            /** Without Follow Up */
+            without_follow_up: boolean;
+            /** Closed At */
+            closed_at: string | null;
+            /** Close Reason */
+            close_reason: string | null;
+            owner: components["schemas"]["PersonRef"];
+            /** Private */
+            private: boolean;
+            /** Can Write */
+            can_write: boolean;
+            /** Version */
+            version: number;
+        };
+        /**
+         * EncounterTriage
+         * @enum {string}
+         */
+        EncounterTriage: "to_triage" | "accept" | "delegate" | "in_writing" | "investigate" | "refuse";
+        /** EncounterUpdate */
+        EncounterUpdate: {
+            /** Relation Id */
+            relation_id?: string | null;
+            /** Project Id */
+            project_id?: string | null;
+            /** Objective */
+            objective?: string | null;
+            /** Expected Decision */
+            expected_decision?: string | null;
+            /** Priority Account */
+            priority_account?: boolean | null;
+            /** Urgent */
+            urgent?: boolean | null;
+            /** Is Trip */
+            is_trip?: boolean | null;
+            /** Starts On */
+            starts_on?: string | null;
+            /** Ends On */
+            ends_on?: string | null;
+            /** Owner Member Id */
+            owner_member_id?: string | null;
+            /** Owner Label */
+            owner_label?: string | null;
+            /** Private */
+            private?: boolean | null;
+            /** Version */
+            version: number;
+            /** Title */
+            title?: string | null;
+            triage?: components["schemas"]["EncounterTriage"] | null;
+            /** Triage Note */
+            triage_note?: string | null;
+            dossier?: components["schemas"]["Dossier"] | null;
+            /** Dossier Ready */
+            dossier_ready?: boolean | null;
+            /** Report */
+            report?: string | null;
+            /** Follow Owner Member Id */
+            follow_owner_member_id?: string | null;
+            /** Follow Owner Label */
+            follow_owner_label?: string | null;
+            /** Next Action */
+            next_action?: string | null;
+            /** Next Action Date */
+            next_action_date?: string | null;
         };
         /** EntityCreate */
         EntityCreate: {
@@ -2732,6 +3236,30 @@ export interface components {
             archived?: boolean | null;
             /** Country */
             country?: string | null;
+        };
+        /** EventControlIn */
+        EventControlIn: {
+            /** Done */
+            done: boolean;
+            /** Note */
+            note?: string | null;
+        };
+        /** EventControlOut */
+        EventControlOut: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Due Date */
+            due_date: string | null;
+            /** Done At */
+            done_at: string | null;
+            /** Done By */
+            done_by: string | null;
+            /** Note */
+            note: string | null;
+            /** Late */
+            late: boolean;
         };
         /**
          * EventIn
@@ -2972,6 +3500,66 @@ export interface components {
             };
             /** Warnings */
             warnings: string[];
+        };
+        /** IndicatorOut */
+        IndicatorOut: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Measure */
+            measure: string;
+            /** Target */
+            target: number;
+            /**
+             * Comparator
+             * @enum {string}
+             */
+            comparator: ">=" | "<=";
+            /**
+             * Unit
+             * @enum {string}
+             */
+            unit: "%" | "count";
+            /** Numerator */
+            numerator: number | null;
+            /** Denominator */
+            denominator: number | null;
+            /** Value */
+            value: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "below" | "na";
+            /** Na Reason */
+            na_reason: string | null;
+            /** Cancelled */
+            cancelled: number;
+            /** Note */
+            note: string | null;
+        };
+        /** IndicatorsOut */
+        IndicatorsOut: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Scope */
+            scope: string;
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Indicators */
+            indicators: components["schemas"]["IndicatorOut"][];
         };
         /** InvitationCreate */
         InvitationCreate: {
@@ -3458,6 +4046,27 @@ export interface components {
             label: string;
             /** Active */
             active: boolean;
+        };
+        /** Partnership */
+        Partnership: {
+            /** Value Proposition */
+            value_proposition?: string | null;
+            /** Economic Model */
+            economic_model?: string | null;
+            /** Risks */
+            risks?: string | null;
+            /** Legal Review */
+            legal_review?: string | null;
+            /** Financial Review */
+            financial_review?: string | null;
+            /** Effort */
+            effort?: string | null;
+            /** Our Obligations */
+            our_obligations?: string | null;
+            /** Their Obligations */
+            their_obligations?: string | null;
+            /** Renewal Date */
+            renewal_date?: string | null;
         };
         /** PasswordChange */
         PasswordChange: {
@@ -4123,6 +4732,111 @@ export interface components {
             /** Display Name */
             display_name: string;
         };
+        /** RelationCreate */
+        RelationCreate: {
+            /** Organization */
+            organization?: string | null;
+            kind?: components["schemas"]["RelationKind"] | null;
+            /** Potential */
+            potential?: ("low" | "medium" | "high") | null;
+            /** Last Contact */
+            last_contact?: string | null;
+            /** Next Action */
+            next_action?: string | null;
+            /** Next Action Date */
+            next_action_date?: string | null;
+            /** Owner Member Id */
+            owner_member_id?: string | null;
+            /** Owner Label */
+            owner_label?: string | null;
+            /** Crm Ref */
+            crm_ref?: string | null;
+            /** Notes */
+            notes?: string | null;
+            partnership?: components["schemas"]["Partnership"] | null;
+            /** Private */
+            private?: boolean | null;
+            /** Name */
+            name: string;
+        };
+        /**
+         * RelationKind
+         * @enum {string}
+         */
+        RelationKind: "partner" | "client" | "institution" | "supplier" | "other";
+        /** RelationOut */
+        RelationOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Organization */
+            organization: string | null;
+            kind: components["schemas"]["RelationKind"];
+            /** Potential */
+            potential: string | null;
+            /** Last Contact */
+            last_contact: string | null;
+            /** Next Action */
+            next_action: string | null;
+            /** Next Action Date */
+            next_action_date: string | null;
+            /** Action Late */
+            action_late: boolean;
+            owner: components["schemas"]["PersonRef"];
+            /** Crm Ref */
+            crm_ref: string | null;
+            /** Notes */
+            notes: string | null;
+            /** Partnership */
+            partnership: {
+                [key: string]: unknown;
+            } | null;
+            /** Private */
+            private: boolean;
+            /** Archived */
+            archived: boolean;
+            /** Encounters */
+            encounters: number;
+            /** Can Write */
+            can_write: boolean;
+            /** Version */
+            version: number;
+        };
+        /** RelationUpdate */
+        RelationUpdate: {
+            /** Organization */
+            organization?: string | null;
+            kind?: components["schemas"]["RelationKind"] | null;
+            /** Potential */
+            potential?: ("low" | "medium" | "high") | null;
+            /** Last Contact */
+            last_contact?: string | null;
+            /** Next Action */
+            next_action?: string | null;
+            /** Next Action Date */
+            next_action_date?: string | null;
+            /** Owner Member Id */
+            owner_member_id?: string | null;
+            /** Owner Label */
+            owner_label?: string | null;
+            /** Crm Ref */
+            crm_ref?: string | null;
+            /** Notes */
+            notes?: string | null;
+            partnership?: components["schemas"]["Partnership"] | null;
+            /** Private */
+            private?: boolean | null;
+            /** Version */
+            version: number;
+            /** Name */
+            name?: string | null;
+            /** Archived */
+            archived?: boolean | null;
+        };
         /**
          * RiskLevel
          * @enum {string}
@@ -4382,6 +5096,8 @@ export interface components {
             priority?: components["schemas"]["TaskPriority"] | null;
             /** Start Date */
             start_date?: string | null;
+            /** Estimate Hours */
+            estimate_hours?: number | null;
             /** Title */
             title: string;
             /** @default todo */
@@ -4403,6 +5119,13 @@ export interface components {
             /** Advanced Mode */
             advanced_mode?: boolean | null;
         };
+        /** TargetsIn */
+        TargetsIn: {
+            /** Targets */
+            targets: {
+                [key: string]: number;
+            };
+        };
         /** TaskCreate */
         TaskCreate: {
             /** Deliverable */
@@ -4420,6 +5143,8 @@ export interface components {
             priority?: components["schemas"]["TaskPriority"] | null;
             /** Start Date */
             start_date?: string | null;
+            /** Estimate Hours */
+            estimate_hours?: number | null;
             /** Title */
             title: string;
             /** @default todo */
@@ -4522,6 +5247,8 @@ export interface components {
              * @default 0
              */
             postpone_count: number;
+            /** Estimate Hours */
+            estimate_hours?: number | null;
         };
         /**
          * TaskPriority
@@ -4571,6 +5298,8 @@ export interface components {
             priority?: components["schemas"]["TaskPriority"] | null;
             /** Start Date */
             start_date?: string | null;
+            /** Estimate Hours */
+            estimate_hours?: number | null;
             /** Version */
             version: number;
             /** Title */
@@ -7853,6 +8582,525 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AgendaOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_indicators_api_spaces__space_id__indicators_get: {
+        parameters: {
+            query?: {
+                start?: string | null;
+                end?: string | null;
+            };
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndicatorsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_targets_api_spaces__space_id__indicators_targets_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TargetsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndicatorsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_capacity_api_spaces__space_id__capacity_get: {
+        parameters: {
+            query?: {
+                weeks?: number;
+            };
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapacityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_capacity_api_spaces__space_id__capacity__member_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CapacityIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapacityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_event_controls_api_spaces__space_id__projects__project_id__event_controls_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventControlOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_event_control_api_spaces__space_id__projects__project_id__event_controls__key__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                key: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventControlIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventControlOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_arbitration_api_spaces__space_id__decisions__decision_id__arbitration_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                decision_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArbitrationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_relations_api_spaces__space_id__relations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelationOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_relation_api_spaces__space_id__relations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RelationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_relation_api_spaces__space_id__relations__relation_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                relation_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RelationUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_encounters_api_spaces__space_id__encounters_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EncounterOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_encounter_api_spaces__space_id__encounters_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EncounterCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EncounterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_encounter_api_spaces__space_id__encounters__encounter_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounter_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EncounterUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EncounterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_encounter_api_spaces__space_id__encounters__encounter_id__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounter_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EncounterClose"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EncounterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reopen_encounter_api_spaces__space_id__encounters__encounter_id__reopen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounter_id: string;
+                space_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EncounterClose"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EncounterOut"];
                 };
             };
             /** @description Validation Error */

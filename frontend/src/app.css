@@ -7375,3 +7375,162 @@ a {
 .routine-profiles__item {
   align-items: flex-start;
 }
+
+/* ---------- Pilotage, relations, contrôles d'événement, arbitrage (étape F6) ---------- */
+.indicators__frame {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+.indicators {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.indicator {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: rgb(var(--fx) / 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.indicator--below {
+  border-color: var(--tone-warn-fg);
+}
+.indicator__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.indicator__head h2 {
+  font-size: 15px;
+  margin: 0;
+}
+.indicator__value {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.indicator--na .indicator__value {
+  font-size: 18px;
+  color: var(--color-muted);
+}
+.indicator__measure,
+.indicator__facts,
+.indicator__note {
+  margin: 0;
+  font-size: 13px;
+}
+.indicator__measure,
+.indicator__note {
+  color: var(--color-muted);
+}
+.table-scroll {
+  overflow-x: auto;
+}
+.capacity {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.capacity th,
+.capacity td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.capacity tbody th {
+  font-weight: 600;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.capacity__over {
+  background: var(--tone-danger-bg);
+  color: var(--tone-danger-fg);
+  font-weight: 600;
+}
+.capacity__unknown {
+  color: var(--tone-warn-fg);
+}
+.capacity__cap {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.capacity__note {
+  padding: 14px 16px 0;
+}
+.capacity input {
+  width: 80px;
+}
+.enc-block {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 0;
+  padding: 10px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.enc-block legend {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 6px;
+}
+.enc-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.event-controls {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.event-controls__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.event-controls__line {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.event-controls__meta {
+  font-size: 12px;
+  padding-left: 26px;
+}
+.event-controls__note {
+  margin-left: 26px;
+  font-size: 13px;
+}
+.arbitration {
+  margin: 8px 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgb(var(--fx) / 0.03);
+}
+.arbitration__title {
+  margin: 0 0 6px;
+  font-weight: 600;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.arbitration__options {
+  margin: 0;
+  padding-left: 18px;
+}
+.arbitration-form {
+  margin: 8px 0;
+}

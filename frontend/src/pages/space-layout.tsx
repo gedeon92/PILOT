@@ -12,6 +12,8 @@ import {
   DocumentIcon,
   FolderIcon,
   RepeatIcon,
+  ChartIcon,
+  HandshakeIcon,
   ScaleIcon,
   TodayIcon,
   Logo,
@@ -186,6 +188,18 @@ function Sidebar({ me, space, onSearch }: SpaceContext & { onSearch: () => void 
             <NavLink to={`${base}/routines`} className={linkClass} title="Routines">
               <RepeatIcon />
               <span className="nav__label">Routines</span>
+            </NavLink>
+          )}
+          {space.advanced_mode && space.role !== 'guest' && (
+            <NavLink to={`${base}/pilotage`} className={linkClass} title="Pilotage">
+              <ChartIcon />
+              <span className="nav__label">Pilotage</span>
+            </NavLink>
+          )}
+          {space.advanced_mode && space.role !== 'guest' && (
+            <NavLink to={`${base}/relations`} className={linkClass} title="Rencontres et relations">
+              <HandshakeIcon />
+              <span className="nav__label">Relations</span>
             </NavLink>
           )}
           <NavLink to={`${base}/timeline`} className={linkClass} title="Timeline">
